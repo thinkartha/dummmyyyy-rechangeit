@@ -1,8 +1,14 @@
 ## LoveHeartBeat
 
-Observability platform for **API monitoring**, **AI monitoring / AI Gateway**, **ETL pipeline monitoring**, **alerts**, **multi-cloud monitoring** (AWS, GCP, Azure), and **cloud + AI cost** across an organization.
+Multi-tenant observability SaaS for **API**, **AI**, **ETL**, **alerts**, and **multi-cloud cost**.
 
-Built on the Phoenix UI theme. Dev server:
+Each organization gets a slug hostname:
+
+`https://<organization>.loveheartbeat.com`
+
+Supports Okta/SSO or native login, org members, and onboarding from trial to enterprise (~30k orgs design target).
+
+### Dev server
 
 ```bash
 npm i

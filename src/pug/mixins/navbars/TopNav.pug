@@ -1,11 +1,13 @@
 include Mixins
 include ../common/Avatar
+include ../organization/Tenant
 
 mixin TopNav(config)
   nav.navbar.navbar-top.fixed-top#navbarDefault&attributes(attributes, attrsNavbarTop)
 
     .collapse.navbar-collapse.justify-content-between
       +NavbarLogo(config.toggleID)
+      +TenantContextBar
       +NavbarSearch
       if config.links || config.simpleNav
         div(id=config.navbarCollapseID ? config.navbarCollapseID : config.toggleID).collapse.navbar-collapse.scrollbar

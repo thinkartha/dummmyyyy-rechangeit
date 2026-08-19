@@ -1,0 +1,132 @@
+mixin ObsPageHeader(config)
+  .mb-6
+    .row.align-items-center.g-3
+      .col
+        h2.mb-2= config.title
+        h5.text-body-tertiary.fw-semibold.mb-0= config.subtitle
+      if config.action
+        .col-auto
+          button.btn.btn-primary(type='button')= config.action
+
+mixin ObsStatCards(stats)
+  .row.g-3.mb-6
+    each stat in stats
+      .col-12.col-sm-6.col-xl-3
+        .card.h-100
+          .card-body
+            .d-flex.justify-content-between.align-items-start
+              div
+                h6.text-body-tertiary.mb-2= stat.label
+                h3.mb-0= stat.value
+              span.badge.badge-phoenix(class=`badge-phoenix-${stat.badge || 'primary'}`)= stat.delta
+
+mixin ObsToolTable(config)
+  -
+    var pageSize = config.pageSize || 5;
+    var columns = config.columns || [];
+    var valueNames = columns.map(function (col, i) {
+      return col.key || ('col' + i);
+    });
+    var filterKey = (config.filter && config.filter.key) || valueNames[valueNames.length - 1] || 'status';
+    var filterLabel = (config.filter && config.filter.label) || 'Filter';
+    var filterOptions = (config.filter && config.filter.options) || [];
+    if (!filterOptions.length) {
+      var seen = {};
+      (config.rows || []).forEach(function (row) {
+        var last = row.cells[row.cells.length - 1];
+        var text = last && last.badge ? last.text : (typeof last === 'string' ? last : null);
+        if (text && !seen[text]) {
+          seen[text] = true;
+          filterOptions.push(text);
+        }
+      });
+    }
+    var listOptions = {
+      valueNames: valueNames,
+      page: pageSize,
+      filter: { key: filterKey }
+    };
+
+  div.obs-list-root(data-list!=listOptions)
+    .card
+      .card-header.border-bottom.border-translucent.py-3
+        .row.align-items-center.g-2.mb-3
+          .col
+            h4.mb-0= config.title
+            p.text-body-tertiary.fs-9.mb-0= config.subtitle
+        .row.align-items-center.g-2
+          .col-12.col-md
+            +Search({placeholder: config.searchPlaceholder || 'Search', inputClass: 'form-control-sm'}).w-100
+          .col-6.col-md-auto
+            select.form-select.form-select-sm(data-list-filter aria-label=filterLabel)
+              option(value='')= filterLabel + ': All'
+              each opt in filterOptions
+                option(value=opt)= opt
+          .col-6.col-md-auto
+            select.form-select.form-select-sm(aria-label='Sort by' data-obs-sort)
+              option(value='') Sort by
+              each col, idx in columns
+                option(value=valueNames[idx])= col.label
+      .card-body.p-0
+        .table-responsive.scrollbar
+          table.table.table-sm.fs-9.mb-0
+            thead
+              tr
+                each col, idx in columns
+                  th.sort.align-middle.white-space-nowrap.text-uppercase(
+                    class=col.className || ''
+                    scope='col'
+                    data-sort=valueNames[idx]
+                  )= col.label
+            tbody.list
+              each row in config.rows
+                tr
+                  each cell, idx in row.cells
+                    - var colKey = valueNames[idx]
+                    if idx === 0
+                      td.align-middle.ps-3.py-3(class=colKey)
+                        .d-flex.align-items-center
+                          span.me-2(class=`${row.iconSet || 'fa-solid'} ${row.icon || 'fa-cube'} text-${row.iconColor || 'primary'}`)
+                          div
+                            h6.mb-0= typeof cell === 'object' && cell.text ? cell.text : cell
+                            if row.meta
+                              p.text-body-tertiary.fs-10.mb-0= row.meta
+                    else if cell && cell.badge
+                      td.align-middle(class=colKey)
+                        span.badge.badge-phoenix(class=`badge-phoenix-${cell.badge}`)= cell.text
+                    else
+                      td.align-middle(class=colKey)= cell
+        .text-center.p-3.fallback.d-none
+          p.mb-0.text-body-tertiary No matching results
+      .card-footer.border-top.border-translucent
+        .row.align-items-center.g-2
+          .pagination.d-none
+          .col.d-flex.fs-9.flex-wrap
+            p.mb-0.d-none.d-sm-block.me-3.fw-semibold.text-body(data-list-info)
+            a.fw-semibold(href='#!' data-list-view='*')
+              | View all
+              span.fas.fa-angle-right.ms-1(data-fa-transform='down-1')
+            a.fw-semibold.d-none(href='#!' data-list-view='less')
+              | View less
+          .col-auto.d-flex
+            button.btn.btn-link.px-1.me-1(type='button' title='Previous' data-list-pagination='prev')
+              span.fas.fa-chevron-left.me-2
+              | Previous
+            button.btn.btn-link.px-1.ms-1(type='button' title='Next' data-list-pagination='next')
+              | Next
+              span.fas.fa-chevron-right.ms-2
+  script.
+    (function () {
+      document.querySelectorAll('[data-obs-sort]').forEach(function (select) {
+        if (select.dataset.bound === '1') return;
+        select.dataset.bound = '1';
+        select.addEventListener('change', function () {
+          var key = select.value;
+          if (!key) return;
+          var root = select.closest('[data-list]');
+          if (!root) return;
+          var header = root.querySelector('th[data-sort="' + key + '"]');
+          if (header) header.click();
+        });
+      });
+    })();

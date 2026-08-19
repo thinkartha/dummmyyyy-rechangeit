@@ -1,0 +1,56 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Organization', href: '#!' },
+      { label: 'Organizations', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'Organizations',
+    subtitle: 'Multi-tenant SaaS — each org gets slug.loveheartbeat.com with isolated members, SSO, and data',
+    action: 'Create organization'
+  })
+
+  +ObsStatCards([
+    { label: 'Organizations', value: '4', delta: 'demo tenants', badge: 'info' },
+    { label: 'Slug URLs', value: '4', delta: '*.loveheartbeat.com', badge: 'primary' },
+    { label: 'SSO enabled', value: '2', delta: 'Okta / SAML', badge: 'success' },
+    { label: 'Capacity target', value: '30k+', delta: 'orgs', badge: 'warning' }
+  ])
+
+  .card.mb-4
+    .card-body.py-3
+      .row.align-items-center.g-2
+        .col-auto
+          span.fa-solid.fa-globe.text-primary
+        .col
+          h6.mb-0 Tenant hostname pattern
+          p.text-body-tertiary.fs-9.mb-0
+            | https://
+            strong &lt;slug&gt;
+            | .loveheartbeat.com — resolved per request for auth, data, and billing isolation.
+
+  +ObsToolTable({
+    title: 'Tenants',
+    subtitle: 'Open an org subdomain or switch tenant context from the top bar',
+    searchPlaceholder: 'Search organizations or slugs',
+    columns: [
+      { label: 'Organization', className: 'ps-3' },
+      { label: 'Slug URL' },
+      { label: 'Plan' },
+      { label: 'Members' },
+      { label: 'Auth' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-building', iconColor: 'primary', meta: 'org_rootvyana', cells: ['RootVyana', 'rootvyana.loveheartbeat.com', 'Enterprise', '86', 'Okta SSO', { text: 'Active', badge: 'success' }] },
+      { icon: 'fa-building', iconColor: 'info', meta: 'org_acme', cells: ['Acme Corp', 'acme.loveheartbeat.com', 'Business', '54', 'Native login', { text: 'Active', badge: 'success' }] },
+      { icon: 'fa-building', iconColor: 'warning', meta: 'org_contoso', cells: ['Contoso', 'contoso.loveheartbeat.com', 'Enterprise', '38', 'Azure AD / SAML', { text: 'Active', badge: 'success' }] },
+      { icon: 'fa-building', iconColor: 'secondary', meta: 'org_demo', cells: ['LoveHeartBeat Demo', 'demo.loveheartbeat.com', 'Trial', '8', 'Native login', { text: 'Onboarding', badge: 'warning' }] }
+    ]
+  })

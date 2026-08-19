@@ -1,0 +1,51 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Observability', href: '#!' },
+      { label: 'AI Monitoring', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'AI Monitoring',
+    subtitle: 'Usage, latency, failures, and spend across AI developer tools and models',
+    action: 'Connect AI tool'
+  })
+
+  +ObsStatCards([
+    { label: 'Tokens (7d)', value: '48.2M', delta: '+26%', badge: 'warning' },
+    { label: 'AI spend (7d)', value: '$4,280', delta: '+18%', badge: 'warning' },
+    { label: 'Active tools', value: '11', delta: 'org-wide', badge: 'info' },
+    { label: 'Failed calls', value: '1.2%', delta: '-0.3%', badge: 'success' }
+  ])
+
+  +ObsToolTable({
+    title: 'AI tools & providers',
+    subtitle: 'Claude · Cursor · Lovable · Grok · ChatGPT · BabyLoveGrowth · DeepSeek · GitHub Copilot and more',
+    searchPlaceholder: 'Search AI tools',
+    columns: [
+      { label: 'Tool', className: 'ps-3' },
+      { label: 'Vendor' },
+      { label: 'Users' },
+      { label: 'Tokens / 7d' },
+      { label: 'Spend' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-robot', iconColor: 'success', meta: 'anthropic', cells: ['Claude', 'Anthropic', '86', '9.4M', '$980', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-code', iconColor: 'primary', meta: 'ide-agent', cells: ['Cursor', 'Cursor', '124', '11.2M', '$1,140', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-wand-magic-sparkles', iconColor: 'info', meta: 'app-builder', cells: ['Lovable', 'Lovable', '18', '2.1M', '$260', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-bolt', iconColor: 'warning', meta: 'xai', cells: ['Grok', 'xAI', '42', '3.8M', '$410', { text: 'Watch', badge: 'info' }] },
+      { icon: 'fa-comments', iconColor: 'success', meta: 'openai', cells: ['ChatGPT', 'OpenAI', '210', '14.6M', '$1,320', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-seedling', iconColor: 'success', meta: 'growth', cells: ['BabyLoveGrowth', 'BabyLoveGrowth', '9', '1.0M', '$95', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-microchip', iconColor: 'info', meta: 'deepseek', cells: ['DeepSeek', 'DeepSeek', '27', '2.4M', '$120', { text: 'Healthy', badge: 'success' }] },
+      { iconSet: 'fa-brands', icon: 'fa-github', iconColor: 'secondary', meta: 'copilot', cells: ['GitHub Copilot', 'GitHub / Microsoft', '156', '6.7M', '$540', { text: 'Healthy', badge: 'success' }] },
+      { iconSet: 'fa-brands', icon: 'fa-windows', iconColor: 'info', meta: 'ms-copilot', cells: ['Microsoft Copilot', 'Microsoft', '73', '3.1M', '$290', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-brain', iconColor: 'primary', meta: 'gemini', cells: ['Gemini', 'Google', '35', '2.0M', '$175', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-fire', iconColor: 'danger', meta: 'mistral', cells: ['Mistral', 'Mistral AI', '14', '0.9M', '$80', { text: 'Healthy', badge: 'success' }] }
+    ]
+  })

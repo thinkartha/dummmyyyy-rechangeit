@@ -1,0 +1,46 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Observability', href: '#!' },
+      { label: 'API Monitoring', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'API Monitoring',
+    subtitle: 'Latency, errors, and throughput for your APIs — gateways live under API Gateway',
+    action: 'Add API'
+  })
+
+  +ObsStatCards([
+    { label: 'Requests (24h)', value: '18.4M', delta: '+8.2%', badge: 'success' },
+    { label: 'Error rate', value: '0.84%', delta: '-0.12%', badge: 'success' },
+    { label: 'p99 latency', value: '412ms', delta: '+36ms', badge: 'warning' },
+    { label: 'Gateways', value: '12', delta: '3 clouds', badge: 'info' }
+  ])
+
+  +ObsToolTable({
+    title: 'API services & gateways',
+    subtitle: 'AWS API Gateway · Azure API Management · GCP Apigee and internal APIs',
+    searchPlaceholder: 'Search APIs or gateways',
+    columns: [
+      { label: 'Service', className: 'ps-3' },
+      { label: 'Provider' },
+      { label: 'Env' },
+      { label: 'p99' },
+      { label: 'Errors' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-cloud', iconColor: 'warning', meta: 'api-prod-us-east-1', cells: ['Checkout API', 'AWS API Gateway', 'prod', '380ms', '0.4%', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-cloud', iconColor: 'info', meta: 'apim-eastus', cells: ['Identity API', 'Azure API Management', 'prod', '210ms', '0.1%', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-cloud', iconColor: 'danger', meta: 'org-apigee-prod', cells: ['Partner API', 'GCP Apigee', 'prod', '920ms', '2.8%', { text: 'Degraded', badge: 'warning' }] },
+      { icon: 'fa-server', iconColor: 'primary', meta: '/v1/billing', cells: ['Billing Service', 'Internal', 'prod', '145ms', '0.2%', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-server', iconColor: 'primary', meta: '/v1/inventory', cells: ['Inventory Service', 'Internal', 'stage', '510ms', '1.1%', { text: 'Watch', badge: 'info' }] },
+      { icon: 'fa-cloud', iconColor: 'warning', meta: 'websocket-gateway', cells: ['Realtime Gateway', 'AWS API Gateway', 'prod', '88ms', '0.0%', { text: 'Healthy', badge: 'success' }] }
+    ]
+  })

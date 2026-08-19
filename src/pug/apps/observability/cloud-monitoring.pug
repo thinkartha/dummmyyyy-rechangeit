@@ -1,0 +1,85 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Observability', href: '#!' },
+      { label: 'Cloud Monitoring', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'Cloud Monitoring',
+    subtitle: 'Health and inventory across AWS, GCP, and Azure — multiple accounts per organization',
+    action: 'Add cloud account'
+  })
+
+  +ObsStatCards([
+    { label: 'Linked accounts', value: '18', delta: '3 clouds', badge: 'info' },
+    { label: 'Resources watched', value: '12.4k', delta: '+320', badge: 'success' },
+    { label: 'Open cloud alerts', value: '7', delta: '2 critical', badge: 'danger' },
+    { label: 'Regions', value: '26', delta: 'global', badge: 'primary' }
+  ])
+
+  .card.mb-4
+    .card-header.border-bottom.border-translucent.py-3
+      .row.align-items-center
+        .col
+          h4.mb-0 Configure cloud accounts
+          p.text-body-tertiary.fs-9.mb-0 Connect multiple AWS / GCP / Azure accounts; LoveHeartBeat monitors all of them in one place.
+        .col-auto
+          button.btn.btn-sm.btn-primary(type='button') Connect AWS account
+          button.btn.btn-sm.btn-phoenix-secondary.ms-2(type='button') Connect GCP
+          button.btn.btn-sm.btn-phoenix-secondary.ms-2(type='button') Connect Azure
+    .card-body
+      .row.g-3
+        .col-md-4
+          .border.border-translucent.rounded-3.p-3.h-100
+            h6.mb-2 AWS
+            p.text-body-tertiary.fs-9.mb-2 Cross-account IAM role or Organizations linkage. Monitor every member account under the org OU.
+            ul.fs-9.mb-0
+              li CloudWatch metrics & alarms
+              li GuardDuty / Config findings
+              li Multi-account inventory
+        .col-md-4
+          .border.border-translucent.rounded-3.p-3.h-100
+            h6.mb-2 Google Cloud
+            p.text-body-tertiary.fs-9.mb-2 Service account or folder-level access across projects in the org.
+            ul.fs-9.mb-0
+              li Cloud Monitoring metrics
+              li Logging / Error Reporting
+              li Project & folder hierarchy
+        .col-md-4
+          .border.border-translucent.rounded-3.p-3.h-100
+            h6.mb-2 Microsoft Azure
+            p.text-body-tertiary.fs-9.mb-2 App registration / management group scope for subscriptions.
+            ul.fs-9.mb-0
+              li Azure Monitor metrics
+              li Activity Log alerts
+              li Subscription rollups
+
+  +ObsToolTable({
+    title: 'Linked accounts',
+    subtitle: 'All environments monitored together',
+    searchPlaceholder: 'Search accounts',
+    columns: [
+      { label: 'Account', className: 'ps-3' },
+      { label: 'Cloud' },
+      { label: 'Type' },
+      { label: 'Resources' },
+      { label: 'Alerts' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'warning', meta: '111122223333', cells: ['prod-root (org)', 'AWS', 'Organizations', '4,820', '3', { text: 'Healthy', badge: 'success' }] },
+      { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'warning', meta: '444455556666', cells: ['prod-workloads', 'AWS', 'Member account', '2,140', '2', { text: 'Watch', badge: 'info' }] },
+      { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'warning', meta: '777788889999', cells: ['dev-sandbox', 'AWS', 'Member account', '680', '0', { text: 'Healthy', badge: 'success' }] },
+      { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'warning', meta: '121212121212', cells: ['data-platform', 'AWS', 'Member account', '910', '1', { text: 'Healthy', badge: 'success' }] },
+      { iconSet: 'fa-brands', icon: 'fa-google', iconColor: 'danger', meta: 'acme-prod', cells: ['acme-prod', 'GCP', 'Project', '1,250', '1', { text: 'Healthy', badge: 'success' }] },
+      { iconSet: 'fa-brands', icon: 'fa-google', iconColor: 'danger', meta: 'acme-analytics', cells: ['acme-analytics', 'GCP', 'Project', '540', '0', { text: 'Healthy', badge: 'success' }] },
+      { iconSet: 'fa-brands', icon: 'fa-microsoft', iconColor: 'info', meta: 'sub-prod', cells: ['Contoso Prod', 'Azure', 'Subscription', '1,480', '0', { text: 'Healthy', badge: 'success' }] },
+      { iconSet: 'fa-brands', icon: 'fa-microsoft', iconColor: 'info', meta: 'sub-shared', cells: ['Contoso Shared', 'Azure', 'Subscription', '620', '0', { text: 'Healthy', badge: 'success' }] }
+    ]
+  })

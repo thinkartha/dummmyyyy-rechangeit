@@ -101,43 +101,79 @@ append variables
             pages: [
               {
                 name: 'API-monitoring',
-                path: 'index',
+                path: 'apps/observability/api-monitoring',
                 pathName: 'obs-api-monitoring',
               },
               {
+                name: 'API-gateway',
+                path: 'apps/observability/api-gateway',
+                pathName: 'obs-api-gateway',
+              },
+              {
                 name: 'AI-monitoring',
-                path: 'index',
+                path: 'apps/observability/ai-monitoring',
                 pathName: 'obs-ai-monitoring',
               },
               {
                 name: 'AI-gateway',
-                path: 'index',
+                path: 'apps/observability/ai-gateway',
                 pathName: 'obs-ai-gateway',
               },
               {
                 name: 'ETL-monitoring',
-                path: 'index',
+                path: 'apps/observability/etl-monitoring',
                 pathName: 'obs-etl-monitoring',
               },
               {
                 name: 'alerts',
-                path: 'index',
+                path: 'apps/observability/alerts',
                 pathName: 'obs-alerts',
               },
               {
                 name: 'cloud-monitoring',
-                path: 'index',
+                path: 'apps/observability/cloud-monitoring',
                 pathName: 'obs-cloud-monitoring',
               },
               {
                 name: 'cloud-cost',
-                path: 'index',
+                path: 'apps/observability/cloud-cost',
                 pathName: 'obs-cloud-cost',
               },
               {
                 name: 'AI-cost-usage',
-                path: 'index',
+                path: 'apps/observability/ai-cost-usage',
                 pathName: 'obs-ai-cost',
+              },
+            ]
+          },
+          {
+            name: 'organization',
+            icon: 'briefcase',
+            pages: [
+              {
+                name: 'organizations',
+                path: 'apps/organization/organizations',
+                pathName: 'org-organizations',
+              },
+              {
+                name: 'multi-tenant',
+                path: 'apps/organization/multi-tenant',
+                pathName: 'org-multi-tenant',
+              },
+              {
+                name: 'onboarding',
+                path: 'apps/organization/onboarding',
+                pathName: 'org-onboarding',
+              },
+              {
+                name: 'members',
+                path: 'apps/organization/members',
+                pathName: 'org-members',
+              },
+              {
+                name: 'authentication-SSO',
+                path: 'apps/organization/authentication',
+                pathName: 'org-authentication',
               },
             ]
           },
@@ -217,12 +253,6 @@ append variables
             icon: 'clock',
             path: 'pages/timeline',
             pathName: 'page-timeline',
-          },
-          {
-            name: 'members',
-            icon: 'users',
-            path: 'pages/members',
-            pathName: 'page-members',
           },
           {
             name: 'notifications',

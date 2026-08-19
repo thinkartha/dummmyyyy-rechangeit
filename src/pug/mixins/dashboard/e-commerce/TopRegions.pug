@@ -23,11 +23,38 @@ mixin TopRegionsTableRow(data,index)
 mixin TopRegionsTable
   div(data-list!={
     valueNames: ["country", "users", "transactions", "revenue", "conv-rate"],
-    page: 5
+    page: 5,
+    filter: { key: 'country' }
   })
     .mb-5.mt-7
-      h3 Cloud cost by account
-      p.text-body-tertiary Multi-account spend across AWS, GCP, and Azure
+      .row.align-items-end.justify-content-between.g-3
+        .col-auto
+          h3 Cloud cost by account
+          p.text-body-tertiary.mb-0 Multi-account spend across AWS, GCP, and Azure
+        .col-12.col-md-auto
+          .row.g-2
+            .col-auto
+              +Search({placeholder:'Search accounts', inputClass: 'form-control-sm'})
+            .col-auto
+              select.form-select.form-select-sm(data-list-filter aria-label='Filter region')
+                option(value='') Region: All
+                option(value='India') India
+                option(value='China') China
+                option(value='USA') USA
+                option(value='South Korea') South Korea
+                option(value='Vietnam') Vietnam
+                option(value='Australia') Australia
+                option(value='England') England
+                option(value='Indonesia') Indonesia
+                option(value='Japan') Japan
+            .col-auto
+              select.form-select.form-select-sm(data-obs-sort aria-label='Sort by')
+                option(value='') Sort by
+                option(value='country') Account / region
+                option(value='users') Resources
+                option(value='transactions') Alerts
+                option(value='revenue') Cost
+                option(value='conv-rate') Budget used
     - 
       var topRegionsTableData = [
         {
@@ -247,6 +274,8 @@ mixin TopRegionsTable
       .pagination.d-none
       .col.d-flex.fs-9
         p.mb-0.d-none.d-sm-block.me-3.fw-semibold.text-body(data-list-info)
+        a.fw-semibold(href='#!' data-list-view='*') View all
+        a.fw-semibold.d-none(href='#!' data-list-view='less') View less
       .col-auto.d-flex
         = '\n'
         button(type='button' title="Previous" data-list-pagination='prev').btn.btn-link.px-1.me-1
@@ -255,6 +284,19 @@ mixin TopRegionsTable
         button(type='button' title="Next" data-list-pagination='next').btn.btn-link.px-1.ms-1
           | Next
           span.fas.fa-chevron-right.ms-2
-
-
+  script.
+    (function () {
+      document.querySelectorAll('[data-obs-sort]').forEach(function (select) {
+        if (select.dataset.bound === '1') return;
+        select.dataset.bound = '1';
+        select.addEventListener('change', function () {
+          var key = select.value;
+          if (!key) return;
+          var root = select.closest('[data-list]');
+          if (!root) return;
+          var header = root.querySelector('th[data-sort="' + key + '"]');
+          if (header) header.click();
+        });
+      });
+    })();
 

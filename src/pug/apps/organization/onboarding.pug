@@ -1,0 +1,110 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Organization', href: '#!' },
+      { label: 'Onboarding', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'Organization onboarding',
+    subtitle: 'Create an org, choose how people sign in, invite members, then connect cloud & AI sources',
+    action: null
+  })
+
+  .row.g-4
+    .col-12.col-xl-8
+      .card.mb-4
+        .card-body
+          h4.mb-4 1. Organization profile
+          .row.g-3
+            .col-md-6
+              label.form-label Organization name
+              input.form-control(type='text' placeholder='e.g. RootVyana')
+            .col-md-6
+              label.form-label Tenant slug
+              .input-group
+                input.form-control#orgSlug(type='text' placeholder='rootvyana')
+                span.input-group-text .loveheartbeat.com
+              p.text-body-tertiary.fs-10.mb-0.mt-1 Becomes
+                code.ms-1 https://rootvyana.loveheartbeat.com
+            .col-md-6
+              label.form-label Company domain
+              input.form-control(type='text' placeholder='rootvyana.com')
+            .col-md-6
+              label.form-label Plan
+              select.form-select
+                option Trial
+                option Business
+                option Enterprise
+
+      .card.mb-4
+        .card-body
+          h4.mb-2 2. How will members sign in?
+          p.text-body-tertiary.mb-4 Choose Okta / SSO for enterprise, or LoveHeartBeat email + password.
+          .row.g-3
+            .col-md-6
+              .border.border-translucent.rounded-3.p-4.h-100
+                .form-check
+                  input.form-check-input#authOkta(type='radio' name='authMode' checked)
+                  label.form-check-label.fw-semibold(for='authOkta') Okta / SSO (SAML / OIDC)
+                p.text-body-tertiary.fs-9.mt-2.mb-0 Connect Okta, Azure AD, Google Workspace, or any SAML/OIDC IdP. Members sign in with corporate identity.
+            .col-md-6
+              .border.border-translucent.rounded-3.p-4.h-100
+                .form-check
+                  input.form-check-input#authNative(type='radio' name='authMode')
+                  label.form-check-label.fw-semibold(for='authNative') LoveHeartBeat login
+                p.text-body-tertiary.fs-9.mt-2.mb-0 Email and password managed by LoveHeartBeat. Optional MFA. Good for trials and smaller teams.
+
+      .card.mb-4
+        .card-body
+          h4.mb-4 3. Invite first members
+          .row.g-3.align-items-end
+            .col-md-7
+              label.form-label Work emails
+              input.form-control(type='text' placeholder='alex@company.com, jordan@company.com')
+            .col-md-3
+              label.form-label Role
+              select.form-select
+                option Admin
+                option Member
+                option Viewer
+            .col-md-2
+              button.btn.btn-phoenix-secondary.w-100(type='button') Invite
+
+      .card
+        .card-body
+          h4.mb-2 4. Connect data sources
+          p.text-body-tertiary.mb-3 You can finish this later from Cloud Monitoring and AI Monitoring.
+          .d-flex.flex-wrap.gap-2
+            button.btn.btn-sm.btn-phoenix-secondary(type='button') Connect AWS accounts
+            button.btn.btn-sm.btn-phoenix-secondary(type='button') Connect GCP
+            button.btn.btn-sm.btn-phoenix-secondary(type='button') Connect Azure
+            button.btn.btn-sm.btn-phoenix-secondary(type='button') Connect AI tools
+          .mt-4.text-end
+            button.btn.btn-primary(type='button') Finish onboarding
+
+    .col-12.col-xl-4
+      .card.bg-body-emphasis
+        .card-body
+          h5.mb-3 Checklist
+          ul.list-unstyled.mb-0
+            li.mb-3
+              span.fa-solid.fa-circle-check.text-success.me-2
+              | Create organization
+            li.mb-3
+              span.fa-solid.fa-circle-check.text-success.me-2
+              | Pick SSO or native login
+            li.mb-3
+              span.fa-regular.fa-circle.text-body-tertiary.me-2
+              | Invite members
+            li.mb-3
+              span.fa-regular.fa-circle.text-body-tertiary.me-2
+              | Link cloud accounts
+            li
+              span.fa-regular.fa-circle.text-body-tertiary.me-2
+              | Connect AI / ETL sources

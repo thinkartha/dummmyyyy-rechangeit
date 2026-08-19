@@ -1,0 +1,45 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Observability', href: '#!' },
+      { label: 'Cloud Cost', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'Cloud Cost Monitoring',
+    subtitle: 'Multi-account spend, budgets, and anomalies across AWS, GCP, and Azure',
+    action: 'Add budget'
+  })
+
+  +ObsStatCards([
+    { label: 'MTD cloud spend', value: '$184.2k', delta: '+9%', badge: 'warning' },
+    { label: 'Forecast EOM', value: '$241k', delta: 'over +6%', badge: 'danger' },
+    { label: 'Accounts over budget', value: '3', delta: 'of 18', badge: 'warning' },
+    { label: 'Savings opportunities', value: '$12.4k', delta: 'idle', badge: 'success' }
+  ])
+
+  +ObsToolTable({
+    title: 'Spend by account',
+    subtitle: 'Organization roll-up with per-account drill-down',
+    searchPlaceholder: 'Search accounts',
+    columns: [
+      { label: 'Account', className: 'ps-3' },
+      { label: 'Cloud' },
+      { label: 'MTD' },
+      { label: 'Budget' },
+      { label: 'Variance' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'warning', meta: 'prod-workloads', cells: ['prod-workloads', 'AWS', '$62.4k', '$58k', '+7.6%', { text: 'Over', badge: 'danger' }] },
+      { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'warning', meta: 'data-platform', cells: ['data-platform', 'AWS', '$28.1k', '$30k', '-6.3%', { text: 'On track', badge: 'success' }] },
+      { iconSet: 'fa-brands', icon: 'fa-google', iconColor: 'danger', meta: 'acme-analytics', cells: ['acme-analytics', 'GCP', '$19.8k', '$18k', '+10%', { text: 'Over', badge: 'danger' }] },
+      { iconSet: 'fa-brands', icon: 'fa-microsoft', iconColor: 'info', meta: 'contoso-prod', cells: ['Contoso Prod', 'Azure', '$24.6k', '$26k', '-5.4%', { text: 'On track', badge: 'success' }] },
+      { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'warning', meta: 'dev-sandbox', cells: ['dev-sandbox', 'AWS', '$4.2k', '$5k', '-16%', { text: 'On track', badge: 'success' }] }
+    ]
+  })

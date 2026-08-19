@@ -1,0 +1,58 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Observability', href: '#!' },
+      { label: 'AI Gateway', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'AI Gateway',
+    subtitle: 'Route, rate-limit, observe, and fall back across AI tools and model providers',
+    action: 'Add AI route'
+  })
+
+  +ObsStatCards([
+    { label: 'AI calls (24h)', value: '2.4M', delta: '+14%', badge: 'success' },
+    { label: 'Rate-limit hits', value: '1.8k', delta: '+5%', badge: 'warning' },
+    { label: 'Fallback activations', value: '312', delta: 'auto', badge: 'info' },
+    { label: 'Avg route latency', value: '420ms', delta: '-35ms', badge: 'success' }
+  ])
+
+  +ObsToolTable({
+    title: 'AI tool routes',
+    subtitle: 'Claude · Cursor · ChatGPT · Grok · Lovable · DeepSeek · Copilot · BabyLoveGrowth and more',
+    searchPlaceholder: 'Search AI routes',
+    columns: [
+      { label: 'Route / tool', className: 'ps-3' },
+      { label: 'Provider' },
+      { label: 'Primary model' },
+      { label: 'Fallback' },
+      { label: 'RPM' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-robot', iconColor: 'success', meta: 'chat.completions', cells: ['Claude', 'Anthropic', 'claude-sonnet', 'GPT-4.1', '12k', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-code', iconColor: 'primary', meta: 'agent + inline', cells: ['Cursor', 'Cursor', 'claude-sonnet', 'GPT-4.1', '18k', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-comments', iconColor: 'success', meta: 'org workspace', cells: ['ChatGPT', 'OpenAI', 'gpt-4.1', 'Grok', '22k', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-bolt', iconColor: 'warning', meta: 'xai', cells: ['Grok', 'xAI', 'grok-2', 'DeepSeek', '6k', { text: 'Watch', badge: 'info' }] },
+      { icon: 'fa-wand-magic-sparkles', iconColor: 'info', meta: 'app gen', cells: ['Lovable', 'Lovable', 'lovable-default', 'Claude', '2k', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-microchip', iconColor: 'info', meta: 'chat', cells: ['DeepSeek', 'DeepSeek', 'deepseek-v3', 'Claude', '4k', { text: 'Healthy', badge: 'success' }] },
+      { iconSet: 'fa-brands', icon: 'fa-github', iconColor: 'secondary', meta: 'ide', cells: ['GitHub Copilot', 'GitHub', 'copilot-chat', 'Claude', '9k', { text: 'Healthy', badge: 'success' }] },
+      { iconSet: 'fa-brands', icon: 'fa-windows', iconColor: 'info', meta: 'm365', cells: ['Microsoft Copilot', 'Microsoft', 'copilot-studio', 'GPT-4.1', '5k', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-seedling', iconColor: 'success', meta: 'growth', cells: ['BabyLoveGrowth', 'BabyLoveGrowth', 'blg-default', 'ChatGPT', '1k', { text: 'Healthy', badge: 'success' }] }
+    ]
+  })
+
+  .card.mt-4
+    .card-body
+      h5.mb-2 AI routing policies
+      p.text-body-tertiary.mb-3 Fallback order when quota, latency, or provider errors breach SLOs.
+      ul.mb-0
+        li Claude → GPT-4.1 → Grok → DeepSeek
+        li Cursor agent traffic prefers Claude, then GitHub Copilot
+        li Lovable / BabyLoveGrowth fall back to ChatGPT when vendor APIs throttle

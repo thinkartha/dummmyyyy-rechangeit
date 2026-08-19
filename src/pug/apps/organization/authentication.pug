@@ -1,0 +1,79 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Organization', href: '#!' },
+      { label: 'Authentication', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'Authentication & SSO',
+    subtitle: 'Okta / enterprise SSO, or LoveHeartBeat email and password for the active organization',
+    action: 'Save changes'
+  })
+
+  .row.g-4
+    .col-12.col-xl-6
+      .card.h-100
+        .card-header.border-bottom.border-translucent.py-3
+          h4.mb-0 Sign-in mode
+        .card-body
+          .form-check.mb-3
+            input.form-check-input#modeSso(type='radio' name='signInMode' checked)
+            label.form-check-label(for='modeSso')
+              span.fw-semibold Okta / SSO
+              span.d-block.text-body-tertiary.fs-9 Members authenticate via your identity provider (SAML 2.0 or OIDC).
+          .form-check.mb-4
+            input.form-check-input#modeNative(type='radio' name='signInMode')
+            label.form-check-label(for='modeNative')
+              span.fw-semibold LoveHeartBeat login & password
+              span.d-block.text-body-tertiary.fs-9 Built-in accounts with optional MFA. No IdP required.
+          .form-check.form-switch
+            input.form-check-input#allowMixed(type='checkbox')
+            label.form-check-label(for='allowMixed') Allow mixed mode (SSO for employees, native for guests)
+
+    .col-12.col-xl-6
+      .card.h-100
+        .card-header.border-bottom.border-translucent.py-3
+          h4.mb-0 Okta / IdP connection
+        .card-body
+          .mb-3
+            label.form-label Provider
+            select.form-select
+              option Okta
+              option Azure AD / Entra ID
+              option Google Workspace
+              option Other SAML / OIDC
+          .mb-3
+            label.form-label Issuer / Okta domain
+            input.form-control(type='text' placeholder='https://your-org.okta.com')
+          .mb-3
+            label.form-label Client ID / Entity ID
+            input.form-control(type='text' placeholder='loveheartbeat-sp')
+          .mb-3
+            label.form-label Client secret / certificate
+            input.form-control(type='password' placeholder='••••••••')
+          button.btn.btn-phoenix-secondary(type='button') Test connection
+
+  .card.mt-4
+    .card-header.border-bottom.border-translucent.py-3
+      h4.mb-0 Native login policy
+    .card-body
+      .row.g-3
+        .col-md-4
+          .form-check.form-switch
+            input.form-check-input#requireMfa(type='checkbox' checked)
+            label.form-check-label(for='requireMfa') Require MFA
+        .col-md-4
+          .form-check.form-switch
+            input.form-check-input#passwordRotation(type='checkbox')
+            label.form-check-label(for='passwordRotation') 90-day password rotation
+        .col-md-4
+          .form-check.form-switch
+            input.form-check-input#inviteOnly(type='checkbox' checked)
+            label.form-check-label(for='inviteOnly') Invite-only signup
+      p.text-body-tertiary.fs-9.mb-0.mt-3 Native login uses LoveHeartBeat sign-in pages when SSO is not enabled for the organization.

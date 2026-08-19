@@ -1,0 +1,120 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Organization', href: '#!' },
+      { label: 'Multi-tenant', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'Multi-tenant SaaS',
+    subtitle: 'LoveHeartBeat isolates every organization on its own slug subdomain — built for thousands of tenants',
+    action: null
+  })
+
+  +ObsStatCards([
+    { label: 'Design target', value: '30k+', delta: 'orgs', badge: 'info' },
+    { label: 'URL model', value: 'slug', delta: '*.loveheartbeat.com', badge: 'primary' },
+    { label: 'Plans', value: 'Trial → Ent', delta: 'self-serve + sales', badge: 'success' },
+    { label: 'Isolation', value: 'org_id', delta: 'data + auth', badge: 'warning' }
+  ])
+
+  .row.g-4.mb-4
+    .col-12.col-lg-6
+      .card.h-100
+        .card-body
+          h4.mb-3 Tenant URL model
+          p.text-body-tertiary Each organization gets a reserved slug that becomes its SaaS hostname:
+          .bg-body-emphasis.border.border-translucent.rounded-3.p-3.mb-3.font-monospace.fs-9
+            | https://&lt;organization-slug&gt;.loveheartbeat.com
+          ul.mb-0
+            li
+              code rootvyana.loveheartbeat.com
+              span.text-body-tertiary  — RootVyana
+            li
+              code acme.loveheartbeat.com
+              span.text-body-tertiary  — Acme Corp
+            li
+              code contoso.loveheartbeat.com
+              span.text-body-tertiary  — Contoso
+          p.text-body-tertiary.fs-9.mb-0.mt-3 Apex
+            code.mx-1 loveheartbeat.com
+            | handles marketing + login routing; subdomain resolves the tenant.
+
+    .col-12.col-lg-6
+      .card.h-100
+        .card-body
+          h4.mb-3 Isolation model
+          p.text-body-tertiary Designed so trial startups and large enterprises share one platform safely:
+          ul
+            li
+              strong Auth
+              |  — Okta/SSO or native login per org
+            li
+              strong Data
+              |  — every query scoped by
+              code.mx-1 org_id
+            li
+              strong Cloud / AI / ETL
+              |  — connectors belong to the org
+            li
+              strong Members
+              |  — users invited into one or more orgs
+            li
+              strong Limits
+              |  — plan quotas (accounts, seats, AI spend)
+
+  .card.mb-4
+    .card-header.border-bottom.border-translucent.py-3
+      h4.mb-0 Onboarding → production path
+    .card-body
+      .row.g-3.text-center
+        .col-6.col-md
+          .border.border-translucent.rounded-3.p-3.h-100
+            .fs-8.fw-bold.text-primary.mb-2 1
+            h6.mb-1 Create org + slug
+            p.fs-9.text-body-tertiary.mb-0 Reserve
+              code.mx-1 slug.loveheartbeat.com
+        .col-6.col-md
+          .border.border-translucent.rounded-3.p-3.h-100
+            .fs-8.fw-bold.text-primary.mb-2 2
+            h6.mb-1 Auth mode
+            p.fs-9.text-body-tertiary.mb-0 Okta/SSO or LoveHeartBeat passwords
+        .col-6.col-md
+          .border.border-translucent.rounded-3.p-3.h-100
+            .fs-8.fw-bold.text-primary.mb-2 3
+            h6.mb-1 Invite members
+            p.fs-9.text-body-tertiary.mb-0 Roles under that org only
+        .col-6.col-md
+          .border.border-translucent.rounded-3.p-3.h-100
+            .fs-8.fw-bold.text-primary.mb-2 4
+            h6.mb-1 Connect sources
+            p.fs-9.text-body-tertiary.mb-0 Multi-account AWS/GCP/Azure + AI + ETL
+        .col-12.col-md
+          .border.border-translucent.rounded-3.p-3.h-100
+            .fs-8.fw-bold.text-primary.mb-2 5
+            h6.mb-1 Observe
+            p.fs-9.text-body-tertiary.mb-0 Dashboards, alerts, cost — tenant-scoped
+
+  .card
+    .card-header.border-bottom.border-translucent.py-3
+      h4.mb-0 Scale notes (~30,000 organizations)
+    .card-body
+      .row.g-3
+        .col-md-4
+          h6 Shared app, isolated data
+          p.fs-9.text-body-tertiary.mb-0 One LoveHeartBeat deployment; tenant resolved from Host header (
+            code slug.loveheartbeat.com
+            | ).
+        .col-md-4
+          h6 Stateless APIs
+          p.fs-9.text-body-tertiary.mb-0 Lambda/API handlers always require
+            code.mx-1 org_id
+            |  from subdomain + auth token claims.
+        .col-md-4
+          h6 Tiered tenancy
+          p.fs-9.text-body-tertiary.mb-0 Trial/Business on shared pools; Enterprise can use dedicated queues, rate limits, and retention.

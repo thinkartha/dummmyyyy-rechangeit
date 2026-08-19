@@ -1,0 +1,52 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Observability', href: '#!' },
+      { label: 'ETL Monitoring', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'ETL / ELT Monitoring',
+    subtitle: 'Pipeline health across integration and analytics platforms',
+    action: 'Connect ETL tool'
+  })
+
+  +ObsStatCards([
+    { label: 'Pipelines', value: '286', delta: '+12', badge: 'info' },
+    { label: 'Success rate', value: '96.4%', delta: '+1.1%', badge: 'success' },
+    { label: 'Failed runs (24h)', value: '14', delta: '-3', badge: 'success' },
+    { label: 'Avg duration', value: '18m', delta: '+2m', badge: 'warning' }
+  ])
+
+  +ObsToolTable({
+    title: 'ETL / ELT platforms',
+    subtitle: 'Talend · Dell Boomi · Jundago · Qlik · Informatica · Alteryx · dbt · SnapLogic · AWS Glue · Microsoft Fabric and more',
+    searchPlaceholder: 'Search ETL tools',
+    columns: [
+      { label: 'Platform', className: 'ps-3' },
+      { label: 'Category' },
+      { label: 'Jobs' },
+      { label: 'Last run' },
+      { label: 'SLA' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-diagram-project', iconColor: 'primary', meta: 'cloud + studio', cells: ['Talend', 'iPaaS / ETL', '42', '12m ago', '99%', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-plug', iconColor: 'info', meta: 'atom spheres', cells: ['Dell Boomi', 'iPaaS', '31', '28m ago', '98%', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-network-wired', iconColor: 'secondary', meta: 'integration hub', cells: ['Jundago', 'iPaaS', '9', '1h ago', '97%', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-chart-pie', iconColor: 'success', meta: 'data integration', cells: ['Qlik', 'Analytics / ETL', '22', '45m ago', '96%', { text: 'Watch', badge: 'info' }] },
+      { icon: 'fa-database', iconColor: 'danger', meta: 'IDMC / PowerCenter', cells: ['Informatica', 'Enterprise ETL', '37', '9m ago', '99%', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-chart-line', iconColor: 'warning', meta: 'designer + server', cells: ['Alteryx', 'Analytics / ETL', '15', '2h ago', '95%', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-cubes', iconColor: 'primary', meta: 'core + cloud', cells: ['dbt', 'ELT transform', '58', '6m ago', '99%', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-link', iconColor: 'info', meta: 'pipelines', cells: ['SnapLogic', 'iPaaS', '19', '33m ago', '97%', { text: 'Healthy', badge: 'success' }] },
+      { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'warning', meta: 'spark jobs', cells: ['AWS Glue', 'Cloud ETL', '27', '4m ago', '98%', { text: 'Healthy', badge: 'success' }] },
+      { iconSet: 'fa-brands', icon: 'fa-microsoft', iconColor: 'info', meta: 'data factory + lakehouse', cells: ['Microsoft Fabric', 'Lakehouse / ETL', '24', '17m ago', '97%', { text: 'Degraded', badge: 'warning' }] },
+      { icon: 'fa-wind', iconColor: 'secondary', meta: 'dags', cells: ['Apache Airflow', 'Orchestration', '40', '3m ago', '99%', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-industry', iconColor: 'primary', meta: 'fivetran syncs', cells: ['Fivetran', 'ELT ingest', '33', '11m ago', '99%', { text: 'Healthy', badge: 'success' }] }
+    ]
+  })

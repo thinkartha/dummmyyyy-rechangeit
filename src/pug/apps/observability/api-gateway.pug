@@ -1,0 +1,46 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Observability', href: '#!' },
+      { label: 'API Gateway', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'API Gateway',
+    subtitle: 'Monitor AWS API Gateway, Azure API Management, and GCP Apigee across accounts',
+    action: 'Connect gateway'
+  })
+
+  +ObsStatCards([
+    { label: 'Gateway calls (24h)', value: '9.8M', delta: '+7%', badge: 'success' },
+    { label: '4xx / 5xx rate', value: '1.1%', delta: '-0.2%', badge: 'success' },
+    { label: 'Connected gateways', value: '14', delta: '3 clouds', badge: 'info' },
+    { label: 'p99 latency', value: '186ms', delta: '+12ms', badge: 'warning' }
+  ])
+
+  +ObsToolTable({
+    title: 'API gateways',
+    subtitle: 'AWS API Gateway · Azure API Management · GCP Apigee',
+    searchPlaceholder: 'Search API gateways',
+    columns: [
+      { label: 'Gateway', className: 'ps-3' },
+      { label: 'Cloud' },
+      { label: 'Account / Project' },
+      { label: 'Region' },
+      { label: 'APIs' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'warning', meta: 'rest + HTTP APIs', cells: ['prod-edge-gateway', 'AWS API Gateway', 'prod-workloads', 'us-east-1', '48', { text: 'Healthy', badge: 'success' }] },
+      { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'warning', meta: 'websocket', cells: ['realtime-gateway', 'AWS API Gateway', 'prod-workloads', 'eu-west-1', '6', { text: 'Healthy', badge: 'success' }] },
+      { iconSet: 'fa-brands', icon: 'fa-microsoft', iconColor: 'info', meta: 'APIM premium', cells: ['contoso-apim', 'Azure API Management', 'Contoso Prod', 'eastus', '32', { text: 'Healthy', badge: 'success' }] },
+      { iconSet: 'fa-brands', icon: 'fa-microsoft', iconColor: 'info', meta: 'APIM developer', cells: ['contoso-apim-dev', 'Azure API Management', 'Contoso Shared', 'westus2', '11', { text: 'Healthy', badge: 'success' }] },
+      { iconSet: 'fa-brands', icon: 'fa-google', iconColor: 'danger', meta: 'Apigee X', cells: ['acme-apigee-x', 'GCP Apigee', 'acme-prod', 'us-central1', '27', { text: 'Degraded', badge: 'warning' }] },
+      { iconSet: 'fa-brands', icon: 'fa-google', iconColor: 'danger', meta: 'Apigee hybrid', cells: ['acme-apigee-hybrid', 'GCP Apigee', 'acme-analytics', 'europe-west1', '9', { text: 'Healthy', badge: 'success' }] }
+    ]
+  })

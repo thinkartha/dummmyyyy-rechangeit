@@ -1,0 +1,46 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Organization', href: '#!' },
+      { label: 'Members', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'Organization members',
+    subtitle: 'People in RootVyana — roles, invites, and auth source (SSO or native)',
+    action: 'Invite member'
+  })
+
+  +ObsStatCards([
+    { label: 'Members', value: '86', delta: 'RootVyana', badge: 'info' },
+    { label: 'Admins', value: '6', delta: 'privileged', badge: 'warning' },
+    { label: 'SSO users', value: '71', delta: 'Okta', badge: 'success' },
+    { label: 'Native login', value: '15', delta: 'password', badge: 'primary' }
+  ])
+
+  +ObsToolTable({
+    title: 'Members',
+    subtitle: 'Scoped to the active organization',
+    searchPlaceholder: 'Search members',
+    columns: [
+      { label: 'Member', className: 'ps-3' },
+      { label: 'Email' },
+      { label: 'Role' },
+      { label: 'Auth' },
+      { label: 'Last active' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-user', iconColor: 'primary', meta: 'owner', cells: ['Asha Patel', 'asha@rootvyana.com', 'Owner', 'Okta SSO', '2m ago', { text: 'Active', badge: 'success' }] },
+      { icon: 'fa-user', iconColor: 'info', meta: 'admin', cells: ['Marcus Lee', 'marcus@rootvyana.com', 'Admin', 'Okta SSO', '1h ago', { text: 'Active', badge: 'success' }] },
+      { icon: 'fa-user', iconColor: 'secondary', meta: 'member', cells: ['Priya Shah', 'priya@rootvyana.com', 'Member', 'Okta SSO', 'Yesterday', { text: 'Active', badge: 'success' }] },
+      { icon: 'fa-user', iconColor: 'secondary', meta: 'member', cells: ['Jon Rivera', 'jon@rootvyana.com', 'Member', 'Native login', '3h ago', { text: 'Active', badge: 'success' }] },
+      { icon: 'fa-user', iconColor: 'warning', meta: 'viewer', cells: ['Sam Ortiz', 'sam@partner.com', 'Viewer', 'Native login', '—', { text: 'Invited', badge: 'warning' }] },
+      { icon: 'fa-user', iconColor: 'secondary', meta: 'member', cells: ['Elena Cho', 'elena@rootvyana.com', 'Member', 'Okta SSO', '5h ago', { text: 'Active', badge: 'success' }] }
+    ]
+  })

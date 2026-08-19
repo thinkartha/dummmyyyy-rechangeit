@@ -1,0 +1,45 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Observability', href: '#!' },
+      { label: 'Alerts', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'Alerts Monitoring',
+    subtitle: 'Unified alerts from APIs, AI tools, ETL jobs, and multi-cloud accounts',
+    action: 'Create alert rule'
+  })
+
+  +ObsStatCards([
+    { label: 'Open alerts', value: '27', delta: '12 critical', badge: 'danger' },
+    { label: 'Acknowledged', value: '9', delta: 'today', badge: 'info' },
+    { label: 'Resolved (24h)', value: '41', delta: '+6', badge: 'success' },
+    { label: 'MTTR', value: '34m', delta: '-8m', badge: 'success' }
+  ])
+
+  +ObsToolTable({
+    title: 'Active alerts',
+    subtitle: 'Cross-domain signal stream',
+    searchPlaceholder: 'Search alerts',
+    columns: [
+      { label: 'Alert', className: 'ps-3' },
+      { label: 'Source' },
+      { label: 'Severity' },
+      { label: 'Owner' },
+      { label: 'Age' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-triangle-exclamation', iconColor: 'danger', meta: '/v1/checkout', cells: ['p99 latency spike', 'API Monitoring', { text: 'Critical', badge: 'danger' }, 'Platform SRE', '12m', { text: 'Open', badge: 'warning' }] },
+      { icon: 'fa-robot', iconColor: 'warning', meta: 'openai org', cells: ['ChatGPT spend threshold', 'AI Monitoring', { text: 'Warning', badge: 'warning' }, 'FinOps', '28m', { text: 'Open', badge: 'warning' }] },
+      { icon: 'fa-shuffle', iconColor: 'info', meta: 'apigee-x', cells: ['Apigee rate-limit storm', 'AI Gateway', { text: 'Warning', badge: 'warning' }, 'API Platform', '41m', { text: 'Ack', badge: 'info' }] },
+      { icon: 'fa-diagram-project', iconColor: 'danger', meta: 'customer_sync', cells: ['Glue job failed', 'ETL Monitoring', { text: 'Critical', badge: 'danger' }, 'Data Eng', '1h', { text: 'Open', badge: 'warning' }] },
+      { icon: 'fa-cloud', iconColor: 'warning', meta: 'aws-prod-042', cells: ['EC2 cost anomaly', 'Cloud Cost', { text: 'Warning', badge: 'warning' }, 'Cloud Ops', '2h', { text: 'Open', badge: 'warning' }] }
+    ]
+  })

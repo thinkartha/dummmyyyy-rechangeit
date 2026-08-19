@@ -1,6 +1,7 @@
 include Search
 include NotificationDropdown
 include ToggleThemeBtn
+include ../organization/Tenant
 
 mixin LinkLooper(config)
   if config.title
@@ -263,6 +264,7 @@ mixin NavbarIcons(config)
   - var config = Object.assign({ search: false }, config)
 
   ul.navbar-nav.navbar-nav-icons.flex-row
+    +OrgSwitcherDropdown
     li.nav-item
       +ToggleThemeBtn.px-2
     if config.search === true

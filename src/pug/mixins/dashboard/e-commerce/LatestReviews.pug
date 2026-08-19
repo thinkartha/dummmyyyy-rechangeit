@@ -163,8 +163,9 @@ mixin LatestReviewsTable
 
 mixin LatestReviews
   div(data-list!={
-    valueNames: ["product", "customer", "rating", "review", "time"],
+    valueNames: ["product", "customer", "rating", "review", "status", "time"],
     page: 6,
+    filter: { key: 'status' }
   })
     .row.align-items-end.justify-content-between.pb-5.g-3
       .col-auto
@@ -175,8 +176,21 @@ mixin LatestReviews
           .col-auto.flex-1
             +Search({placeholder:'Search alerts', inputClass: 'form-control-sm'})
           .col-auto
-            button.btn.btn-sm.btn-phoenix-secondary.bg-body-emphasis.bg-body-hover.me-2(type='button') All sources
-            button.btn.btn-sm.btn-phoenix-secondary.bg-body-emphasis.bg-body-hover.action-btn(type='button' data-bs-toggle='dropdown' data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent" )
+            select.form-select.form-select-sm(data-list-filter aria-label='Filter status')
+              option(value='') Status: All
+              option(value='Critical') Critical
+              option(value='Warning') Warning
+              option(value='Open') Open
+              option(value='Acknowledged') Acknowledged
+              option(value='Resolved') Resolved
+          .col-auto
+            select.form-select.form-select-sm(aria-label='Sort by' data-obs-sort)
+              option(value='') Sort by
+              option(value='product') Source
+              option(value='customer') Owner
+              option(value='status') Status
+              option(value='time') Time
+            button.btn.btn-sm.btn-phoenix-secondary.bg-body-emphasis.bg-body-hover.action-btn.ms-2(type='button' data-bs-toggle='dropdown' data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent" )
               span.fas.fa-ellipsis-h(data-fa-transform="shrink-2")
             ul.dropdown-menu.dropdown-menu-end
               li
@@ -204,3 +218,18 @@ mixin LatestReviews
         button(type='button' title="Next" data-list-pagination='next').btn.btn-link.px-1.ms-1
           | Next
           span.fas.fa-chevron-right.ms-2
+  script.
+    (function () {
+      document.querySelectorAll('[data-obs-sort]').forEach(function (select) {
+        if (select.dataset.bound === '1') return;
+        select.dataset.bound = '1';
+        select.addEventListener('change', function () {
+          var key = select.value;
+          if (!key) return;
+          var root = select.closest('[data-list]');
+          if (!root) return;
+          var header = root.querySelector('th[data-sort="' + key + '"]');
+          if (header) header.click();
+        });
+      });
+    })();

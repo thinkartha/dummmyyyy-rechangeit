@@ -1,0 +1,30 @@
+mixin TenantContextBar
+  .d-none.d-lg-flex.align-items-center.border.border-translucent.rounded-pill.px-3.py-1.bg-body-emphasis.me-2
+    span.fa-solid.fa-building.text-primary.me-2.fs-10
+    div
+      p.mb-0.fs-10.text-body-tertiary.lh-1 Tenant
+      a.fw-semibold.fs-9.text-body-emphasis.text-decoration-none(href=`${CWD}${paths['org-organizations']}`)
+        | RootVyana
+        span.text-body-tertiary.fw-normal.ms-1 rootvyana.loveheartbeat.com
+
+mixin OrgSwitcherDropdown
+  li.nav-item.dropdown
+    a.nav-link.dropdown-toggle.lh-1.pe-0(href='#!' role='button' data-bs-toggle='dropdown' data-bs-auto-close='outside' aria-expanded='false')
+      span.fa-solid.fa-building.me-1
+      span.d-none.d-sm-inline RootVyana
+    .dropdown-menu.dropdown-menu-end.shadow.border.py-2(style='min-width: 18rem;')
+      h6.dropdown-header Multi-tenant organizations
+      a.dropdown-item(href='https://rootvyana.loveheartbeat.com' target='_blank' rel='noopener')
+        .d-flex.justify-content-between.align-items-center
+          span RootVyana
+          span.badge.badge-phoenix.badge-phoenix-success Active
+        .fs-10.text-body-tertiary rootvyana.loveheartbeat.com
+      a.dropdown-item(href='https://acme.loveheartbeat.com' target='_blank' rel='noopener')
+        span Acme Corp
+        .fs-10.text-body-tertiary acme.loveheartbeat.com
+      a.dropdown-item(href='https://contoso.loveheartbeat.com' target='_blank' rel='noopener')
+        span Contoso
+        .fs-10.text-body-tertiary contoso.loveheartbeat.com
+      .dropdown-divider
+      a.dropdown-item(href=`${CWD}${paths['org-organizations']}`) Manage organizations
+      a.dropdown-item(href=`${CWD}${paths['org-onboarding']}`) Onboard new organization
