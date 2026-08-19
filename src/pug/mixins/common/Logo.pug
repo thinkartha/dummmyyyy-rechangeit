@@ -1,0 +1,5 @@
+mixin Logo(config)
+  - var config = Object.assign({ text: true }, config)
+  .d-flex.align-items-center&attributes(attributes)
+    if config.text
+      h5.logo-text.mb-0(class=config.textClass ? config.textClass : '') LoveHeartBeat

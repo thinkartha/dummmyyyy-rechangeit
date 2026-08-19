@@ -1,0 +1,41 @@
+mixin SingleStat(stat)
+  - var color = stat.color;
+  - var icon = stat.icon;
+  .d-flex.align-items-center
+    span.fa-stack(style="min-height: 46px;min-width: 46px;")
+      span.fa-solid.fa-square.fa-stack-2x.dark__text-opacity-50(data-fa-transform="down-4 rotate--10 left-4" class=`text-${color}-light`)
+      span.fa-solid.fa-circle.fa-stack-2x.stack-circle( class=`text-stats-circle-${color}` data-fa-transform="up-4 right-3 grow-2")
+      span.fa-stack-1x(class=`${icon} text-${color} ` data-fa-transform="shrink-2 up-8 right-6")
+    .ms-3
+      h4.mb-0=stat.title
+      p.text-body-secondary.fs-9.mb-0=stat.subTitle
+
+mixin Stats
+  -
+    const stats = [
+      {
+        img:'illustrations/4l.png',
+        icon:'fa-solid fa-triangle-exclamation',
+        color: 'danger',
+        title:'12 critical alerts',
+        subTitle:'Across APIs & cloud'
+      },
+      {
+        img:'illustrations/3l.png',
+        icon:'fa-solid fa-robot',
+        color: 'warning',
+        title:'$4.2k AI spend',
+        subTitle:'This billing period'
+      },
+      {
+        img:'illustrations/2l.png',
+        icon:'fa-solid fa-cloud',
+        color: 'info',
+        title:'18 cloud accounts',
+        subTitle:'AWS · GCP · Azure'
+      },
+    ]
+  .row.align-items-center.g-4
+    each stat in stats
+      .col-12.col-md-auto
+        +SingleStat(stat)
