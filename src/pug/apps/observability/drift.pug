@@ -72,13 +72,14 @@ block content
                   td.text-body-tertiary Upstream column added
 
   +ObsToolTable({
+    live: 'drift',
     title: 'Tracked features',
     subtitle: 'Compared against a rolling 14-day baseline, recomputed nightly per organization',
     searchPlaceholder: 'Search features or models',
     pageSize: 8,
     columns: [
       { label: 'Feature', className: 'ps-3' },
-      { label: 'Consumer' },
+      { label: 'Kind' },
       { label: 'Test' },
       { label: 'Score' },
       { label: 'Threshold' },

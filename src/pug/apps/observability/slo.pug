@@ -55,13 +55,14 @@ block content
           p.fs-10.text-body-tertiary.mb-0 Burn 4.1x · budget exhausted
 
   +ObsToolTable({
+    live: 'slo',
     title: 'Service level objectives',
     subtitle: 'Availability and latency objectives per service, evaluated over a rolling 30-day window',
     searchPlaceholder: 'Search SLOs or services',
     pageSize: 8,
     columns: [
       { label: 'Objective', className: 'ps-3' },
-      { label: 'Service' },
+      { label: 'Budget left' },
       { label: 'Target' },
       { label: 'Actual' },
       { label: 'Burn rate' },

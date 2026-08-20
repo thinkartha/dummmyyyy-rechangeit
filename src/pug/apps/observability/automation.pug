@@ -26,6 +26,7 @@ block content
   .row.g-4.mb-4
     .col-12.col-lg-7
       +ObsToolTable({
+    live: 'automationRules',
         title: 'Automation rules',
         subtitle: 'Trigger → condition → action. High-impact actions require approval before they run.',
         searchPlaceholder: 'Search automation rules',
@@ -34,8 +35,8 @@ block content
           { label: 'Rule', className: 'ps-3' },
           { label: 'Trigger' },
           { label: 'Action' },
-          { label: 'Runs (7d)' },
-          { label: 'Mode' },
+          { label: 'Runs' },
+          { label: 'Type' },
           { label: 'Status' }
         ],
         rows: [

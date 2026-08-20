@@ -34,16 +34,17 @@ block content
   .tab-content
     .tab-pane.fade.show.active#tab-routing(role='tabpanel')
       +ObsToolTable({
+    live: 'alertManagement',
         title: 'Routing rules',
         subtitle: 'First matching rule wins. Test a rule against a recent alert before enabling it.',
         searchPlaceholder: 'Search rules, services, or destinations',
         pageSize: 6,
         columns: [
           { label: 'Rule', className: 'ps-3' },
-          { label: 'Match' },
-          { label: 'Destination' },
+          { label: 'Scope' },
+          { label: 'Channels' },
           { label: 'Severity' },
-          { label: 'Matches (7d)' },
+          { label: 'Escalates in' },
           { label: 'Status' }
         ],
         rows: [

@@ -36,15 +36,16 @@ block content
             | .loveheartbeat.com — resolved per request for auth, data, and billing isolation.
 
   +ObsToolTable({
+    live: 'organizations',
     title: 'Tenants',
     subtitle: 'Open an org subdomain or switch tenant context from the top bar',
     searchPlaceholder: 'Search organizations or slugs',
     columns: [
       { label: 'Organization', className: 'ps-3' },
-      { label: 'Slug URL' },
+      { label: 'Hostname' },
       { label: 'Plan' },
-      { label: 'Members' },
-      { label: 'Auth' },
+      { label: 'Org ID' },
+      { label: 'Slug' },
       { label: 'Status' }
     ],
     rows: [

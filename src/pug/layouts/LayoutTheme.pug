@@ -52,6 +52,19 @@ block styles
     }
 
 append layoutScripts
+  //- API bootstrap. window.lhbReady is created synchronously here, before the module
+  //- below runs, so a page script can await it without racing module evaluation:
+  //-   window.lhbReady.then(({ api }) => ...)
+  //- Pages that never touch it are unaffected — the client is only fetched once.
+  script.
+    window.lhbReady = new Promise(function (resolve) { window.__lhbResolve = resolve; });
+  script(type='module').
+    import { api, currentTenantSlug, tenantUrl, getToken, setToken } from '#{CWD}assets/js/integration/api-client.js';
+    import { hydrate } from '#{CWD}assets/js/integration/live-data.js';
+    window.lhb = { api, currentTenantSlug, tenantUrl, getToken, setToken };
+    window.__lhbResolve(window.lhb);
+    hydrate(api);
+
   script(src=`${CWD}vendors/fontawesome/all.min.js`)
   script(src=`${CWD}vendors/lodash/lodash.min.js`)
   script(src=`${CWD}vendors/list.js/list.min.js`)

@@ -8,7 +8,7 @@ requireDir('./gulp');
 /*= -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 |  Compile
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*/
-gulp.task('compile', gulp.parallel('style', 'script', 'vendor'));
+gulp.task('compile', gulp.parallel('style', 'script', 'vendor', 'integration'));
 gulp.task('compile:all', gulp.parallel('compile', 'pug'));
 
 /*= -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
