@@ -1,0 +1,103 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Observability', href: '#!' },
+      { label: 'Data Observability', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'Data Observability',
+    subtitle: 'Freshness, volume, schema, and quality for the tables your pipelines land — backed by Databricks Unity Catalog',
+    action: 'Run scan'
+  })
+
+  +ObsStatCards([
+    { label: 'Tables monitored', value: '1,284', delta: '+96', badge: 'info' },
+    { label: 'Passing', value: '94.1%', delta: '+0.8%', badge: 'success' },
+    { label: 'Stale tables', value: '23', delta: 'past freshness SLA', badge: 'warning' },
+    { label: 'Schema changes (7d)', value: '11', delta: '2 breaking', badge: 'danger' }
+  ])
+
+  .row.g-4.mb-4
+    .col-12.col-lg-4
+      .card.h-100
+        .card-body
+          h4.mb-3 The four pillars
+          p.text-body-tertiary.fs-9 Every monitored table is scored on the same four checks, so one number is comparable across catalogs.
+          ul.mb-0
+            li
+              strong Freshness
+              |  — time since the last successful write
+            li
+              strong Volume
+              |  — row count against its own recent baseline
+            li
+              strong Schema
+              |  — added, dropped, or retyped columns
+            li
+              strong Quality
+              |  — null rates and distribution drift on tracked columns
+    .col-12.col-lg-8
+      .card.h-100
+        .card-body
+          h4.mb-3 Breaking changes needing review
+          .table-responsive.scrollbar
+            table.table.table-sm.fs-9.mb-0
+              thead
+                tr
+                  th.text-uppercase Table
+                  th.text-uppercase Change
+                  th.text-uppercase Detected
+                  th.text-uppercase Downstream
+              tbody
+                tr
+                  td.font-monospace.fs-10 prod.sales.orders
+                  td
+                    span.badge.badge-phoenix.badge-phoenix-danger Column dropped
+                    span.ms-2.text-body-tertiary discount_code
+                  td 2h ago
+                  td 7 jobs
+                tr
+                  td.font-monospace.fs-10 prod.finance.ledger_entries
+                  td
+                    span.badge.badge-phoenix.badge-phoenix-danger Type changed
+                    span.ms-2.text-body-tertiary amount int → decimal
+                  td 6h ago
+                  td 3 jobs
+                tr
+                  td.font-monospace.fs-10 prod.marketing.attribution
+                  td
+                    span.badge.badge-phoenix.badge-phoenix-warning Column added
+                    span.ms-2.text-body-tertiary channel_group
+                  td 1d ago
+                  td 1 job
+
+  +ObsToolTable({
+    title: 'Monitored tables',
+    subtitle: 'Unity Catalog — catalog.schema.table, scanned on the schedule each organization configures',
+    searchPlaceholder: 'Search catalogs, schemas, or tables',
+    pageSize: 8,
+    columns: [
+      { label: 'Table', className: 'ps-3' },
+      { label: 'Catalog' },
+      { label: 'Rows' },
+      { label: 'Freshness' },
+      { label: 'Null rate' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-table', iconColor: 'primary', meta: 'prod.sales', cells: ['orders', 'prod', '184.2M', '4m', '0.1%', { text: 'Passing', badge: 'success' }] },
+      { icon: 'fa-table', iconColor: 'primary', meta: 'prod.sales', cells: ['order_items', 'prod', '912.7M', '4m', '0.0%', { text: 'Passing', badge: 'success' }] },
+      { icon: 'fa-table', iconColor: 'danger', meta: 'prod.finance', cells: ['ledger_entries', 'prod', '61.4M', '9h', '0.3%', { text: 'Stale', badge: 'danger' }] },
+      { icon: 'fa-table', iconColor: 'warning', meta: 'prod.marketing', cells: ['attribution', 'prod', '22.8M', '38m', '4.7%', { text: 'Quality', badge: 'warning' }] },
+      { icon: 'fa-table', iconColor: 'primary', meta: 'prod.identity', cells: ['users', 'prod', '8.1M', '11m', '0.0%', { text: 'Passing', badge: 'success' }] },
+      { icon: 'fa-table', iconColor: 'warning', meta: 'prod.support', cells: ['tickets', 'prod', '3.4M', '2h', '1.2%', { text: 'Volume', badge: 'warning' }] },
+      { icon: 'fa-table', iconColor: 'primary', meta: 'analytics.dbt', cells: ['fct_revenue_daily', 'analytics', '1.2M', '21m', '0.0%', { text: 'Passing', badge: 'success' }] },
+      { icon: 'fa-table', iconColor: 'info', meta: 'analytics.dbt', cells: ['dim_customer', 'analytics', '8.9M', '52m', '0.2%', { text: 'Passing', badge: 'success' }] }
+    ]
+  })

@@ -1,0 +1,81 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Observability', href: '#!' },
+      { label: 'SLO & Error Budgets', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'SLO & Error Budgets',
+    subtitle: 'What you promised, what you have spent, and how fast you are spending it',
+    action: 'Define SLO'
+  })
+
+  +ObsStatCards([
+    { label: 'SLOs tracked', value: '18', delta: '+2', badge: 'info' },
+    { label: 'Meeting target', value: '15', delta: '83%', badge: 'success' },
+    { label: 'Budget at risk', value: '2', delta: 'burn > 2x', badge: 'warning' },
+    { label: 'Breached', value: '1', delta: 'partner API', badge: 'danger' }
+  ])
+
+  .card.mb-4
+    .card-header.border-bottom.border-translucent.py-3
+      h4.mb-0 Error budget burn
+      p.text-body-tertiary.fs-9.mb-0 Burn rate is budget consumed per hour against the 30-day window. Above 1x, the budget runs out before the window closes.
+    .card-body
+      .row.g-4
+        .col-12.col-md-4
+          h6.mb-2 API availability
+          .d-flex.justify-content-between.fs-9.mb-1
+            span.text-body-tertiary 99.9% target
+            span.fw-semibold 41% spent
+          .progress.mb-2(style='height: 6px;')
+            .progress-bar.bg-success(style='width: 41%;' role='progressbar' aria-valuenow='41' aria-valuemin='0' aria-valuemax='100')
+          p.fs-10.text-body-tertiary.mb-0 Burn 0.8x · 17d remaining
+        .col-12.col-md-4
+          h6.mb-2 Checkout latency p99 < 500ms
+          .d-flex.justify-content-between.fs-9.mb-1
+            span.text-body-tertiary 99.0% target
+            span.fw-semibold 78% spent
+          .progress.mb-2(style='height: 6px;')
+            .progress-bar.bg-warning(style='width: 78%;' role='progressbar' aria-valuenow='78' aria-valuemin='0' aria-valuemax='100')
+          p.fs-10.text-body-tertiary.mb-0 Burn 2.4x · 3d remaining
+        .col-12.col-md-4
+          h6.mb-2 Partner API availability
+          .d-flex.justify-content-between.fs-9.mb-1
+            span.text-body-tertiary 99.5% target
+            span.fw-semibold 100% spent
+          .progress.mb-2(style='height: 6px;')
+            .progress-bar.bg-danger(style='width: 100%;' role='progressbar' aria-valuenow='100' aria-valuemin='0' aria-valuemax='100')
+          p.fs-10.text-body-tertiary.mb-0 Burn 4.1x · budget exhausted
+
+  +ObsToolTable({
+    live: 'slo',
+    title: 'Service level objectives',
+    subtitle: 'Availability and latency objectives per service, evaluated over a rolling 30-day window',
+    searchPlaceholder: 'Search SLOs or services',
+    pageSize: 8,
+    columns: [
+      { label: 'Objective', className: 'ps-3' },
+      { label: 'Budget left' },
+      { label: 'Target' },
+      { label: 'Actual' },
+      { label: 'Burn rate' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-bullseye', iconColor: 'success', meta: 'availability · 30d', cells: ['API availability', 'checkout-api', '99.9%', '99.94%', '0.8x', { text: 'On track', badge: 'success' }] },
+      { icon: 'fa-bullseye', iconColor: 'warning', meta: 'latency p99 · 30d', cells: ['Checkout latency', 'checkout-api', '99.0%', '98.7%', '2.4x', { text: 'At risk', badge: 'warning' }] },
+      { icon: 'fa-bullseye', iconColor: 'danger', meta: 'availability · 30d', cells: ['Partner availability', 'partner-api', '99.5%', '99.1%', '4.1x', { text: 'Breached', badge: 'danger' }] },
+      { icon: 'fa-bullseye', iconColor: 'success', meta: 'availability · 30d', cells: ['Identity availability', 'identity-api', '99.95%', '99.98%', '0.3x', { text: 'On track', badge: 'success' }] },
+      { icon: 'fa-bullseye', iconColor: 'success', meta: 'freshness · 30d', cells: ['Nightly load freshness', 'etl-nightly', '99.0%', '99.6%', '0.4x', { text: 'On track', badge: 'success' }] },
+      { icon: 'fa-bullseye', iconColor: 'info', meta: 'success rate · 30d', cells: ['Inference success', 'ai-gateway', '99.5%', '99.5%', '1.0x', { text: 'Watch', badge: 'info' }] },
+      { icon: 'fa-bullseye', iconColor: 'success', meta: 'availability · 30d', cells: ['Billing availability', 'billing-service', '99.9%', '99.97%', '0.2x', { text: 'On track', badge: 'success' }] },
+      { icon: 'fa-bullseye', iconColor: 'success', meta: 'latency p95 · 30d', cells: ['Search latency', 'search-api', '99.0%', '99.3%', '0.7x', { text: 'On track', badge: 'success' }] }
+    ]
+  })

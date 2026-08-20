@@ -38,7 +38,7 @@ Product by **RootVyana**. Design target: shared platform for ~**30,000 organizat
 |--------|--------|------|
 | **Frontend** | `src/`, `public/` (build output) | UI: dashboards, org onboarding, tables |
 | **Integration** | `integration/` | Browser API client → backend (tenant-aware) |
-| **Backend** | `backend/` | Python Lambdas: APIs, tenant resolve, CRUD |
+| **Backend** | `backend/` | FastAPI on Lambda: APIs, tenant resolve, pipeline, integrations |
 | **Middleware** | `middleware/` | Batch ETL/ELT jobs (extract → transform → load) |
 
 All reads/writes are scoped by **`org_id`** after the tenant is resolved from the slug subdomain (or `X-Tenant-Slug` in local/dev).
@@ -88,9 +88,18 @@ Static admin UI (Phoenix theme) compiled with Gulp:
 **Observability**
 
 - API Monitoring, **API Gateway** (AWS API Gateway, Azure APIM, GCP Apigee)
-- AI Monitoring, **AI Gateway** (Claude, Cursor, ChatGPT, Copilot, …)
-- ETL Monitoring (Talend, Boomi, dbt, Glue, Fabric, …)
-- Alerts, Cloud Monitoring (multi-account), Cloud Cost, AI Cost & Usage
+- AI Monitoring, **AI Gateway** (Claude, Cursor, ChatGPT, Copilot, …), Custom AI Models
+- ETL Monitoring (Talend, Boomi, dbt, Glue, Fabric, …), Orchestration (Airflow, Step Functions, Dagster, Prefect)
+- Database Monitoring, Data Observability (Unity Catalog freshness / schema / quality)
+- Traces & Topology (OpenTelemetry), Logs (Elasticsearch)
+- Alerts, Alert Management (routing, SLA, maintenance windows), Correlation & RCA
+- AI Automation (rules, predictive insights, ML models, remediation agents)
+- SLO & Error Budgets, Drift Detection
+- Cloud Monitoring (multi-account), Cloud Cost, AI Cost & Usage
+
+**Platform**
+
+- Command Center, Administration (orgs / users / join requests), Integrations, Health & Connectivity
 
 **Organization (SaaS)**
 
@@ -125,7 +134,7 @@ Bridge between the browser UI and backend APIs.
 
 | File | Purpose |
 |------|---------|
-| `integration/api-client.js` | `fetch` wrapper; attaches tenant; CRUD helpers |
+| `integration/api-client.js` | `fetch` wrapper; attaches tenant + bearer token; one namespace per product area |
 
 ### Tenant-aware requests
 
@@ -135,11 +144,20 @@ import { api, currentTenantSlug, tenantUrl } from './integration/api-client.js';
 // Production: slug from hostname  →  acme.loveheartbeat.com
 // Local: window.__TENANT_SLUG__ or localStorage `lhb_tenant_slug`
 
-await api.health();
-await api.tenant();           // GET /tenant
-await api.organizations();    // GET /organizations
-await api.list('alerts');
+await api.tenant();                       // which organization am I?
+await api.auth.login(email, password);    // stores the token for later calls
+await api.observability.status();
+await api.gateways.summary();
+await api.etl.summary();
+await api.alerts.clusters({ window: '24h' });
+await api.automation.rules();
+await api.databases.health();
 ```
+
+Namespaces: `auth` · `observability` · `agents` · `gateways` · `etl` · `alerts` ·
+`alertManagement` · `automation` · `aiModels` · `databases` · `dataObservability` ·
+`databricks` · `finops` · `slo` · `drift` · `correlation` · `rca` · `awsLambda` · `elk` ·
+`ingest` · `admin`. See `integration/README.md`.
 
 Configure before load (or edit defaults in the file):
 
@@ -157,86 +175,115 @@ Every request sends **`X-Tenant-Slug`** when a slug is known so Lambda can resol
 
 ## Backend (`backend/`) — AWS Lambda
 
-Python handlers behind API Gateway (or Function URL). Stateless; tenant on every call.
+One FastAPI application served through Mangum behind API Gateway, plus standalone
+event-in/event-out handlers for the tenant and health surface. Stateless; tenant on
+every call.
 
 | Path | Purpose |
 |------|---------|
-| `handlers/health.py` | Health check |
-| `handlers/example.py` | Sample CRUD-style handler |
-| `handlers/organizations.py` | Tenant context, list orgs, onboard stub |
-| `shared/tenant.py` | Host / header → slug → `org_id` |
-| `shared/response.py` | JSON + CORS responses |
-| `events/` | Sample API Gateway events |
-| `requirements.txt` | `boto3`, `pydantic`, … |
+| `handlers/lambda_handler.py` | Lambda entrypoint — secrets, then Mangum |
+| `handlers/api.py` | FastAPI app: CORS, auth, router mounting |
+| `handlers/routers/` | Routes, one module per product area |
+| `handlers/health.py`, `example.py`, `organizations.py` | Standalone Lambda handlers |
+| `handlers/cognito_triggers.py` | Cognito pre-signup / post-confirmation |
+| `shared/core/` | Domain services — auth, orgs, users, gateways, alerts, automation |
+| `shared/pipeline/` | Detection, correlation, clustering, RCA, service graph |
+| `shared/etl/`, `elk/`, `collector/`, `aws/`, `slo/`, `finops/`, `drift/` | Integrations and analysis |
+| `shared/tenant.py`, `shared/response.py` | Slug → `org_id`, API Gateway envelopes |
+| `events/` | Sample API Gateway events, one per route family |
 
 ### Tenant resolution order
 
-1. `Host: <slug>.loveheartbeat.com`  
-2. Else `X-Tenant-Slug` header (local clients)  
-3. Lookup slug → org record (demo map today; DynamoDB/Postgres in production)
+1. Verified JWT / Cognito claim `org_id`
+2. `solo-<sub>` for an authenticated user with no organization
+3. `Host: <slug>.loveheartbeat.com` → slug → `org_id`
+4. `X-Tenant-Slug` header (local clients)
+5. `X-Tenant-Id` header (dev/test override)
 
-### Local smoke tests
+`shared/core/tenancy.py` covers the FastAPI routes and delegates steps 3–4 to
+`shared/tenant.py`, so the routes and the standalone handlers agree.
+
+### Route families
+
+`/health` · `/api/v1/tenant` · `/organizations` · `/auth` · `/observability` ·
+`/observability/agents` · `/gateways` · `/integrations/etl` · `/integrations/aws/lambda` ·
+`/alerts` · `/alert-management` · `/automation` · `/ai-models` · `/databases` ·
+`/data-observability` · `/databricks` · `/finops` · `/slo` · `/drift` ·
+`/correlated-incidents` · `/incidents/{id}/rca` · `/logs` · `/metrics` · `/traces` ·
+`/ingest` · `/admin` — full list at `/docs`.
+
+### Local
 
 ```bash
 cd backend
 pip install -r requirements.txt
-PYTHONPATH=. python -c "
-from handlers.organizations import tenant_context_handler, list_organizations_handler
-print(tenant_context_handler({'headers': {'Host': 'rootvyana.loveheartbeat.com'}}, None))
-print(list_organizations_handler({}, None))
-"
+PYTHONPATH=. uvicorn handlers.api:app --reload --port 8000
 ```
+
+Without configuration the API runs in demo mode: stores fall back to memory, unconnected
+integrations return `501` with the reason, and the dev API key `dev-admin-key` is accepted.
+`GET /health/store` reports which stores are actually persistent.
 
 ### Deploy sketch (production)
 
-1. Package handlers + `shared/` for Lambda  
-2. API Gateway HTTP API → routes (`/health`, `/tenant`, `/organizations`, …)  
-3. Custom domain / wildcard `*.loveheartbeat.com` so Host carries the slug  
-4. Persist orgs/members/connectors in a data store keyed by `org_id`  
-5. Wire IdP callbacks per org (Okta / SAML / OIDC) or native auth service  
-
----
+1. Package `handlers/` + `shared/` with `requirements.txt` for Lambda
+2. API Gateway HTTP API → `handlers.lambda_handler.handler`
+3. Wildcard custom domain `*.loveheartbeat.com` so `Host` carries the slug
+4. DynamoDB for users and records; Secrets Manager for runtime secrets
+5. Wire per-org IdP callbacks (Okta / SAML / OIDC) or native auth
 
 ## Middleware (`middleware/`) — ETL / ELT jobs
 
-Batch and sync pipelines that pull from external systems, normalize, and load into LoveHeartBeat (or a warehouse) **per tenant**.
+Batch and scheduled jobs that pull from external systems, normalize, and load into
+LoveHeartBeat **per tenant**.
 
 ```text
 extractors/  →  transformers/  →  loaders/
      │                │               │
-  APIs, S3, DB    clean/reshape    stdout / S3 / DB / Lambda
+ ETL platform    CloudEvent      ingest API / stdout
+   APIs, CSV      mapping
 ```
 
 | Path | Purpose |
 |------|---------|
-| `pipelines/` | Runnable jobs (compose E → T → L) |
-| `extractors/` | Sources (CSV, later APIs/S3) |
-| `transformers/` | Normalize / enrich |
-| `loaders/` | Destinations |
-| `sample_data/` | Local fixtures |
+| `pipelines/etl_sync.py` | Talend / Boomi / Databricks run sync for one organization |
+| `pipelines/example_pipeline.py` | Minimal E → T → L example |
+| `extractors/` | Sources — ETL platform APIs, CSV |
+| `transformers/` | Vendor rows → tenant-stamped CloudEvents |
+| `loaders/` | Destinations — backend ingest API, stdout |
+| `_backend.py` | Puts `backend/` on `sys.path` so jobs reuse `shared/` |
 
-### Run the example pipeline
+### Run
 
 ```bash
 cd middleware
 pip install -r requirements.txt
+PYTHONPATH=. python -m pipelines.etl_sync rootvyana
+PYTHONPATH=. python -m pipelines.etl_sync --demo    # self-check, no vendor or backend needed
 PYTHONPATH=. python -m pipelines.example_pipeline
 ```
+
+| Env var | Default | Purpose |
+|---------|---------|---------|
+| `LHB_API_BASE_URL` | `http://localhost:8000` | Backend base URL |
+| `LHB_API_KEY` | — | Sent as `X-API-Key` when the backend requires one |
+
+Jobs reuse the backend's vendor clients and mappers rather than vendoring a second copy
+that would drift the first time a vendor renames a field. Vendor credentials come from
+the tenant's saved connector config in the backend — the job never holds them itself.
 
 ### How middleware ties to the product
 
 | Observability area | Middleware role |
 |--------------------|-----------------|
-| ETL Monitoring | Ingest run status from Talend, Boomi, dbt, Glue, Fabric, … |
+| ETL Monitoring | `pipelines/etl_sync.py` — Talend, Boomi, Databricks run status |
 | Cloud / cost | Pull CUR / billing exports multi-account |
 | AI cost & usage | Pull provider usage (OpenAI, Anthropic, …) |
-| Alerts | Emit anomalies into alert store / SNS |
+| Alerts | Ingested events feed clustering and RCA in the backend |
 
-Jobs should always receive **`org_id` / slug** (env, event payload, or Step Functions input) and never mix tenant data.
+Jobs always receive **`org_id` / slug** and never mix tenant data.
 
-**Runtime options later:** Lambda, Step Functions, ECS, Glue, EventBridge schedules.
-
----
+**Runtime options:** Lambda, Step Functions, ECS, Glue, EventBridge schedules.
 
 ## External system integrations
 
@@ -298,11 +345,12 @@ npm i && npm start
 
 # 2) Backend (separate terminal)
 cd backend && pip install -r requirements.txt
-PYTHONPATH=. python -c "from handlers.health import handler; print(handler({}, type('C',(),{'aws_request_id':'local'})()))"
+PYTHONPATH=. uvicorn handlers.api:app --reload --port 8000
+# → http://localhost:8000/docs
 
 # 3) Middleware job
 cd middleware && pip install -r requirements.txt
-PYTHONPATH=. python -m pipelines.example_pipeline
+PYTHONPATH=. python -m pipelines.etl_sync --demo
 ```
 
 Point the UI at a real API:

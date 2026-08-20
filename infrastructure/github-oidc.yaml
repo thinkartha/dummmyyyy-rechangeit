@@ -1,0 +1,91 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Bootstrap stack for GitHub Actions OIDC.
+  Creates an OIDC identity provider for GitHub and an IAM role that GitHub Actions
+  can assume to deploy the Loveheartbeat application. The role ARN is exported for
+  configuration in GitHub repository secrets/variables.
+
+Parameters:
+  GitHubOrg:
+    Type: String
+    Description: GitHub organization or user name
+  RepositoryName:
+    Type: String
+    Description: GitHub repository name (e.g. dummmyyyy-rechangeit)
+  BranchFilter:
+    Type: String
+    Default: "*"
+    Description: Branch filter for OIDC trust (e.g. refs/heads/main or *)
+  BootstrapRoleName:
+    Type: String
+    Default: LoveHeartBeatGitHubActionsDeployRole
+    Description: Name of the IAM role GitHub Actions will assume
+
+Resources:
+  GitHubOIDCProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ThumbprintList:
+        # GitHub Actions OIDC intermediate certificate thumbprints (covers pre/post 2023 cert rotation)
+        - 6938fd4e98bab03faadb97b34396831e3780aea1
+        - a031c47382e8c59626f9aee6d4dd294210838e3e
+      ClientIdList:
+        - sts.amazonaws.com
+
+  GitHubActionsDeployRole:
+    Type: AWS::IAM::Role
+    DependsOn: GitHubOIDCProvider
+    Properties:
+      RoleName: !Ref BootstrapRoleName
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Ref GitHubOIDCProvider
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringLike:
+                # Trust any OIDC token issued for this repository.
+                # Supports both legacy (repo:org/repo:ref:...) and immutable (repo:org@id/repo@id:ref:...) subject formats.
+                # Tighten this after setup if you want to restrict to specific refs.
+                "token.actions.githubusercontent.com:sub":
+                  - !Sub "repo:${GitHubOrg}/${RepositoryName}:*"
+                  - !Sub "repo:${GitHubOrg}@*/${RepositoryName}@*:*"
+              StringEquals:
+                "token.actions.githubusercontent.com:aud": sts.amazonaws.com
+      Policies:
+        - PolicyName: LoveHeartBeatDeploymentServices
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudformation:*
+                  - iam:*
+                  - lambda:*
+                  - apigateway:*
+                  - dynamodb:*
+                  - cognito-idp:*
+                  - cognito-identity:*
+                  - s3:*
+                  - cloudfront:*
+                  - secretsmanager:*
+                  - logs:*
+                  - cloudwatch:*
+                  - route53:*
+                  - sns:*
+                  - ses:*
+                  - acm:*
+                Resource: "*"
+
+Outputs:
+  GitHubActionsRoleArn:
+    Description: ARN of the IAM role to configure in GitHub Secrets as AWS_DEPLOY_ROLE_ARN
+    Value: !GetAtt GitHubActionsDeployRole.Arn
+    Export:
+      Name: LoveHeartBeatGitHubActionsDeployRoleArn
+  GitHubOIDCProviderArn:
+    Description: ARN of the OIDC provider
+    Value: !Ref GitHubOIDCProvider

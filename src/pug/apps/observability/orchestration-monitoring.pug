@@ -1,0 +1,72 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Observability', href: '#!' },
+      { label: 'Orchestration Monitoring', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'Orchestration Monitoring',
+    subtitle: 'DAGs, workflows, and scheduled jobs — the layer that decides when your ETL actually runs',
+    action: 'Connect orchestrator'
+  })
+
+  +ObsStatCards([
+    { label: 'Workflows', value: '164', delta: '+9', badge: 'info' },
+    { label: 'Runs (24h)', value: '3,428', delta: '+184', badge: 'success' },
+    { label: 'Failed runs', value: '27', delta: '+6', badge: 'warning' },
+    { label: 'Queued > SLA', value: '4', delta: 'waiting on slots', badge: 'danger' }
+  ])
+
+  +ObsToolTable({
+    title: 'Orchestration platforms',
+    subtitle: 'Apache Airflow · AWS Step Functions · Dagster · Prefect · Azure Data Factory · Control-M',
+    searchPlaceholder: 'Search orchestrators',
+    pageSize: 6,
+    columns: [
+      { label: 'Platform', className: 'ps-3' },
+      { label: 'Workflows' },
+      { label: 'Runs (24h)' },
+      { label: 'Failures' },
+      { label: 'Last run' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-wind', iconColor: 'success', meta: 'MWAA · us-east-1', cells: ['Apache Airflow', '82', '1,904', '11', '2m ago', { text: 'Healthy', badge: 'success' }] },
+      { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'warning', meta: 'state machines', cells: ['AWS Step Functions', '38', '842', '3', '1m ago', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-diagram-project', iconColor: 'primary', meta: 'cloud', cells: ['Dagster', '21', '318', '2', '7m ago', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-water', iconColor: 'info', meta: 'prefect cloud', cells: ['Prefect', '14', '221', '9', '4m ago', { text: 'Degraded', badge: 'warning' }] },
+      { iconSet: 'fa-brands', icon: 'fa-microsoft', iconColor: 'info', meta: 'ADF pipelines', cells: ['Azure Data Factory', '7', '118', '2', '22m ago', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-calendar-days', iconColor: 'secondary', meta: 'on-prem scheduler', cells: ['Control-M', '2', '25', '0', '1h ago', { text: 'Healthy', badge: 'success' }] }
+    ]
+  })
+
+  +ObsToolTable({
+    title: 'Recent workflow runs',
+    subtitle: 'Newest first. A failed run raises an event into the same alert pipeline as API, ETL, and database signals.',
+    searchPlaceholder: 'Search runs, DAGs, or owners',
+    pageSize: 8,
+    columns: [
+      { label: 'Workflow', className: 'ps-3' },
+      { label: 'Platform' },
+      { label: 'Started' },
+      { label: 'Duration' },
+      { label: 'Tasks' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-play', iconColor: 'success', meta: 'run 20260820T0100', cells: ['nightly_customer_load', 'Airflow', '01:00 UTC', '42m', '18 / 18', { text: 'Succeeded', badge: 'success' }] },
+      { icon: 'fa-play', iconColor: 'danger', meta: 'run 20260820T0130', cells: ['ledger_reconcile', 'Airflow', '01:30 UTC', '9m', '4 / 7', { text: 'Failed', badge: 'danger' }] },
+      { icon: 'fa-play', iconColor: 'success', meta: 'exec 9f2a…', cells: ['order-export-sfn', 'Step Functions', '02:00 UTC', '6m', '9 / 9', { text: 'Succeeded', badge: 'success' }] },
+      { icon: 'fa-play', iconColor: 'warning', meta: 'run 20260820T0200', cells: ['marketing_attribution', 'Dagster', '02:00 UTC', '1h 12m', '11 / 12', { text: 'Retrying', badge: 'warning' }] },
+      { icon: 'fa-play', iconColor: 'success', meta: 'flow-run 4c81…', cells: ['inventory_sync', 'Prefect', '02:15 UTC', '18m', '6 / 6', { text: 'Succeeded', badge: 'success' }] },
+      { icon: 'fa-play', iconColor: 'danger', meta: 'flow-run 4c82…', cells: ['pricing_refresh', 'Prefect', '02:30 UTC', '3m', '1 / 5', { text: 'Failed', badge: 'danger' }] },
+      { icon: 'fa-play', iconColor: 'info', meta: 'run 20260820T0300', cells: ['dbt_daily_models', 'Airflow', '03:00 UTC', '—', '0 / 24', { text: 'Queued', badge: 'info' }] },
+      { icon: 'fa-play', iconColor: 'success', meta: 'pipeline 118', cells: ['crm_ingest', 'Data Factory', '03:10 UTC', '11m', '5 / 5', { text: 'Succeeded', badge: 'success' }] }
+    ]
+  })

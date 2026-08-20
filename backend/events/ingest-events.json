@@ -1,0 +1,20 @@
+{
+  "version": "2.0",
+  "routeKey": "POST /api/v1/ingest/events",
+  "rawPath": "/api/v1/ingest/events",
+  "headers": {
+    "content-type": "application/json",
+    "host": "rootvyana.loveheartbeat.com",
+    "x-tenant-slug": "rootvyana",
+    "x-api-key": "dev-admin-key"
+  },
+  "requestContext": {
+    "http": {
+      "method": "POST",
+      "path": "/api/v1/ingest/events",
+      "sourceIp": "127.0.0.1"
+    }
+  },
+  "body": "{\"event_type\": \"metric.threshold\", \"source\": \"api-gateway\", \"severity\": \"critical\", \"timestamp\": \"2026-08-20T10:32:00Z\", \"title\": \"payments-api p95 latency above SLO\", \"description\": \"p95 latency 1840ms exceeded the 800ms objective for 5 minutes.\", \"data\": {\"service\": \"payments-api\", \"latency_ms\": 1840, \"threshold_ms\": 800}}",
+  "isBase64Encoded": false
+}

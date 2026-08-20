@@ -1,0 +1,95 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Observability', href: '#!' },
+      { label: 'Correlation & RCA', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'Correlation & Root Cause',
+    subtitle: 'Alerts that fired together, collapsed into one incident with a probable cause and the evidence behind it',
+    action: 'Recorrelate'
+  })
+
+  +ObsStatCards([
+    { label: 'Raw alerts (24h)', value: '1,904', delta: '+212', badge: 'info' },
+    { label: 'Correlated incidents', value: '46', delta: '97.6% reduction', badge: 'success' },
+    { label: 'Open incidents', value: '7', delta: '2 critical', badge: 'warning' },
+    { label: 'Mean time to RCA', value: '6m', delta: '-4m', badge: 'success' }
+  ])
+
+  .card.mb-4
+    .card-header.border-bottom.border-translucent.py-3
+      h4.mb-0 INC-4821 · Checkout failures across three services
+      p.text-body-tertiary.fs-9.mb-0 Correlated from 34 alerts spanning 11 minutes
+    .card-body
+      .row.g-4
+        .col-12.col-lg-7
+          h6.mb-3 Signal timeline
+          .border-start.border-2.border-translucent.ps-3
+            .mb-3
+              span.badge.badge-phoenix.badge-phoenix-danger 14:02:10
+              p.mb-0.mt-1
+                strong payments-db replication lag 14.8s
+                span.text-body-tertiary.d-block.fs-9 database · orders (MySQL 8.0) — first signal
+            .mb-3
+              span.badge.badge-phoenix.badge-phoenix-warning 14:03:44
+              p.mb-0.mt-1
+                strong checkout-api p99 latency 4.2s
+                span.text-body-tertiary.d-block.fs-9 api · 22 alerts collapsed
+            .mb-3
+              span.badge.badge-phoenix.badge-phoenix-warning 14:05:02
+              p.mb-0.mt-1
+                strong AWS API Gateway 5xx rate 6.1%
+                span.text-body-tertiary.d-block.fs-9 gateway · api-prod-us-east-1
+            .mb-0
+              span.badge.badge-phoenix.badge-phoenix-info 14:13:20
+              p.mb-0.mt-1
+                strong Replication recovered, latency normal
+                span.text-body-tertiary.d-block.fs-9 auto-resolved
+        .col-12.col-lg-5
+          h6.mb-3 Probable root cause
+          .bg-body-emphasis.border.border-translucent.rounded-3.p-3.mb-3
+            .d-flex.justify-content-between.align-items-start.mb-2
+              strong.fs-9 Replication lag on orders
+              span.badge.badge-phoenix.badge-phoenix-success 0.86 confidence
+            p.fs-9.text-body-tertiary.mb-0 The orders replica fell behind during a bulk backfill. Checkout reads served from the replica timed out, and the gateway surfaced them as 5xx. Latency and error rate both recovered within 90s of replication catching up.
+          h6.mb-2 Evidence
+          ul.fs-9.mb-0
+            li Lag rose before any API alert fired
+            li Backfill job
+              code.mx-1 nightly-customer-load
+              | overlapped the window
+            li No deploy, config change, or scaling event in the window
+            li Recovery order matched the failure order in reverse
+
+  +ObsToolTable({
+    live: 'correlation',
+    title: 'Correlated incidents',
+    subtitle: 'Alerts grouped by shared service, time proximity, and dependency edges in the service graph',
+    searchPlaceholder: 'Search incidents or services',
+    pageSize: 8,
+    columns: [
+      { label: 'Incident', className: 'ps-3' },
+      { label: 'Root cause' },
+      { label: 'Alerts' },
+      { label: 'Services' },
+      { label: 'Duration' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-code-merge', iconColor: 'danger', meta: 'INC-4821', cells: ['Checkout failures', 'DB replication lag', '34', '3', '11m', { text: 'Resolved', badge: 'success' }] },
+      { icon: 'fa-code-merge', iconColor: 'danger', meta: 'INC-4819', cells: ['Partner API timeouts', 'Upstream vendor outage', '58', '2', '2h 14m', { text: 'Open', badge: 'danger' }] },
+      { icon: 'fa-code-merge', iconColor: 'warning', meta: 'INC-4816', cells: ['Nightly load failure', 'Talend engine OOM', '12', '1', '46m', { text: 'Open', badge: 'warning' }] },
+      { icon: 'fa-code-merge', iconColor: 'warning', meta: 'INC-4812', cells: ['AI gateway throttling', 'Provider rate limit', '27', '2', '38m', { text: 'Resolved', badge: 'success' }] },
+      { icon: 'fa-code-merge', iconColor: 'info', meta: 'INC-4808', cells: ['Search latency spike', 'Cache eviction storm', '19', '2', '22m', { text: 'Resolved', badge: 'success' }] },
+      { icon: 'fa-code-merge', iconColor: 'info', meta: 'INC-4803', cells: ['Identity 5xx burst', 'Cert rotation restart', '9', '1', '6m', { text: 'Resolved', badge: 'success' }] },
+      { icon: 'fa-code-merge', iconColor: 'warning', meta: 'INC-4799', cells: ['Ledger freshness miss', 'dbt run queued behind backfill', '7', '1', '3h 02m', { text: 'Open', badge: 'warning' }] },
+      { icon: 'fa-code-merge', iconColor: 'secondary', meta: 'INC-4791', cells: ['Stage deploy noise', 'Rolling restart', '104', '6', '14m', { text: 'Suppressed', badge: 'secondary' }] }
+    ]
+  })

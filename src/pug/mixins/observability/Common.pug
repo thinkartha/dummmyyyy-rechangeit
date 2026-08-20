@@ -47,7 +47,10 @@ mixin ObsToolTable(config)
       filter: { key: filterKey }
     };
 
-  div.obs-list-root(data-list!=listOptions)
+  //- config.live names an entry in integration/live-data.js. The static rows below
+  //- stay in the markup as the fallback: if the API is unreachable or the visitor is
+  //- signed out, the page still renders and the card header says which it is.
+  div.obs-list-root(data-list!=listOptions data-live-table=config.live)
     .card
       .card-header.border-bottom.border-translucent.py-3
         .row.align-items-center.g-2.mb-3

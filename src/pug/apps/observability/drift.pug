@@ -1,0 +1,98 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Observability', href: '#!' },
+      { label: 'Drift Detection', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'Drift Detection',
+    subtitle: 'Where today stopped looking like the baseline — for metrics feeding alerts and features feeding models',
+    action: 'Rebaseline'
+  })
+
+  +ObsStatCards([
+    { label: 'Features tracked', value: '214', delta: '+18', badge: 'info' },
+    { label: 'Drifting', value: '9', delta: '4 significant', badge: 'warning' },
+    { label: 'Baseline age', value: '14d', delta: 'rolling', badge: 'primary' },
+    { label: 'Models affected', value: '3', delta: 'retrain suggested', badge: 'danger' }
+  ])
+
+  .row.g-4.mb-4
+    .col-12.col-lg-5
+      .card.h-100
+        .card-body
+          h4.mb-3 How drift is measured
+          p.text-body-tertiary.fs-9 Two tests, chosen by what the feature is:
+          ul.fs-9
+            li
+              strong Numeric
+              |  — Kolmogorov–Smirnov against the baseline distribution
+            li
+              strong Categorical
+              |  — population stability index over the category mix
+          p.text-body-tertiary.fs-9.mb-0 Drift is a warning, not a failure. A p95 that shifted because traffic doubled is real drift and entirely fine; a feature that shifted because an upstream schema changed is not. The evidence column is there so you can tell them apart.
+    .col-12.col-lg-7
+      .card.h-100
+        .card-body
+          h4.mb-3 Significant drift needing review
+          .table-responsive.scrollbar
+            table.table.table-sm.fs-9.mb-0
+              thead
+                tr
+                  th.text-uppercase Feature
+                  th.text-uppercase Test
+                  th.text-uppercase Score
+                  th.text-uppercase Likely cause
+              tbody
+                tr
+                  td payments-api latency_p95
+                  td KS
+                  td.text-danger 0.42
+                  td.text-body-tertiary Replica routing change
+                tr
+                  td checkout basket_size
+                  td KS
+                  td.text-warning 0.28
+                  td.text-body-tertiary Promotion campaign
+                tr
+                  td fraud-scorer country_code
+                  td PSI
+                  td.text-danger 0.31
+                  td.text-body-tertiary New market launch
+                tr
+                  td demand-forecast channel
+                  td PSI
+                  td.text-warning 0.19
+                  td.text-body-tertiary Upstream column added
+
+  +ObsToolTable({
+    live: 'drift',
+    title: 'Tracked features',
+    subtitle: 'Compared against a rolling 14-day baseline, recomputed nightly per organization',
+    searchPlaceholder: 'Search features or models',
+    pageSize: 8,
+    columns: [
+      { label: 'Feature', className: 'ps-3' },
+      { label: 'Kind' },
+      { label: 'Test' },
+      { label: 'Score' },
+      { label: 'Threshold' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-wave-square', iconColor: 'danger', meta: 'numeric', cells: ['latency_p95', 'payments-api alerts', 'KS', '0.42', '0.30', { text: 'Drifting', badge: 'danger' }] },
+      { icon: 'fa-wave-square', iconColor: 'warning', meta: 'numeric', cells: ['basket_size', 'demand-forecast', 'KS', '0.28', '0.30', { text: 'Watch', badge: 'warning' }] },
+      { icon: 'fa-chart-simple', iconColor: 'danger', meta: 'categorical', cells: ['country_code', 'fraud-scorer', 'PSI', '0.31', '0.25', { text: 'Drifting', badge: 'danger' }] },
+      { icon: 'fa-chart-simple', iconColor: 'warning', meta: 'categorical', cells: ['channel', 'demand-forecast', 'PSI', '0.19', '0.25', { text: 'Watch', badge: 'warning' }] },
+      { icon: 'fa-wave-square', iconColor: 'success', meta: 'numeric', cells: ['error_rate', 'checkout-api alerts', 'KS', '0.06', '0.30', { text: 'Stable', badge: 'success' }] },
+      { icon: 'fa-wave-square', iconColor: 'success', meta: 'numeric', cells: ['tokens_per_request', 'ai-gateway cost', 'KS', '0.11', '0.30', { text: 'Stable', badge: 'success' }] },
+      { icon: 'fa-chart-simple', iconColor: 'success', meta: 'categorical', cells: ['device_type', 'churn-predictor', 'PSI', '0.04', '0.25', { text: 'Stable', badge: 'success' }] },
+      { icon: 'fa-wave-square', iconColor: 'success', meta: 'numeric', cells: ['rows_processed', 'etl freshness SLO', 'KS', '0.09', '0.30', { text: 'Stable', badge: 'success' }] }
+    ]
+  })

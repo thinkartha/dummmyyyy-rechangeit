@@ -43,3 +43,27 @@ block content
       { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'warning', meta: 'dev-sandbox', cells: ['dev-sandbox', 'AWS', '$4.2k', '$5k', '-16%', { text: 'On track', badge: 'success' }] }
     ]
   })
+
+  //- Rightsizing recommendations from /api/v1/finops/recommendations. Kept separate
+  //- from spend-by-account above: that table answers "where did the money go", this
+  //- one answers "what would you change", and they have different shapes.
+  +ObsToolTable({
+    live: 'finops',
+    title: 'Rightsizing recommendations',
+    subtitle: 'Generated from observed utilization — estimated monthly saving per change',
+    searchPlaceholder: 'Search recommendations or components',
+    pageSize: 6,
+    columns: [
+      { label: 'Recommendation', className: 'ps-3' },
+      { label: 'Component' },
+      { label: 'Namespace' },
+      { label: 'Est. saving' },
+      { label: 'Confidence' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-coins', iconColor: 'warning', meta: 'resize', cells: ['Reduce CPU request 2.00 → 0.75 cores', 'payments-api', 'prod', '$38.25/mo', '80%', { text: 'High confidence', badge: 'success' }] },
+      { icon: 'fa-coins', iconColor: 'warning', meta: 'resize', cells: ['Reduce memory request 4Gi → 1.5Gi', 'checkout-api', 'prod', '$26.40/mo', '76%', { text: 'Review', badge: 'secondary' }] },
+      { icon: 'fa-coins', iconColor: 'info', meta: 'idle', cells: ['Scale idle deployment to zero overnight', 'batch-worker', 'stage', '$61.10/mo', '91%', { text: 'High confidence', badge: 'success' }] }
+    ]
+  })

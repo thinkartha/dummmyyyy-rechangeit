@@ -1,0 +1,104 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Platform', href: '#!' },
+      { label: 'Health & Connectivity', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'Health & Connectivity',
+    subtitle: 'Can we reach it, does it answer, and is the answer correct — the checks that run before you trust any other dashboard',
+    action: 'Run all checks'
+  })
+
+  +ObsStatCards([
+    { label: 'Endpoints checked', value: '96', delta: '+8', badge: 'info' },
+    { label: 'Reachable', value: '92', delta: '95.8%', badge: 'success' },
+    { label: 'Failing', value: '4', delta: '1 platform', badge: 'danger' },
+    { label: 'Median RTT', value: '38ms', delta: '-4ms', badge: 'success' }
+  ])
+
+  .row.g-4.mb-4
+    .col-12.col-lg-6
+      .card.h-100
+        .card-body
+          h4.mb-3 Platform self-check
+          p.text-body-tertiary.fs-9 What the backend reports about its own dependencies. A store falling back to memory is the check worth watching — writes look successful and vanish on the next cold start.
+          .table-responsive
+            table.table.table-sm.fs-9.mb-0
+              tbody
+                tr
+                  td API
+                  td.text-end
+                    span.badge.badge-phoenix.badge-phoenix-success ok
+                tr
+                  td Record store (DynamoDB)
+                  td.text-end
+                    span.badge.badge-phoenix.badge-phoenix-success persistent
+                tr
+                  td User store (DynamoDB)
+                  td.text-end
+                    span.badge.badge-phoenix.badge-phoenix-success persistent
+                tr
+                  td Elasticsearch
+                  td.text-end
+                    span.badge.badge-phoenix.badge-phoenix-success green
+                tr
+                  td Kafka event spine
+                  td.text-end
+                    span.badge.badge-phoenix.badge-phoenix-warning no broker
+                tr
+                  td Service graph (Neo4j)
+                  td.text-end
+                    span.badge.badge-phoenix.badge-phoenix-success connected
+    .col-12.col-lg-6
+      .card.h-100
+        .card-body
+          h4.mb-3 Ad-hoc probe
+          p.text-body-tertiary.fs-9 Run a one-off reachability check from the platform's network, not your laptop's — useful when a connector claims a host is unreachable.
+          .mb-3
+            label.form-label.fs-9(for='probe-target') Target
+            input.form-control.form-control-sm.font-monospace#probe-target(type='text' value='payments-prod.cluster-us-east-1.rds.amazonaws.com:5432' aria-label='Probe target host and port')
+          .mb-3
+            label.form-label.fs-9(for='probe-type') Check type
+            select.form-select.form-select-sm#probe-type(aria-label='Probe type')
+              option(value='tcp' selected) TCP connect
+              option(value='http') HTTP health check
+              option(value='icmp') ICMP ping
+              option(value='dns') DNS resolve
+          button.btn.btn-primary.btn-sm(type='button') Run probe
+          .bg-body-emphasis.border.border-translucent.rounded-3.p-3.mt-3.font-monospace.fs-10
+            div connect payments-prod.cluster-us-east-1.rds.amazonaws.com:5432
+            div.text-success resolved 10.42.8.19 in 4ms
+            div.text-success tcp established in 11ms
+            div.text-body-tertiary tls handshake 24ms · total 39ms
+
+  +ObsToolTable({
+    title: 'Monitored endpoints',
+    subtitle: 'Health checks and reachability probes across every environment this organization runs',
+    searchPlaceholder: 'Search endpoints or hosts',
+    pageSize: 8,
+    columns: [
+      { label: 'Endpoint', className: 'ps-3' },
+      { label: 'Check' },
+      { label: 'Env' },
+      { label: 'RTT' },
+      { label: 'Uptime (30d)' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-heart-pulse', iconColor: 'success', meta: 'https://api.rootvyana.com/health', cells: ['checkout-api', 'HTTP 200', 'prod', '28ms', '99.98%', { text: 'Up', badge: 'success' }] },
+      { icon: 'fa-heart-pulse', iconColor: 'success', meta: 'https://id.rootvyana.com/health', cells: ['identity-api', 'HTTP 200', 'prod', '19ms', '99.99%', { text: 'Up', badge: 'success' }] },
+      { icon: 'fa-heart-pulse', iconColor: 'danger', meta: 'https://partner.vendor.io/status', cells: ['partner-api', 'HTTP 504', 'prod', 'timeout', '97.21%', { text: 'Down', badge: 'danger' }] },
+      { icon: 'fa-plug-circle-check', iconColor: 'success', meta: 'payments-prod:5432', cells: ['payments-db', 'TCP connect', 'prod', '39ms', '99.99%', { text: 'Up', badge: 'success' }] },
+      { icon: 'fa-plug-circle-check', iconColor: 'danger', meta: 'legacy-billing:1433', cells: ['legacy-billing-db', 'TCP connect', 'prod', 'refused', '94.10%', { text: 'Down', badge: 'danger' }] },
+      { icon: 'fa-heart-pulse', iconColor: 'success', meta: 'https://api.rootvyana.com/v1/orders', cells: ['orders endpoint', 'Synthetic POST', 'prod', '412ms', '99.87%', { text: 'Up', badge: 'success' }] },
+      { icon: 'fa-heart-pulse', iconColor: 'warning', meta: 'https://mwaa.us-east-1…/health', cells: ['airflow webserver', 'HTTP 200', 'prod', '1.8s', '99.42%', { text: 'Slow', badge: 'warning' }] },
+      { icon: 'fa-heart-pulse', iconColor: 'success', meta: 'https://stage.rootvyana.com/health', cells: ['checkout-api', 'HTTP 200', 'stage', '34ms', '99.10%', { text: 'Up', badge: 'success' }] }
+    ]
+  })

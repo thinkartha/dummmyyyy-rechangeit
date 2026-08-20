@@ -1,0 +1,26 @@
+name: deploy-backend-qa
+
+# The qa backend. Manual only: unlike dev, promoting to qa is a decision,
+# not a consequence of merging. Deploys the same code as dev with a different
+# stage name, so it gets its own isolated tables, user pool, and secrets.
+
+on:
+  workflow_dispatch:
+    inputs:
+      demo_agents:
+        description: "Set to 1 for seeded agent observations/evals; 0 uses DynamoDB telemetry"
+        required: false
+        default: "0"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/deploy-backend.yml
+    with:
+      stage: qa
+      frontend_url: https://qa.loveheartbeat.com
+      demo_agents: ${{ inputs.demo_agents || '0' }}
+    secrets: inherit

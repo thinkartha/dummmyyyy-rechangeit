@@ -1,0 +1,98 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Observability', href: '#!' },
+      { label: 'Custom AI Models', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'Custom AI Models',
+    subtitle: 'Inference health for the models your organization deploys — latency, failures, and the thresholds that decide what counts as broken',
+    action: 'Register model'
+  })
+
+  +ObsStatCards([
+    { label: 'Models', value: '12', delta: '+2', badge: 'info' },
+    { label: 'Inferences (24h)', value: '4.8M', delta: '+11%', badge: 'success' },
+    { label: 'Failure rate', value: '0.42%', delta: '+0.09%', badge: 'warning' },
+    { label: 'p95 latency', value: '318ms', delta: '-24ms', badge: 'success' }
+  ])
+
+  .row.g-4.mb-4
+    .col-12.col-lg-7
+      +ObsToolTable({
+    live: 'aiModels',
+        title: 'Registered models',
+        subtitle: 'Every model an organization has registered, scored against its own thresholds rather than a global default',
+        searchPlaceholder: 'Search models',
+        pageSize: 6,
+        columns: [
+          { label: 'Model', className: 'ps-3' },
+          { label: 'Task' },
+          { label: 'Requests (24h)' },
+          { label: 'p95' },
+          { label: 'Failures' },
+          { label: 'Status' }
+        ],
+        rows: [
+          { icon: 'fa-microchip', iconColor: 'success', meta: 'v4 · sagemaker', cells: ['fraud-scorer', 'Classification', '2.1M', '84ms', '0.02%', { text: 'Healthy', badge: 'success' }] },
+          { icon: 'fa-microchip', iconColor: 'success', meta: 'v2 · sagemaker', cells: ['risk-ranker', 'Ranking', '910K', '142ms', '0.11%', { text: 'Healthy', badge: 'success' }] },
+          { icon: 'fa-microchip', iconColor: 'warning', meta: 'v9 · vertex', cells: ['demand-forecast', 'Regression', '318K', '1.2s', '1.84%', { text: 'Degraded', badge: 'warning' }] },
+          { icon: 'fa-microchip', iconColor: 'success', meta: 'v1 · self-hosted', cells: ['doc-extractor', 'Extraction', '486K', '640ms', '0.31%', { text: 'Healthy', badge: 'success' }] },
+          { icon: 'fa-microchip', iconColor: 'danger', meta: 'v3 · self-hosted', cells: ['image-tagger', 'Vision', '92K', '3.4s', '6.20%', { text: 'Down', badge: 'danger' }] },
+          { icon: 'fa-microchip', iconColor: 'info', meta: 'v7 · azure ml', cells: ['churn-predictor', 'Classification', '204K', '96ms', '0.08%', { text: 'Healthy', badge: 'success' }] }
+        ]
+      })
+    .col-12.col-lg-5
+      .card.mb-4
+        .card-body
+          h4.mb-3 Thresholds
+          p.text-body-tertiary.fs-9 A model is marked degraded or down by its own limits. Raise them for a batch model that is allowed to be slow; tighten them for anything in a request path.
+          .mb-3
+            label.form-label.fs-9(for='thr-latency') Degraded above p95 latency
+            .input-group.input-group-sm
+              input.form-control#thr-latency(type='number' value='800' aria-label='Degraded latency threshold in milliseconds')
+              span.input-group-text ms
+          .mb-3
+            label.form-label.fs-9(for='thr-failure') Degraded above failure rate
+            .input-group.input-group-sm
+              input.form-control#thr-failure(type='number' value='1.0' step='0.1' aria-label='Degraded failure rate threshold percent')
+              span.input-group-text %
+          .mb-3
+            label.form-label.fs-9(for='thr-down') Down above failure rate
+            .input-group.input-group-sm
+              input.form-control#thr-down(type='number' value='5.0' step='0.1' aria-label='Down failure rate threshold percent')
+              span.input-group-text %
+          button.btn.btn-primary.btn-sm(type='button') Save thresholds
+      .card
+        .card-body
+          h4.mb-3 Recent failures
+          .table-responsive.scrollbar
+            table.table.table-sm.fs-9.mb-0
+              thead
+                tr
+                  th.text-uppercase Model
+                  th.text-uppercase Error
+                  th.text-uppercase When
+              tbody
+                tr
+                  td image-tagger
+                  td.text-danger CUDA out of memory
+                  td 3m ago
+                tr
+                  td image-tagger
+                  td.text-danger Inference timeout
+                  td 5m ago
+                tr
+                  td demand-forecast
+                  td.text-warning Feature null in payload
+                  td 18m ago
+                tr
+                  td doc-extractor
+                  td.text-warning Unsupported MIME type
+                  td 41m ago
