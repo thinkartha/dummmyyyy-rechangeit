@@ -1,0 +1,20 @@
+{
+  "version": "2.0",
+  "routeKey": "GET /api/v1/databricks/status",
+  "rawPath": "/api/v1/databricks/status",
+  "headers": {
+    "content-type": "application/json",
+    "host": "rootvyana.loveheartbeat.com",
+    "x-tenant-slug": "rootvyana",
+    "x-api-key": "dev-admin-key"
+  },
+  "requestContext": {
+    "http": {
+      "method": "GET",
+      "path": "/api/v1/databricks/status",
+      "sourceIp": "127.0.0.1"
+    }
+  },
+  "body": null,
+  "isBase64Encoded": false
+}

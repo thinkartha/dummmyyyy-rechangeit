@@ -1,0 +1,62 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Platform', href: '#!' },
+      { label: 'Integrations', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'Integrations & Config Management',
+    subtitle: 'Every source this organization has connected, what it is feeding, and whether its credentials still work',
+    action: 'Add integration'
+  })
+
+  +ObsStatCards([
+    { label: 'Connected', value: '27', delta: '+4', badge: 'success' },
+    { label: 'Needs attention', value: '3', delta: 'auth or quota', badge: 'warning' },
+    { label: 'Credentials expiring', value: '2', delta: 'within 30d', badge: 'danger' },
+    { label: 'Available', value: '41', delta: 'in catalog', badge: 'info' }
+  ])
+
+  .alert.alert-subtle-warning.d-flex.align-items-center.mb-4(role='alert')
+    span.fa-solid.fa-triangle-exclamation.me-2
+    div
+      strong Two credentials expire within 30 days.
+      span.ms-1 Rotate the Databricks PAT and the Okta client secret before they lapse — collection stops silently when they do.
+
+  +ObsToolTable({
+    title: 'Connected integrations',
+    subtitle: 'Credentials are stored as secret references under org_id and never returned to the browser',
+    searchPlaceholder: 'Search integrations',
+    pageSize: 10,
+    columns: [
+      { label: 'Integration', className: 'ps-3' },
+      { label: 'Category' },
+      { label: 'Feeds' },
+      { label: 'Last sync' },
+      { label: 'Credential' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'warning', meta: '4 accounts', cells: ['AWS CloudWatch', 'Cloud', 'Cloud Monitoring, Cost', '2m ago', 'IAM role', { text: 'Connected', badge: 'success' }] },
+      { iconSet: 'fa-brands', icon: 'fa-microsoft', iconColor: 'info', meta: '2 subscriptions', cells: ['Azure Monitor', 'Cloud', 'Cloud Monitoring, Cost', '4m ago', 'Service principal', { text: 'Connected', badge: 'success' }] },
+      { iconSet: 'fa-brands', icon: 'fa-google', iconColor: 'danger', meta: '3 projects', cells: ['Google Cloud Operations', 'Cloud', 'Cloud Monitoring, Cost', '6m ago', 'Service account', { text: 'Connected', badge: 'success' }] },
+      { icon: 'fa-cloud', iconColor: 'warning', meta: 'api-prod-us-east-1', cells: ['AWS API Gateway', 'Gateway', 'API Gateway, Traces', '1m ago', 'IAM role', { text: 'Connected', badge: 'success' }] },
+      { icon: 'fa-satellite-dish', iconColor: 'primary', meta: 'OTLP collector', cells: ['OpenTelemetry', 'Telemetry', 'Traces, Logs, Metrics', 'streaming', 'Ingest key', { text: 'Connected', badge: 'success' }] },
+      { icon: 'fa-diagram-project', iconColor: 'primary', meta: 'cloud + studio', cells: ['Talend', 'ETL', 'ETL Monitoring', '12m ago', 'OAuth client', { text: 'Connected', badge: 'success' }] },
+      { icon: 'fa-plug', iconColor: 'info', meta: 'atom spheres', cells: ['Dell Boomi', 'ETL', 'ETL Monitoring', '28m ago', 'Basic auth', { text: 'Connected', badge: 'success' }] },
+      { icon: 'fa-database', iconColor: 'danger', meta: 'unity catalog', cells: ['Databricks', 'Data', 'Data Observability, ETL', '9m ago', 'PAT · 12d left', { text: 'Expiring', badge: 'warning' }] },
+      { icon: 'fa-wind', iconColor: 'success', meta: 'MWAA us-east-1', cells: ['Apache Airflow', 'Orchestration', 'Orchestration Monitoring', '2m ago', 'API token', { text: 'Connected', badge: 'success' }] },
+      { icon: 'fa-shield-halved', iconColor: 'primary', meta: 'rootvyana.okta.com', cells: ['Okta', 'Identity', 'SSO, Members', '1h ago', 'Client secret · 21d left', { text: 'Expiring', badge: 'warning' }] },
+      { icon: 'fa-bell', iconColor: 'success', meta: 'payments-oncall', cells: ['PagerDuty', 'Notification', 'Alert routing', '5m ago', 'Integration key', { text: 'Connected', badge: 'success' }] },
+      { iconSet: 'fa-brands', icon: 'fa-slack', iconColor: 'success', meta: '6 channels', cells: ['Slack', 'Notification', 'Alert routing', '3m ago', 'Bot token', { text: 'Connected', badge: 'success' }] },
+      { icon: 'fa-ticket', iconColor: 'info', meta: 'L2 queue', cells: ['ServiceNow', 'Notification', 'Alert routing, Incidents', '22m ago', 'OAuth client', { text: 'Connected', badge: 'success' }] },
+      { icon: 'fa-chart-line', iconColor: 'secondary', meta: 'controller', cells: ['AppDynamics', 'APM', 'API Monitoring', '3h ago', 'API client', { text: 'Auth failed', badge: 'danger' }] },
+      { icon: 'fa-layer-group', iconColor: 'warning', meta: 'alert correlation', cells: ['BigPanda', 'Alerting', 'Correlation', '—', 'API key', { text: 'Not connected', badge: 'secondary' }] }
+    ]
+  })

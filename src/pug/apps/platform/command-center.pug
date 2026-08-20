@@ -1,0 +1,111 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Platform', href: '#!' },
+      { label: 'Command Center', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'Command Center',
+    subtitle: 'Every signal this organization produces, on one page — with a way into whichever area is on fire',
+    action: 'Acknowledge all'
+  })
+
+  +ObsStatCards([
+    { label: 'Open incidents', value: '7', delta: '2 critical', badge: 'danger' },
+    { label: 'Services healthy', value: '61 / 68', delta: '89.7%', badge: 'success' },
+    { label: 'Signals (24h)', value: '2.1M', delta: '+6.4%', badge: 'info' },
+    { label: 'Spend today', value: '$4,182', delta: '+$310', badge: 'warning' }
+  ])
+
+  .row.g-4.mb-4
+    .col-12.col-xl-8
+      .card.h-100
+        .card-header.border-bottom.border-translucent.py-3
+          h4.mb-0 Needs attention now
+          p.text-body-tertiary.fs-9.mb-0 Ranked by blast radius, then by how long it has been open
+        .card-body.p-0
+          .table-responsive.scrollbar
+            table.table.table-sm.fs-9.mb-0
+              thead
+                tr
+                  th.ps-3.text-uppercase Incident
+                  th.text-uppercase Area
+                  th.text-uppercase Impact
+                  th.text-uppercase Open
+                  th.text-uppercase Severity
+              tbody
+                tr
+                  td.ps-3
+                    h6.mb-0 Partner API timeouts
+                    p.text-body-tertiary.fs-10.mb-0 INC-4819 · upstream vendor outage
+                  td API Gateway
+                  td 2 services · 118K calls
+                  td 2h 14m
+                  td
+                    span.badge.badge-phoenix.badge-phoenix-danger Critical
+                tr
+                  td.ps-3
+                    h6.mb-0 image-tagger inference failures
+                    p.text-body-tertiary.fs-10.mb-0 6.2% failure rate · CUDA OOM
+                  td Custom AI Models
+                  td 92K requests
+                  td 48m
+                  td
+                    span.badge.badge-phoenix.badge-phoenix-danger Critical
+                tr
+                  td.ps-3
+                    h6.mb-0 Nightly load failure
+                    p.text-body-tertiary.fs-10.mb-0 INC-4816 · Talend engine OOM
+                  td ETL Monitoring
+                  td 1 pipeline · 7 downstream
+                  td 46m
+                  td
+                    span.badge.badge-phoenix.badge-phoenix-warning High
+                tr
+                  td.ps-3
+                    h6.mb-0 orders replication lag
+                    p.text-body-tertiary.fs-10.mb-0 14.8s behind primary
+                  td Database Monitoring
+                  td 1 database
+                  td 32m
+                  td
+                    span.badge.badge-phoenix.badge-phoenix-warning High
+                tr
+                  td.ps-3
+                    h6.mb-0 partner-api error budget exhausted
+                    p.text-body-tertiary.fs-10.mb-0 4.1x burn · 30d window
+                  td SLO
+                  td 1 objective
+                  td 1d 4h
+                  td
+                    span.badge.badge-phoenix.badge-phoenix-warning High
+    .col-12.col-xl-4
+      .card.h-100
+        .card-header.border-bottom.border-translucent.py-3
+          h4.mb-0 Area health
+        .card-body
+          each area in [{ name: 'API Monitoring', pct: 96, badge: 'success', path: 'obs-api-monitoring' }, { name: 'API Gateway', pct: 78, badge: 'warning', path: 'obs-api-gateway' }, { name: 'AI Monitoring', pct: 99, badge: 'success', path: 'obs-ai-monitoring' }, { name: 'ETL Monitoring', pct: 84, badge: 'warning', path: 'obs-etl-monitoring' }, { name: 'Orchestration', pct: 92, badge: 'success', path: 'obs-orchestration' }, { name: 'Database Monitoring', pct: 90, badge: 'success', path: 'obs-database-monitoring' }, { name: 'Data Observability', pct: 94, badge: 'success', path: 'obs-data-observability' }, { name: 'Cloud Monitoring', pct: 97, badge: 'success', path: 'obs-cloud-monitoring' }]
+            .mb-3
+              .d-flex.justify-content-between.align-items-center.fs-9.mb-1
+                a.text-body-emphasis.text-decoration-none.fw-semibold(href=`${CWD}${paths[area.path]}`)= area.name
+                span.text-body-tertiary= area.pct + '%'
+              .progress(style='height: 5px;')
+                .progress-bar(class=`bg-${area.badge}` style=`width: ${area.pct}%;` role='progressbar' aria-valuenow=area.pct aria-valuemin='0' aria-valuemax='100')
+
+  .card
+    .card-header.border-bottom.border-translucent.py-3
+      h4.mb-0 Jump to
+      p.text-body-tertiary.fs-9.mb-0 Every product area for this organization
+    .card-body
+      .row.g-3
+        each item in [{ label: 'API Monitoring', icon: 'fa-server', path: 'obs-api-monitoring' }, { label: 'API Gateway', icon: 'fa-cloud', path: 'obs-api-gateway' }, { label: 'AI Monitoring', icon: 'fa-robot', path: 'obs-ai-monitoring' }, { label: 'AI Gateway', icon: 'fa-network-wired', path: 'obs-ai-gateway' }, { label: 'Custom AI Models', icon: 'fa-microchip', path: 'obs-ai-models' }, { label: 'ETL Monitoring', icon: 'fa-diagram-project', path: 'obs-etl-monitoring' }, { label: 'Orchestration', icon: 'fa-wind', path: 'obs-orchestration' }, { label: 'Data Observability', icon: 'fa-table', path: 'obs-data-observability' }, { label: 'Database Monitoring', icon: 'fa-database', path: 'obs-database-monitoring' }, { label: 'Traces & Topology', icon: 'fa-sitemap', path: 'obs-traces' }, { label: 'Logs', icon: 'fa-file-lines', path: 'obs-logs' }, { label: 'Alerts', icon: 'fa-bell', path: 'obs-alerts' }, { label: 'Alert Management', icon: 'fa-route', path: 'obs-alert-management' }, { label: 'Correlation & RCA', icon: 'fa-code-merge', path: 'obs-correlation' }, { label: 'AI Automation', icon: 'fa-bolt', path: 'obs-automation' }, { label: 'SLO & Budgets', icon: 'fa-bullseye', path: 'obs-slo' }, { label: 'Drift Detection', icon: 'fa-wave-square', path: 'obs-drift' }, { label: 'Cloud Monitoring', icon: 'fa-cloud-arrow-up', path: 'obs-cloud-monitoring' }, { label: 'Cloud Cost', icon: 'fa-coins', path: 'obs-cloud-cost' }, { label: 'AI Cost & Usage', icon: 'fa-sack-dollar', path: 'obs-ai-cost' }]
+          .col-6.col-md-4.col-xl-3
+            a.d-block.text-decoration-none.border.border-translucent.rounded-3.p-3.h-100(href=`${CWD}${paths[item.path]}`)
+              span.fa-solid.text-primary.mb-2.d-block(class=item.icon)
+              h6.mb-0.text-body-emphasis= item.label

@@ -1,0 +1,100 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Observability', href: '#!' },
+      { label: 'AI Automation', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'AI Automation',
+    subtitle: 'Rules that act on signals, models that predict them, and the agents that carry out remediation',
+    action: 'New rule'
+  })
+
+  +ObsStatCards([
+    { label: 'Active rules', value: '19', delta: 'of 24', badge: 'info' },
+    { label: 'Executions (7d)', value: '412', delta: '+64', badge: 'success' },
+    { label: 'Success rate', value: '97.1%', delta: '+0.6%', badge: 'success' },
+    { label: 'Awaiting approval', value: '5', delta: 'high impact', badge: 'warning' }
+  ])
+
+  .row.g-4.mb-4
+    .col-12.col-lg-7
+      +ObsToolTable({
+        title: 'Automation rules',
+        subtitle: 'Trigger → condition → action. High-impact actions require approval before they run.',
+        searchPlaceholder: 'Search automation rules',
+        pageSize: 6,
+        columns: [
+          { label: 'Rule', className: 'ps-3' },
+          { label: 'Trigger' },
+          { label: 'Action' },
+          { label: 'Runs (7d)' },
+          { label: 'Mode' },
+          { label: 'Status' }
+        ],
+        rows: [
+          { icon: 'fa-bolt', iconColor: 'success', meta: 'auto-approved', cells: ['Restart stuck ETL job', 'etl.job.stalled > 30m', 'Retry execution', '38', 'Auto', { text: 'Enabled', badge: 'success' }] },
+          { icon: 'fa-bolt', iconColor: 'success', meta: 'auto-approved', cells: ['Scale checkout pods', 'p99 > 2s for 5m', 'Scale +2 replicas', '17', 'Auto', { text: 'Enabled', badge: 'success' }] },
+          { icon: 'fa-bolt', iconColor: 'warning', meta: 'needs approval', cells: ['Failover payments replica', 'replication lag > 10s', 'Promote replica', '2', 'Approval', { text: 'Enabled', badge: 'success' }] },
+          { icon: 'fa-bolt', iconColor: 'info', meta: 'auto-approved', cells: ['Clear CDN cache', '5xx spike on static', 'Purge edge cache', '6', 'Auto', { text: 'Enabled', badge: 'success' }] },
+          { icon: 'fa-bolt', iconColor: 'warning', meta: 'needs approval', cells: ['Throttle AI provider', 'cost anomaly > 3σ', 'Lower rate limit', '3', 'Approval', { text: 'Enabled', badge: 'success' }] },
+          { icon: 'fa-bolt', iconColor: 'secondary', meta: 'draft', cells: ['Rollback deploy', 'error rate > 5% post-deploy', 'Revert to previous', '0', 'Approval', { text: 'Disabled', badge: 'secondary' }] }
+        ]
+      })
+    .col-12.col-lg-5
+      .card.h-100
+        .card-body
+          h4.mb-3 Predictive insights
+          p.text-body-tertiary.fs-9 Model output the platform believes is actionable. Approve to turn an insight into a scheduled action; dismiss to feed the rejection back into training.
+          .border.border-translucent.rounded-3.p-3.mb-3
+            .d-flex.justify-content-between.align-items-start.mb-2
+              strong.fs-9 orders replica will breach lag SLO
+              span.badge.badge-phoenix.badge-phoenix-warning 0.79
+            p.fs-10.text-body-tertiary.mb-2 Predicted within 4 hours, based on the backfill schedule and current write volume.
+            button.btn.btn-sm.btn-primary.me-2(type='button') Approve
+            button.btn.btn-sm.btn-phoenix-secondary(type='button') Dismiss
+          .border.border-translucent.rounded-3.p-3.mb-3
+            .d-flex.justify-content-between.align-items-start.mb-2
+              strong.fs-9 AI spend will exceed monthly budget
+              span.badge.badge-phoenix.badge-phoenix-danger 0.91
+            p.fs-10.text-body-tertiary.mb-2 Current burn projects 118% of the Claude + GPT budget by month end.
+            button.btn.btn-sm.btn-primary.me-2(type='button') Approve
+            button.btn.btn-sm.btn-phoenix-secondary(type='button') Dismiss
+          .border.border-translucent.rounded-3.p-3
+            .d-flex.justify-content-between.align-items-start.mb-2
+              strong.fs-9 partner-api error budget exhausted
+              span.badge.badge-phoenix.badge-phoenix-info 0.68
+            p.fs-10.text-body-tertiary.mb-2 Recommend freezing non-critical changes until the window resets.
+            button.btn.btn-sm.btn-primary.me-2(type='button') Approve
+            button.btn.btn-sm.btn-phoenix-secondary(type='button') Dismiss
+
+  +ObsToolTable({
+    title: 'ML models & remediation agents',
+    subtitle: 'Models scoring signals, and the agents installed in customer environments that execute approved actions',
+    searchPlaceholder: 'Search models or agents',
+    pageSize: 8,
+    columns: [
+      { label: 'Name', className: 'ps-3' },
+      { label: 'Type' },
+      { label: 'Version' },
+      { label: 'Accuracy' },
+      { label: 'Last trained' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-brain', iconColor: 'primary', meta: 'anomaly detection', cells: ['latency-anomaly', 'Model', 'v14', '94.2%', '2d ago', { text: 'Serving', badge: 'success' }] },
+      { icon: 'fa-brain', iconColor: 'primary', meta: 'forecasting', cells: ['cost-forecast', 'Model', 'v8', '91.7%', '1d ago', { text: 'Serving', badge: 'success' }] },
+      { icon: 'fa-brain', iconColor: 'warning', meta: 'classification', cells: ['alert-triage', 'Model', 'v21', '88.1%', '9d ago', { text: 'Retrain due', badge: 'warning' }] },
+      { icon: 'fa-brain', iconColor: 'info', meta: 'clustering', cells: ['incident-grouping', 'Model', 'v11', '96.0%', '4d ago', { text: 'Serving', badge: 'success' }] },
+      { icon: 'fa-robot', iconColor: 'success', meta: 'us-east-1 · prod', cells: ['remediation-agent-01', 'Agent', '2.4.1', '—', 'heartbeat 22s ago', { text: 'Online', badge: 'success' }] },
+      { icon: 'fa-robot', iconColor: 'success', meta: 'eu-west-1 · prod', cells: ['remediation-agent-02', 'Agent', '2.4.1', '—', 'heartbeat 31s ago', { text: 'Online', badge: 'success' }] },
+      { icon: 'fa-robot', iconColor: 'warning', meta: 'us-west-2 · stage', cells: ['remediation-agent-03', 'Agent', '2.3.0', '—', 'heartbeat 14m ago', { text: 'Stale', badge: 'warning' }] },
+      { icon: 'fa-robot', iconColor: 'danger', meta: 'on-prem · dc1', cells: ['remediation-agent-04', 'Agent', '2.2.6', '—', 'heartbeat 3d ago', { text: 'Offline', badge: 'danger' }] }
+    ]
+  })

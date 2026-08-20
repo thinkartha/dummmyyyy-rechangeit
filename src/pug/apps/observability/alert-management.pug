@@ -1,0 +1,101 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Observability', href: '#!' },
+      { label: 'Alert Management', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'Alert Management',
+    subtitle: 'Where alerts go, who owes a response, and when to stay quiet — routing rules, SLA policies, and maintenance windows',
+    action: 'New routing rule'
+  })
+
+  +ObsStatCards([
+    { label: 'Open alerts', value: '37', delta: '-8', badge: 'success' },
+    { label: 'Breaching SLA', value: '4', delta: 'ack overdue', badge: 'danger' },
+    { label: 'Routing rules', value: '22', delta: '19 enabled', badge: 'info' },
+    { label: 'Windows active', value: '2', delta: 'suppressing', badge: 'warning' }
+  ])
+
+  ul.nav.nav-underline.mb-4(role='tablist')
+    li.nav-item(role='presentation')
+      button.nav-link.active(data-bs-toggle='tab' data-bs-target='#tab-routing' type='button' role='tab' aria-controls='tab-routing' aria-selected='true') Routing rules
+    li.nav-item(role='presentation')
+      button.nav-link(data-bs-toggle='tab' data-bs-target='#tab-sla' type='button' role='tab' aria-controls='tab-sla' aria-selected='false') SLA policies
+    li.nav-item(role='presentation')
+      button.nav-link(data-bs-toggle='tab' data-bs-target='#tab-maintenance' type='button' role='tab' aria-controls='tab-maintenance' aria-selected='false') Maintenance windows
+
+  .tab-content
+    .tab-pane.fade.show.active#tab-routing(role='tabpanel')
+      +ObsToolTable({
+        title: 'Routing rules',
+        subtitle: 'First matching rule wins. Test a rule against a recent alert before enabling it.',
+        searchPlaceholder: 'Search rules, services, or destinations',
+        pageSize: 6,
+        columns: [
+          { label: 'Rule', className: 'ps-3' },
+          { label: 'Match' },
+          { label: 'Destination' },
+          { label: 'Severity' },
+          { label: 'Matches (7d)' },
+          { label: 'Status' }
+        ],
+        rows: [
+          { icon: 'fa-route', iconColor: 'danger', meta: 'priority 1', cells: ['Payments critical', 'service=payments-api', 'PagerDuty · payments-oncall', 'critical', '14', { text: 'Enabled', badge: 'success' }] },
+          { icon: 'fa-route', iconColor: 'warning', meta: 'priority 2', cells: ['ETL failures', 'source in (talend, boomi)', 'Slack · #data-eng', 'critical', '31', { text: 'Enabled', badge: 'success' }] },
+          { icon: 'fa-route', iconColor: 'info', meta: 'priority 3', cells: ['Database degraded', 'source=database', 'Slack · #dba', 'warning', '9', { text: 'Enabled', badge: 'success' }] },
+          { icon: 'fa-route', iconColor: 'primary', meta: 'priority 4', cells: ['AI cost spike', 'type=ai.cost.anomaly', 'Email · finops@', 'warning', '5', { text: 'Enabled', badge: 'success' }] },
+          { icon: 'fa-route', iconColor: 'secondary', meta: 'priority 5', cells: ['Stage noise', 'env=stage', 'Slack · #stage-alerts', 'info', '212', { text: 'Enabled', badge: 'success' }] },
+          { icon: 'fa-route', iconColor: 'secondary', meta: 'draft', cells: ['Partner API escalation', 'service=partner-api', 'ServiceNow · L2', 'critical', '0', { text: 'Disabled', badge: 'secondary' }] }
+        ]
+      })
+
+    .tab-pane.fade#tab-sla(role='tabpanel')
+      +ObsToolTable({
+        title: 'SLA policies',
+        subtitle: 'Acknowledgement and resolution targets by severity. Breaches escalate to the next tier automatically.',
+        searchPlaceholder: 'Search SLA policies',
+        pageSize: 6,
+        columns: [
+          { label: 'Policy', className: 'ps-3' },
+          { label: 'Severity' },
+          { label: 'Ack within' },
+          { label: 'Resolve within' },
+          { label: 'Compliance (30d)' },
+          { label: 'Status' }
+        ],
+        rows: [
+          { icon: 'fa-stopwatch', iconColor: 'danger', meta: 'escalates to L2', cells: ['Critical response', 'critical', '5m', '1h', '92%', { text: 'At risk', badge: 'warning' }] },
+          { icon: 'fa-stopwatch', iconColor: 'warning', meta: 'escalates to L2', cells: ['High response', 'high', '15m', '4h', '97%', { text: 'Meeting', badge: 'success' }] },
+          { icon: 'fa-stopwatch', iconColor: 'info', meta: 'no escalation', cells: ['Warning response', 'warning', '1h', '1d', '99%', { text: 'Meeting', badge: 'success' }] },
+          { icon: 'fa-stopwatch', iconColor: 'secondary', meta: 'no escalation', cells: ['Info triage', 'info', '1d', '5d', '100%', { text: 'Meeting', badge: 'success' }] }
+        ]
+      })
+
+    .tab-pane.fade#tab-maintenance(role='tabpanel')
+      +ObsToolTable({
+        title: 'Maintenance windows',
+        subtitle: 'Alerts matching a window are suppressed, not dropped — they stay queryable and resume routing when the window closes.',
+        searchPlaceholder: 'Search maintenance windows',
+        pageSize: 6,
+        columns: [
+          { label: 'Window', className: 'ps-3' },
+          { label: 'Scope' },
+          { label: 'Starts' },
+          { label: 'Ends' },
+          { label: 'Suppressed' },
+          { label: 'Status' }
+        ],
+        rows: [
+          { icon: 'fa-wrench', iconColor: 'warning', meta: 'recurring · weekly', cells: ['Nightly ETL window', 'source in (talend, boomi)', 'Daily 01:00 UTC', 'Daily 04:00 UTC', '128', { text: 'Active', badge: 'warning' }] },
+          { icon: 'fa-wrench', iconColor: 'warning', meta: 'one-off', cells: ['Payments DB failover', 'service=payments-api', '20 Aug 22:00 UTC', '21 Aug 02:00 UTC', '19', { text: 'Active', badge: 'warning' }] },
+          { icon: 'fa-wrench', iconColor: 'secondary', meta: 'one-off', cells: ['Apigee upgrade', 'gateway=org-apigee-prod', '24 Aug 06:00 UTC', '24 Aug 09:00 UTC', '0', { text: 'Scheduled', badge: 'info' }] },
+          { icon: 'fa-wrench', iconColor: 'secondary', meta: 'completed', cells: ['Stage refresh', 'env=stage', '17 Aug 20:00 UTC', '18 Aug 02:00 UTC', '341', { text: 'Ended', badge: 'secondary' }] }
+        ]
+      })

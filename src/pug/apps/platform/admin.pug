@@ -1,0 +1,108 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Platform', href: '#!' },
+      { label: 'Administration', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'Platform Administration',
+    subtitle: 'Cross-tenant view for platform admins — organizations, users, join requests, and pending approvals',
+    action: 'Create organization'
+  })
+
+  +ObsStatCards([
+    { label: 'Organizations', value: '1,284', delta: 'of 30,000 capacity', badge: 'info' },
+    { label: 'Users', value: '18,402', delta: '+312 (30d)', badge: 'success' },
+    { label: 'Pending approvals', value: '23', delta: 'awaiting review', badge: 'warning' },
+    { label: 'Suspended', value: '7', delta: 'billing or policy', badge: 'danger' }
+  ])
+
+  ul.nav.nav-underline.mb-4(role='tablist')
+    li.nav-item(role='presentation')
+      button.nav-link.active(data-bs-toggle='tab' data-bs-target='#tab-orgs' type='button' role='tab' aria-controls='tab-orgs' aria-selected='true') Organizations
+    li.nav-item(role='presentation')
+      button.nav-link(data-bs-toggle='tab' data-bs-target='#tab-users' type='button' role='tab' aria-controls='tab-users' aria-selected='false') Users
+    li.nav-item(role='presentation')
+      button.nav-link(data-bs-toggle='tab' data-bs-target='#tab-requests' type='button' role='tab' aria-controls='tab-requests' aria-selected='false') Join requests
+
+  .tab-content
+    .tab-pane.fade.show.active#tab-orgs(role='tabpanel')
+      +ObsToolTable({
+        title: 'Organizations',
+        subtitle: 'Every tenant on the platform. Each owns its slug subdomain, members, connectors, and billing.',
+        searchPlaceholder: 'Search organizations or slugs',
+        pageSize: 8,
+        columns: [
+          { label: 'Organization', className: 'ps-3' },
+          { label: 'Plan' },
+          { label: 'Members' },
+          { label: 'Connectors' },
+          { label: 'Auth' },
+          { label: 'Status' }
+        ],
+        rows: [
+          { icon: 'fa-building', iconColor: 'primary', meta: 'rootvyana.loveheartbeat.com', cells: ['RootVyana', 'Enterprise', '184', '27', 'Okta SSO', { text: 'Active', badge: 'success' }] },
+          { icon: 'fa-building', iconColor: 'info', meta: 'acme.loveheartbeat.com', cells: ['Acme Corp', 'Business', '62', '11', 'Entra ID', { text: 'Active', badge: 'success' }] },
+          { icon: 'fa-building', iconColor: 'primary', meta: 'contoso.loveheartbeat.com', cells: ['Contoso', 'Enterprise', '241', '34', 'SAML', { text: 'Active', badge: 'success' }] },
+          { icon: 'fa-building', iconColor: 'secondary', meta: 'demo.loveheartbeat.com', cells: ['LoveHeartBeat Demo', 'Trial', '4', '3', 'Native', { text: 'Trial', badge: 'info' }] },
+          { icon: 'fa-building', iconColor: 'info', meta: 'northwind.loveheartbeat.com', cells: ['Northwind', 'Business', '38', '9', 'Google', { text: 'Active', badge: 'success' }] },
+          { icon: 'fa-building', iconColor: 'warning', meta: 'initech.loveheartbeat.com', cells: ['Initech', 'Business', '19', '6', 'Native', { text: 'Past due', badge: 'warning' }] },
+          { icon: 'fa-building', iconColor: 'secondary', meta: 'umbrella.loveheartbeat.com', cells: ['Umbrella', 'Trial', '2', '1', 'Native', { text: 'Trial', badge: 'info' }] },
+          { icon: 'fa-building', iconColor: 'danger', meta: 'hooli.loveheartbeat.com', cells: ['Hooli', 'Business', '0', '0', 'Native', { text: 'Suspended', badge: 'danger' }] }
+        ]
+      })
+
+    .tab-pane.fade#tab-users(role='tabpanel')
+      +ObsToolTable({
+        title: 'Users',
+        subtitle: 'Platform-wide directory. A user belongs to one or more organizations; roles are scoped per organization.',
+        searchPlaceholder: 'Search users or emails',
+        pageSize: 8,
+        columns: [
+          { label: 'User', className: 'ps-3' },
+          { label: 'Organization' },
+          { label: 'Role' },
+          { label: 'Auth' },
+          { label: 'Last seen' },
+          { label: 'Status' }
+        ],
+        rows: [
+          { icon: 'fa-user-shield', iconColor: 'danger', meta: 'admin@rootvyana.com', cells: ['Priya Raman', 'RootVyana', 'Platform admin', 'Okta', '2m ago', { text: 'Active', badge: 'success' }] },
+          { icon: 'fa-user', iconColor: 'primary', meta: 'devops@rootvyana.com', cells: ['Marcus Webb', 'RootVyana', 'Org admin', 'Okta', '14m ago', { text: 'Active', badge: 'success' }] },
+          { icon: 'fa-user', iconColor: 'primary', meta: 'sre@acme.com', cells: ['Lin Zhao', 'Acme Corp', 'Org admin', 'Entra ID', '1h ago', { text: 'Active', badge: 'success' }] },
+          { icon: 'fa-user', iconColor: 'info', meta: 'data@contoso.com', cells: ['Sofia Almeida', 'Contoso', 'Member', 'SAML', '3h ago', { text: 'Active', badge: 'success' }] },
+          { icon: 'fa-user', iconColor: 'info', meta: 'analyst@contoso.com', cells: ['Tomas Nowak', 'Contoso', 'Member', 'SAML', '1d ago', { text: 'Active', badge: 'success' }] },
+          { icon: 'fa-user-clock', iconColor: 'warning', meta: 'newhire@northwind.com', cells: ['Ada Okoro', 'Northwind', 'Member', 'Google', '—', { text: 'Pending', badge: 'warning' }] },
+          { icon: 'fa-user-clock', iconColor: 'warning', meta: 'contractor@initech.com', cells: ['Ravi Menon', 'Initech', 'Member', 'Native', '—', { text: 'Pending', badge: 'warning' }] },
+          { icon: 'fa-user-slash', iconColor: 'danger', meta: 'former@hooli.com', cells: ['Jordan Pike', 'Hooli', 'Member', 'Native', '46d ago', { text: 'Suspended', badge: 'danger' }] }
+        ]
+      })
+
+    .tab-pane.fade#tab-requests(role='tabpanel')
+      +ObsToolTable({
+        title: 'Join requests',
+        subtitle: 'People asking to join an organization. Approving grants access scoped to that organization only.',
+        searchPlaceholder: 'Search join requests',
+        pageSize: 6,
+        columns: [
+          { label: 'Requester', className: 'ps-3' },
+          { label: 'Organization' },
+          { label: 'Requested role' },
+          { label: 'Domain match' },
+          { label: 'Requested' },
+          { label: 'Status' }
+        ],
+        rows: [
+          { icon: 'fa-user-plus', iconColor: 'warning', meta: 'ada.okoro@northwind.com', cells: ['Ada Okoro', 'Northwind', 'Member', 'Yes', '2h ago', { text: 'Pending', badge: 'warning' }] },
+          { icon: 'fa-user-plus', iconColor: 'warning', meta: 'r.menon@initech.com', cells: ['Ravi Menon', 'Initech', 'Member', 'Yes', '6h ago', { text: 'Pending', badge: 'warning' }] },
+          { icon: 'fa-user-plus', iconColor: 'warning', meta: 'k.silva@gmail.com', cells: ['Karina Silva', 'Acme Corp', 'Member', 'No', '1d ago', { text: 'Pending', badge: 'warning' }] },
+          { icon: 'fa-user-check', iconColor: 'success', meta: 's.almeida@contoso.com', cells: ['Sofia Almeida', 'Contoso', 'Member', 'Yes', '3d ago', { text: 'Approved', badge: 'success' }] },
+          { icon: 'fa-user-xmark', iconColor: 'danger', meta: 'unknown@mailinator.com', cells: ['Unverified user', 'RootVyana', 'Org admin', 'No', '4d ago', { text: 'Denied', badge: 'danger' }] }
+        ]
+      })

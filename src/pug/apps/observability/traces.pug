@@ -1,0 +1,89 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Observability', href: '#!' },
+      { label: 'Traces & Topology', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'Traces & Service Topology',
+    subtitle: 'OpenTelemetry spans and the dependency graph derived from them — which service called what, and where the time went',
+    action: 'Export traces'
+  })
+
+  +ObsStatCards([
+    { label: 'Spans (1h)', value: '42.7M', delta: '+3.1%', badge: 'info' },
+    { label: 'Services', value: '68', delta: '+2', badge: 'primary' },
+    { label: 'Error spans', value: '0.61%', delta: '+0.08%', badge: 'warning' },
+    { label: 'p99 trace', value: '2.4s', delta: '+310ms', badge: 'warning' }
+  ])
+
+  .card.mb-4
+    .card-header.border-bottom.border-translucent.py-3
+      h4.mb-0 Slowest trace · checkout POST /v1/orders
+      p.text-body-tertiary.fs-9.mb-0 trace 8f21c4de · 4.19s total · 14 spans across 5 services
+    .card-body
+      .fs-9
+        .mb-2
+          .d-flex.justify-content-between.mb-1
+            span api-gateway
+            span.text-body-tertiary 4.19s
+          .progress(style='height: 8px;')
+            .progress-bar.bg-primary(style='width: 100%;' role='progressbar' aria-valuenow='100' aria-valuemin='0' aria-valuemax='100')
+        .mb-2.ps-3
+          .d-flex.justify-content-between.mb-1
+            span checkout-api
+            span.text-body-tertiary 4.02s
+          .progress(style='height: 8px;')
+            .progress-bar.bg-info(style='width: 96%;' role='progressbar' aria-valuenow='96' aria-valuemin='0' aria-valuemax='100')
+        .mb-2.ps-5
+          .d-flex.justify-content-between.mb-1
+            span identity-api · validate token
+            span.text-body-tertiary 84ms
+          .progress(style='height: 8px;')
+            .progress-bar.bg-success(style='width: 2%;' role='progressbar' aria-valuenow='2' aria-valuemin='0' aria-valuemax='100')
+        .mb-2.ps-5
+          .d-flex.justify-content-between.mb-1
+            span orders-db · SELECT order_items
+            span.text-body-tertiary 3.61s
+          .progress(style='height: 8px;')
+            .progress-bar.bg-danger(style='width: 86%;' role='progressbar' aria-valuenow='86' aria-valuemin='0' aria-valuemax='100')
+        .mb-0.ps-5
+          .d-flex.justify-content-between.mb-1
+            span payments-api · authorize
+            span.text-body-tertiary 210ms
+          .progress(style='height: 8px;')
+            .progress-bar.bg-success(style='width: 5%;' role='progressbar' aria-valuenow='5' aria-valuemin='0' aria-valuemax='100')
+      p.text-body-tertiary.fs-9.mb-0.mt-3 86% of this trace is one query against
+        code.mx-1 orders
+        | . The gateway and auth hops are noise by comparison.
+
+  +ObsToolTable({
+    title: 'Service dependencies',
+    subtitle: 'Edges inferred from span parentage — call volume, error rate, and latency per caller → callee pair',
+    searchPlaceholder: 'Search services or dependencies',
+    pageSize: 8,
+    columns: [
+      { label: 'Service', className: 'ps-3' },
+      { label: 'Depends on' },
+      { label: 'Calls (1h)' },
+      { label: 'p99' },
+      { label: 'Error rate' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-diagram-project', iconColor: 'primary', meta: 'entrypoint', cells: ['api-gateway', 'checkout-api', '1.8M', '4.2s', '0.9%', { text: 'Degraded', badge: 'warning' }] },
+      { icon: 'fa-diagram-project', iconColor: 'danger', meta: 'read path', cells: ['checkout-api', 'orders-db', '3.4M', '3.6s', '1.4%', { text: 'Degraded', badge: 'warning' }] },
+      { icon: 'fa-diagram-project', iconColor: 'success', meta: 'auth', cells: ['checkout-api', 'identity-api', '1.8M', '96ms', '0.0%', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-diagram-project', iconColor: 'success', meta: 'sync', cells: ['checkout-api', 'payments-api', '842K', '240ms', '0.1%', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-diagram-project', iconColor: 'success', meta: 'ledger write', cells: ['payments-api', 'payments-db', '842K', '38ms', '0.0%', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-diagram-project', iconColor: 'warning', meta: 'external', cells: ['payments-api', 'partner-api', '118K', '8.1s', '4.2%', { text: 'Degraded', badge: 'danger' }] },
+      { icon: 'fa-diagram-project', iconColor: 'success', meta: 'cache', cells: ['search-api', 'search-cache', '2.2M', '4ms', '0.0%', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-diagram-project', iconColor: 'success', meta: 'async', cells: ['inventory-api', 'events.raw', '640K', '12ms', '0.0%', { text: 'Healthy', badge: 'success' }] }
+    ]
+  })

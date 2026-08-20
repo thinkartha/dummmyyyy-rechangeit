@@ -1,3 +1,7 @@
 # ETL / ELT pipeline dependencies
-pandas>=2.2.0
+#
+# Jobs reuse the backend's vendor clients and mappers via _backend.py, so the
+# backend's runtime deps must be installed too (pydantic in particular).
+-r ../backend/requirements.txt
+
 python-dotenv>=1.0.0

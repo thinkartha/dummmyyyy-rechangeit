@@ -44,6 +44,7 @@ public/vendors/
 live/
 temp/
 dist/
+build/
 *.zip
 
 # Compiled / packaged binaries

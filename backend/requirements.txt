@@ -1,4 +1,28 @@
 # AWS Lambda Python dependencies
 # Package with: pip install -r requirements.txt -t package/
-boto3>=1.35.0
-pydantic>=2.9.0
+#
+# Keep this list to what the package actually imports — everything here is
+# unzipped into the Lambda (250 MB cap) and paid for again in cold-start import
+# time. boto3 is provided by the python3.11 runtime — do not vendor it.
+
+fastapi==0.111.0
+mangum==0.17.0
+pydantic==2.7.4
+
+# Pipeline: log template mining (drain3), service graph (neo4j)
+drain3==0.9.11
+neo4j==5.22.0
+
+# Auth. [crypto] pulls in `cryptography`; without it PyJWT supports HMAC only and
+# every RS256-signed Cognito token silently decodes to None — login succeeds and
+# every request after it 401s.
+PyJWT[crypto]==2.8.0
+
+# Event spine + database monitoring
+kafka-python==2.0.2
+psycopg2-binary==2.9.9
+PyMySQL==1.1.1
+
+# ELK
+elasticsearch==8.13.1
+python-dateutil==2.8.2

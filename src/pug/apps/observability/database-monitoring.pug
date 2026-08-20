@@ -1,0 +1,105 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Observability', href: '#!' },
+      { label: 'Database Monitoring', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'Database Monitoring',
+    subtitle: 'Connection health, replication lag, and slow queries across every engine an org has registered',
+    action: 'Add database'
+  })
+
+  +ObsStatCards([
+    { label: 'Databases', value: '48', delta: '+6', badge: 'info' },
+    { label: 'Healthy', value: '43', delta: '89.6%', badge: 'success' },
+    { label: 'Degraded', value: '4', delta: 'replication lag', badge: 'warning' },
+    { label: 'Down', value: '1', delta: 'connect refused', badge: 'danger' }
+  ])
+
+  +ObsToolTable({
+    title: 'Registered databases',
+    subtitle: 'PostgreSQL · MySQL / MariaDB · SQL Server · Oracle · Aurora · Redshift — credentials stored per organization',
+    searchPlaceholder: 'Search databases or hosts',
+    pageSize: 8,
+    columns: [
+      { label: 'Database', className: 'ps-3' },
+      { label: 'Engine' },
+      { label: 'Env' },
+      { label: 'Connections' },
+      { label: 'Replication lag' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-database', iconColor: 'info', meta: 'payments-prod.cluster-us-east-1', cells: ['payments', 'PostgreSQL 15', 'prod', '184 / 400', '0.4s', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-database', iconColor: 'info', meta: 'identity-prod.cluster-us-east-1', cells: ['identity', 'PostgreSQL 15', 'prod', '96 / 300', '0.2s', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-database', iconColor: 'warning', meta: 'orders-prod.mysql.internal', cells: ['orders', 'MySQL 8.0', 'prod', '271 / 300', '14.8s', { text: 'Degraded', badge: 'warning' }] },
+      { icon: 'fa-database', iconColor: 'warning', meta: 'catalog.mariadb.internal', cells: ['catalog', 'MariaDB 11', 'prod', '48 / 200', '0.9s', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-database', iconColor: 'danger', meta: 'legacy-billing.sqlserver.internal', cells: ['legacy-billing', 'SQL Server 2019', 'prod', '0 / 150', '—', { text: 'Down', badge: 'danger' }] },
+      { icon: 'fa-database', iconColor: 'primary', meta: 'analytics.redshift.us-east-1', cells: ['analytics', 'Redshift', 'prod', '22 / 100', '2m', { text: 'Watch', badge: 'info' }] },
+      { icon: 'fa-database', iconColor: 'secondary', meta: 'reporting.oracle.internal', cells: ['reporting', 'Oracle 19c', 'stage', '11 / 80', '1.1s', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-database', iconColor: 'info', meta: 'sessions-stage.cluster-eu-west-1', cells: ['sessions', 'Aurora PostgreSQL', 'stage', '30 / 200', '0.3s', { text: 'Healthy', badge: 'success' }] }
+    ]
+  })
+
+  .row.g-4
+    .col-12.col-lg-6
+      .card.h-100
+        .card-body
+          h4.mb-3 Slowest queries (24h)
+          .table-responsive.scrollbar
+            table.table.table-sm.fs-9.mb-0
+              thead
+                tr
+                  th.text-uppercase Query
+                  th.text-uppercase Database
+                  th.text-uppercase Calls
+                  th.text-uppercase Mean
+              tbody
+                tr
+                  td.font-monospace.fs-10 SELECT … FROM order_items JOIN orders …
+                  td orders
+                  td 18,402
+                  td.text-warning 2.9s
+                tr
+                  td.font-monospace.fs-10 UPDATE inventory SET qty = qty - $1 …
+                  td catalog
+                  td 9,117
+                  td.text-warning 1.4s
+                tr
+                  td.font-monospace.fs-10 SELECT … FROM ledger_entries WHERE …
+                  td payments
+                  td 42,880
+                  td 0.6s
+                tr
+                  td.font-monospace.fs-10 SELECT count(*) FROM sessions WHERE …
+                  td sessions
+                  td 61,204
+                  td 0.2s
+    .col-12.col-lg-6
+      .card.h-100
+        .card-body
+          h4.mb-3 How database checks run
+          p.text-body-tertiary Each database an organization registers is probed on its own schedule. Credentials are held as secret references under
+            code.mx-1 org_id
+            | , never in the browser.
+          ul.mb-0
+            li
+              strong Connectivity
+              |  — driver-level connect with a short timeout
+            li
+              strong Replication
+              |  — lag measured against the primary's LSN / GTID
+            li
+              strong Saturation
+              |  — open connections against the configured pool ceiling
+            li
+              strong Slow queries
+              |  — sampled from the engine's own statement statistics
+          p.text-body-tertiary.fs-9.mb-0.mt-3 A failed probe raises an event into the same alert pipeline as API and ETL signals, so database incidents cluster with whatever else broke at the same moment.
