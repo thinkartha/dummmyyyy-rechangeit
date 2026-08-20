@@ -1,0 +1,19 @@
+name: deploy-frontend-prod
+
+# The prod frontend: loveheartbeat.com.
+# Manual only, for the same reason as the prod backend.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/deploy-frontend.yml
+    with:
+      stage: prod
+      domain_name: loveheartbeat.com
+    secrets: inherit

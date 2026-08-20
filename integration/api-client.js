@@ -20,6 +20,19 @@ const TENANT_BASE_DOMAIN =
 const API_PREFIX = '/api/v1';
 const TOKEN_KEY = 'lhb_access_token';
 
+/* Environment selector for the shared API domain.
+ *
+ * app.loveheartbeat.com fronts three isolated backends (dev, qa, prod). The router
+ * behind it picks one by matching this opaque HMAC token, which the frontend deploy
+ * writes into runtime-config.js per stage. It selects an origin and nothing more —
+ * authentication is still the selected backend's job — so it is not a credential,
+ * but it is stage-specific and must not be hardcoded here.
+ *
+ * Empty when talking straight to a backend (local dev, or a per-stage API URL), in
+ * which case no env parameter is sent at all. */
+const ENV_TOKEN =
+  (typeof window !== 'undefined' && window.__ENV_TOKEN__) || '';
+
 function slugFromHostname(hostname = '') {
   const host = hostname.toLowerCase().split(':')[0];
   const suffix = `.${TENANT_BASE_DOMAIN}`;
@@ -64,7 +77,15 @@ function query(params = {}) {
   const pairs = Object.entries(params).filter(
     ([, value]) => value !== undefined && value !== null && value !== ''
   );
+  if (ENV_TOKEN) pairs.push(['env', ENV_TOKEN]);
   return pairs.length ? `?${new URLSearchParams(pairs)}` : '';
+}
+
+/* Writes carry the selector in the JSON body: the router reads `env` from the body
+ * for POST/PUT/PATCH so it never lands in access logs or browser history. */
+function withEnv(body) {
+  const payload = body || {};
+  return ENV_TOKEN ? { ...payload, env: ENV_TOKEN } : payload;
 }
 
 async function request(path, options = {}) {
@@ -96,18 +117,20 @@ const get = (path, params) => request(`${API_PREFIX}${path}${query(params)}`);
 const post = (path, body) =>
   request(`${API_PREFIX}${path}`, {
     method: 'POST',
-    body: JSON.stringify(body || {})
+    body: JSON.stringify(withEnv(body))
   });
 const put = (path, body) =>
-  request(`${API_PREFIX}${path}`, { method: 'PUT', body: JSON.stringify(body || {}) });
+  request(`${API_PREFIX}${path}`, { method: 'PUT', body: JSON.stringify(withEnv(body)) });
 const patch = (path, body) =>
-  request(`${API_PREFIX}${path}`, { method: 'PATCH', body: JSON.stringify(body || {}) });
-const del = (path) => request(`${API_PREFIX}${path}`, { method: 'DELETE' });
+  request(`${API_PREFIX}${path}`, { method: 'PATCH', body: JSON.stringify(withEnv(body)) });
+const del = (path) => request(`${API_PREFIX}${path}${query()}`, { method: 'DELETE' });
 
 export const api = {
   /* Platform + tenant */
-  health: () => request('/health'),
-  storeHealth: () => request('/health/store'),
+  //- Unprefixed paths, but still routed: through app.loveheartbeat.com the env
+  //- selector decides which stage answers, so it has to ride along here too.
+  health: () => request(`/health${query()}`),
+  storeHealth: () => request(`/health/store${query()}`),
   tenant: () => get('/tenant'),
   organizations: () => get('/organizations'),
   onboardOrganization: (body) => post('/organizations', body),
@@ -355,6 +378,7 @@ export const api = {
 export {
   API_BASE_URL,
   API_PREFIX,
+  ENV_TOKEN,
   TENANT_BASE_DOMAIN,
   currentTenantSlug,
   getToken,

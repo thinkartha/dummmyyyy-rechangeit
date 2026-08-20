@@ -46,7 +46,9 @@ permissions:
   contents: read
 
 concurrency:
-  group: loveheartbeat-backend-${{ inputs.stage || 'prod' }}
+  # Every stage updates the same shared router after deploying its own isolated
+  # backend, so all stages serialize on one group rather than one group per stage.
+  group: loveheartbeat-backend-and-environment-router
   cancel-in-progress: false
 
 jobs:
@@ -172,6 +174,91 @@ jobs:
               --secret-string "$PAYLOAD"
 
           echo "API base URL: ${API_URL}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Deploy shared environment router
+        # One public API domain in front of three isolated backends. The frontend
+        # sends an opaque per-stage token; the router matches it to an origin and
+        # forwards. It selects a backend and nothing else — auth stays the
+        # selected backend's job.
+        env:
+          ROUTING_ROOT_KEY: ${{ secrets.ENV_ROUTING_ROOT_KEY }}
+          ROUTER_API_DOMAIN: app.loveheartbeat.com
+        run: |
+          if [[ -z "$ROUTING_ROOT_KEY" ]]; then
+            echo "Create the ENV_ROUTING_ROOT_KEY repository secret before deploying the backend." >&2
+            exit 1
+          fi
+
+          secret_origin() {
+            aws secretsmanager get-secret-value \
+              --secret-id "loveheartbeat/app-config-$1" \
+              --query SecretString --output text 2>/dev/null \
+              | jq -r '.API_BASE_URL // empty' || true
+          }
+
+          DEV_ORIGIN="$(secret_origin dev)"
+          QA_ORIGIN="$(secret_origin qa)"
+          PROD_ORIGIN="$(secret_origin prod)"
+          if [[ -z "$DEV_ORIGIN" && -z "$QA_ORIGIN" && -z "$PROD_ORIGIN" ]]; then
+            echo "No backend origins were found after deployment." >&2
+            exit 1
+          fi
+          # A stored origin pointing at the router itself would forward to the
+          # router forever. Catch it here rather than at request time.
+          for origin in "$DEV_ORIGIN" "$QA_ORIGIN" "$PROD_ORIGIN"; do
+            if [[ "$origin" == "https://${ROUTER_API_DOMAIN}"* ]]; then
+              echo "A stored backend origin points to the public router and would create a loop." >&2
+              echo "Redeploy that stage to refresh its generated API Gateway origin." >&2
+              exit 1
+            fi
+          done
+
+          token() {
+            ENV_NAME="$1" python3 -c 'import hashlib,hmac,os; print(hmac.new(os.environ["ROUTING_ROOT_KEY"].encode(), os.environ["ENV_NAME"].encode(), hashlib.sha256).hexdigest())'
+          }
+
+          HOSTED_ZONE_ID=$(aws route53 list-hosted-zones --output json \
+            | jq -r --arg domain "$ROUTER_API_DOMAIN" '.HostedZones[] | select(.Name as $zone | ($domain + ".") | endswith($zone)) | .Id' \
+            | head -n1 | sed 's|/hostedzone/||')
+          if [[ -z "$HOSTED_ZONE_ID" ]]; then
+            echo "Could not find the Route 53 hosted zone for ${ROUTER_API_DOMAIN}." >&2
+            exit 1
+          fi
+
+          # The template treats UNCONFIGURED as "this stage has no origin yet",
+          # which is what makes a dev-only deployment valid before qa/prod exist.
+          [[ -z "$DEV_ORIGIN" ]] && DEV_ORIGIN=UNCONFIGURED
+          [[ -z "$QA_ORIGIN" ]] && QA_ORIGIN=UNCONFIGURED
+          [[ -z "$PROD_ORIGIN" ]] && PROD_ORIGIN=UNCONFIGURED
+
+          sam build \
+            --template-file ../infrastructure/environment-router.yaml \
+            --build-dir .aws-sam/environment-router
+
+          sam deploy \
+            --template-file .aws-sam/environment-router/template.yaml \
+            --stack-name loveheartbeat-environment-router \
+            --region "${{ env.AWS_REGION }}" \
+            --resolve-s3 \
+            --capabilities CAPABILITY_IAM \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset \
+            --parameter-overrides \
+              "ApiDomainName=${ROUTER_API_DOMAIN}" \
+              "HostedZoneId=${HOSTED_ZONE_ID}" \
+              "DevApiOrigin=${DEV_ORIGIN}" \
+              "QaApiOrigin=${QA_ORIGIN}" \
+              "ProdApiOrigin=${PROD_ORIGIN}" \
+              "DevEnvToken=$(token dev)" \
+              "QaEnvToken=$(token qa)" \
+              "ProdEnvToken=$(token prod)" \
+              "AllowedFrontendOrigins=https://dev.loveheartbeat.com,https://qa.loveheartbeat.com,https://loveheartbeat.com"
+
+          ROUTER_URL=$(aws cloudformation describe-stacks \
+            --stack-name loveheartbeat-environment-router \
+            --query 'Stacks[0].Outputs[?OutputKey==`RouterUrl`].OutputValue' \
+            --output text)
+          echo "Shared API base URL: ${ROUTER_URL}" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Smoke test the deployed API
         # A green CloudFormation update still leaves a Lambda that cannot import.

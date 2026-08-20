@@ -1,0 +1,126 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Shared app.loveheartbeat.com router for isolated dev, QA, and production APIs.
+
+Parameters:
+  ApiDomainName:
+    Type: String
+    Default: app.loveheartbeat.com
+  HostedZoneId:
+    Type: String
+  CertificateArn:
+    Type: String
+    Default: ""
+  DevApiOrigin:
+    Type: String
+    Default: ""
+  QaApiOrigin:
+    Type: String
+    Default: ""
+  ProdApiOrigin:
+    Type: String
+    Default: ""
+  DevEnvToken:
+    Type: String
+    NoEcho: true
+  QaEnvToken:
+    Type: String
+    NoEcho: true
+  ProdEnvToken:
+    Type: String
+    NoEcho: true
+  AllowedFrontendOrigins:
+    Type: String
+    Default: https://dev.loveheartbeat.com,https://qa.loveheartbeat.com,https://loveheartbeat.com
+
+Conditions:
+  CreateCertificate: !Equals [!Ref CertificateArn, ""]
+
+Globals:
+  Function:
+    Runtime: python3.11
+    Architectures: [x86_64]
+    MemorySize: 256
+    Timeout: 29
+
+Resources:
+  EnvironmentRouterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: loveheartbeat-environment-router
+      CodeUri: router/
+      Handler: handler.handler
+      Environment:
+        Variables:
+          DEV_API_ORIGIN: !Ref DevApiOrigin
+          QA_API_ORIGIN: !Ref QaApiOrigin
+          PROD_API_ORIGIN: !Ref ProdApiOrigin
+          DEV_ENV_TOKEN: !Ref DevEnvToken
+          QA_ENV_TOKEN: !Ref QaEnvToken
+          PROD_ENV_TOKEN: !Ref ProdEnvToken
+          ALLOWED_FRONTEND_ORIGINS: !Ref AllowedFrontendOrigins
+      Events:
+        Root:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EnvironmentRouterApi
+            Path: /
+            Method: ANY
+        Proxy:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EnvironmentRouterApi
+            Path: /{proxy+}
+            Method: ANY
+
+  EnvironmentRouterApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: loveheartbeat-environment-router
+      StageName: router
+      EndpointConfiguration:
+        Type: REGIONAL
+
+  RouterCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Condition: CreateCertificate
+    Properties:
+      DomainName: !Ref ApiDomainName
+      ValidationMethod: DNS
+      DomainValidationOptions:
+        - DomainName: !Ref ApiDomainName
+          HostedZoneId: !Ref HostedZoneId
+
+  RouterCustomDomain:
+    Type: AWS::ApiGateway::DomainName
+    Properties:
+      DomainName: !Ref ApiDomainName
+      EndpointConfiguration:
+        Types: [REGIONAL]
+      RegionalCertificateArn: !If [CreateCertificate, !Ref RouterCertificate, !Ref CertificateArn]
+      SecurityPolicy: TLS_1_2
+
+  RouterBasePathMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    Properties:
+      DomainName: !Ref RouterCustomDomain
+      RestApiId: !Ref EnvironmentRouterApi
+      Stage: router
+
+  RouterARecord:
+    Type: AWS::Route53::RecordSet
+    DependsOn: RouterCustomDomain
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref ApiDomainName
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt RouterCustomDomain.RegionalDomainName
+        HostedZoneId: !GetAtt RouterCustomDomain.RegionalHostedZoneId
+        EvaluateTargetHealth: false
+
+Outputs:
+  RouterUrl:
+    Value: !Sub https://${ApiDomainName}/api/v1
+  RouterHealthUrl:
+    Value: !Sub https://${ApiDomainName}/health

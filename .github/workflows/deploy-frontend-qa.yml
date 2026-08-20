@@ -1,0 +1,19 @@
+name: deploy-frontend-qa
+
+# The qa frontend: qa.loveheartbeat.com.
+# Manual only, for the same reason as the qa backend.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/deploy-frontend.yml
+    with:
+      stage: qa
+      domain_name: qa.loveheartbeat.com
+    secrets: inherit
