@@ -1,0 +1,159 @@
+name: ci
+
+# Runs on every push and pull request. No AWS credentials, no deploys — this is the
+# gate that catches a broken import, an unbuildable page, or a dead pipeline before
+# any of the deploy workflows get a chance to ship it.
+
+on:
+  push:
+    branches:
+      - main
+      - Tejas
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Import the application
+        # Catches the failure this job exists for: a module that moved during the port
+        # and left an import pointing at its old home. The app mounts every router at
+        # import time, so this fails loudly rather than at the first request.
+        env:
+          PYTHONPATH: .
+        run: |
+          python -c "
+          from handlers.api import app
+          routes = [r for r in app.routes if hasattr(r, 'methods')]
+          print(f'{len(routes)} routes mounted')
+          assert len(routes) > 100, 'router surface shrank unexpectedly'
+          "
+
+      - name: Replay sample API Gateway events
+        # Every file in events/ goes through the real Lambda entrypoint. 5xx means the
+        # handler itself broke; 501 (integration not configured) and 401 (bad demo
+        # password) are the correct answers in an unconfigured environment.
+        env:
+          PYTHONPATH: .
+        run: |
+          python - <<'PY'
+          import json, pathlib, sys
+          from handlers.lambda_handler import handler
+
+          ctx = type("C", (), {"aws_request_id": "ci"})()
+          failures = []
+          for path in sorted(pathlib.Path("events").glob("*.json")):
+              event = json.loads(path.read_text())
+              if "requestContext" not in event:
+                  continue
+              status = handler(event, ctx)["statusCode"]
+              print(f"  {status}  {path.name}")
+              if status >= 500 and status != 501:
+                  failures.append(f"{path.name} -> {status}")
+          if failures:
+              sys.exit("Sample events returned server errors: " + ", ".join(failures))
+          PY
+
+      - name: Exercise the standalone handlers
+        env:
+          PYTHONPATH: .
+        run: |
+          python -c "
+          from handlers.health import handler as health
+          from handlers.organizations import tenant_context_handler, list_organizations_handler
+          from handlers.example import handler as example
+          import handlers.cognito_triggers  # import-only: Cognito invokes these directly
+
+          ctx = type('C', (), {'aws_request_id': 'ci'})()
+          assert health({}, ctx)['statusCode'] == 200
+          assert tenant_context_handler({'headers': {'Host': 'rootvyana.loveheartbeat.com'}}, None)['statusCode'] == 200
+          assert list_organizations_handler({}, None)['statusCode'] == 200
+          assert example({'httpMethod': 'GET'}, None)['statusCode'] == 200
+          print('standalone handlers ok')
+          "
+
+      - name: Validate SAM template
+        uses: aws-actions/setup-sam@v2
+      - name: sam validate
+        run: sam validate --lint --template-file template.yaml --region us-east-1
+
+  middleware:
+    name: middleware
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: middleware
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: middleware/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run pipeline self-checks
+        # etl_sync --demo asserts the extract -> transform -> load wiring end to end
+        # without a vendor API or a running backend.
+        env:
+          PYTHONPATH: .
+        run: |
+          python -m pipelines.etl_sync --demo
+          python -m pipelines.example_pipeline > /dev/null && echo "example_pipeline ok"
+
+  frontend:
+    name: frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build
+        run: npm run build
+
+      - name: Verify pages were emitted
+        # A Pug error does not always fail the Gulp task, so assert the output exists
+        # rather than trusting a green build step.
+        run: |
+          test -f build/index.html
+          COUNT=$(find build/apps/observability build/apps/platform build/apps/organization -name '*.html' | wc -l)
+          echo "$COUNT product pages built"
+          test "$COUNT" -ge 24
+
+      - name: Check the API client parses
+        run: node --input-type=module -e "import('./integration/api-client.js').then(m => console.log(Object.keys(m.api).length + ' api namespaces'))"

@@ -1,0 +1,186 @@
+name: deploy-backend
+
+# Builds the Python FastAPI backend and deploys it with AWS SAM.
+# SAM creates/updates Lambda, API Gateway, DynamoDB, Cognito, and Secrets Manager.
+
+# Manual only. deploy-backend-dev.yml calls this via workflow_call for the dev stage.
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: "Deployment stage"
+        required: true
+        default: "prod"
+      frontend_url:
+        description: "Frontend origin for API Gateway CORS"
+        required: false
+        default: "https://loveheartbeat.com"
+      demo_agents:
+        description: "Set to 1 for seeded agent observations/evals; 0 uses DynamoDB telemetry"
+        required: false
+        default: "0"
+  workflow_call:
+    inputs:
+      stage:
+        type: string
+        required: true
+      frontend_url:
+        type: string
+        required: false
+        default: ""
+      demo_agents:
+        type: string
+        required: false
+        default: "0"
+
+env:
+  AWS_REGION: us-east-1
+  SAM_TEMPLATE: template.yaml
+  SAM_CONFIG: samconfig.toml
+  # sam build installs dependencies into here; deploying SAM_TEMPLATE instead
+  # ships source with no site-packages.
+  SAM_BUILD_TEMPLATE_DIR: .aws-sam/build
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: loveheartbeat-backend-${{ inputs.stage || 'prod' }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve deploy role ARN
+        id: resolve-role
+        run: |
+          ROLE="${{ secrets.AWS_DEPLOY_ROLE_ARN }}"
+          if [[ "$ROLE" == arn:aws:iam::*:role/* ]]; then
+            echo "arn=$ROLE" >> "$GITHUB_OUTPUT"
+          else
+            ACCOUNT_ID="${{ secrets.AWS_ACCOUNT_ID }}"
+            if [[ -z "$ACCOUNT_ID" ]]; then
+              echo "AWS_DEPLOY_ROLE_ARN must be a full ARN or AWS_ACCOUNT_ID secret must be set." >&2
+              exit 1
+            fi
+            echo "arn=arn:aws:iam::${ACCOUNT_ID}:role/${ROLE}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ steps.resolve-role.outputs.arn }}
+          role-session-name: loveheartbeat-backend-deploy
+          audience: sts.amazonaws.com
+
+      - name: Read frontend URL from Secrets Manager
+        id: frontend-config
+        run: |
+          aws secretsmanager get-secret-value \
+            --secret-id loveheartbeat/frontend-config-${{ inputs.stage || 'prod' }} \
+            --query SecretString --output text > /tmp/frontend-config.json || true
+          echo "url=$(jq -r .FRONTEND_URL /tmp/frontend-config.json 2>/dev/null || echo '')" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install SAM CLI
+        uses: aws-actions/setup-sam@v2
+
+      - name: Build backend
+        run: sam build --template-file ${{ env.SAM_TEMPLATE }} --config-file ${{ env.SAM_CONFIG }}
+
+      - name: Verify build installed dependencies
+        # Guards the failure this step was added for: deploying the source template
+        # ships the code with no site-packages, and the Lambda dies with
+        # Runtime.ImportModuleError before it can log anything useful.
+        run: |
+          ls ${{ env.SAM_BUILD_TEMPLATE_DIR }}/LoveHeartBeatApiFunction | head
+          test -d ${{ env.SAM_BUILD_TEMPLATE_DIR }}/LoveHeartBeatApiFunction/fastapi
+          test -d ${{ env.SAM_BUILD_TEMPLATE_DIR }}/LoveHeartBeatApiFunction/mangum
+          # shared/ and handlers/ must both be in the bundle — the port split the code
+          # across two packages and a CodeUri mistake would drop one of them.
+          test -d ${{ env.SAM_BUILD_TEMPLATE_DIR }}/LoveHeartBeatApiFunction/shared
+          test -d ${{ env.SAM_BUILD_TEMPLATE_DIR }}/LoveHeartBeatApiFunction/handlers
+
+      - name: Deploy backend
+        env:
+          DEPLOY_ELASTICSEARCH_HOSTS: ${{ secrets.ELASTICSEARCH_HOSTS }}
+          # The fallback also covers callers that explicitly pass "".
+          DEPLOY_DEMO_AGENTS: ${{ inputs.demo_agents || '0' }}
+        run: |
+          STAGE="${{ inputs.stage || 'prod' }}"
+          FRONTEND_URL="${{ inputs.frontend_url || steps.frontend-config.outputs.url || '*' }}"
+
+          if [[ "$DEPLOY_DEMO_AGENTS" != "0" && "$DEPLOY_DEMO_AGENTS" != "1" ]]; then
+            echo "demo_agents must be 0 or 1" >&2
+            exit 1
+          fi
+
+          OVERRIDES=(
+            "Stage=${STAGE}"
+            "FrontendUrl=${FRONTEND_URL}"
+          )
+          [[ -n "$DEPLOY_ELASTICSEARCH_HOSTS" ]] && OVERRIDES+=("ElasticsearchHosts=${DEPLOY_ELASTICSEARCH_HOSTS}")
+          # Always pass this one so changing 1 back to 0 disables seeded data on
+          # an existing stack instead of CloudFormation retaining its prior value.
+          OVERRIDES+=("DemoAgents=${DEPLOY_DEMO_AGENTS}")
+
+          sam deploy \
+            --template-file ${{ env.SAM_BUILD_TEMPLATE_DIR }}/template.yaml \
+            --config-file ${{ env.SAM_CONFIG }} \
+            --stack-name loveheartbeat-backend-${STAGE} \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset \
+            --resolve-s3 \
+            --region ${{ env.AWS_REGION }} \
+            --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
+            --parameter-overrides "${OVERRIDES[@]}"
+
+      - name: Store deployment outputs in Secrets Manager
+        run: |
+          STAGE="${{ inputs.stage || 'prod' }}"
+          STACK_NAME=loveheartbeat-backend-${STAGE}
+          output() {
+            aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
+              --query "Stacks[0].Outputs[?OutputKey=='$1'].OutputValue" --output text
+          }
+          API_URL=$(output ApiBaseUrl)
+          USER_POOL_ID=$(output CognitoUserPoolId)
+          CLIENT_ID=$(output CognitoAppClientId)
+
+          PAYLOAD=$(jq -nc \
+            --arg api "$API_URL" --arg pool "$USER_POOL_ID" --arg client "$CLIENT_ID" \
+            '{API_BASE_URL: $api, COGNITO_USER_POOL_ID: $pool, COGNITO_APP_CLIENT_ID: $client}')
+
+          aws secretsmanager put-secret-value \
+            --secret-id loveheartbeat/app-config-${STAGE} \
+            --secret-string "$PAYLOAD" \
+            || aws secretsmanager create-secret \
+              --name loveheartbeat/app-config-${STAGE} \
+              --secret-string "$PAYLOAD"
+
+          echo "API base URL: ${API_URL}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Smoke test the deployed API
+        # A green CloudFormation update still leaves a Lambda that cannot import.
+        # /health is public, so this needs no credentials and fails fast if it does.
+        run: |
+          STAGE="${{ inputs.stage || 'prod' }}"
+          API_URL=$(aws cloudformation describe-stacks \
+            --stack-name loveheartbeat-backend-${STAGE} \
+            --query "Stacks[0].Outputs[?OutputKey=='ApiBaseUrl'].OutputValue" --output text)
+          HEALTH="${API_URL%/api/v1}/health"
+          echo "GET $HEALTH"
+          curl --fail --silent --show-error --retry 5 --retry-delay 5 --retry-connrefused "$HEALTH"

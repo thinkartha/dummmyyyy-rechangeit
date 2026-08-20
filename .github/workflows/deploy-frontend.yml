@@ -1,0 +1,188 @@
+name: deploy-frontend
+
+# Builds the Pug/Gulp static frontend and deploys it to S3 / CloudFront.
+# Triggered only when frontend code changes.
+
+# Manual only. deploy-frontend-dev.yml calls this via workflow_call for the dev stage.
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: "Deployment stage"
+        required: true
+        default: "prod"
+      domain_name:
+        description: "Optional custom domain for the frontend (e.g. loveheartbeat.com)"
+        required: false
+        default: ""
+      hosted_zone_id:
+        description: "Optional Route 53 hosted zone ID for the custom domain"
+        required: false
+        default: ""
+      certificate_arn:
+        description: "Optional existing ACM certificate ARN in us-east-1 for the custom domain"
+        required: false
+        default: ""
+  workflow_call:
+    inputs:
+      stage:
+        type: string
+        required: true
+      domain_name:
+        type: string
+        required: false
+        default: ""
+      hosted_zone_id:
+        type: string
+        required: false
+        default: ""
+      certificate_arn:
+        type: string
+        required: false
+        default: ""
+
+env:
+  AWS_REGION: us-east-1
+  STAGE: ${{ inputs.stage || 'prod' }}
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: loveheartbeat-frontend-${{ inputs.stage || 'prod' }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve deploy role ARN
+        id: resolve-role
+        run: |
+          ROLE="${{ secrets.AWS_DEPLOY_ROLE_ARN }}"
+          if [[ "$ROLE" == arn:aws:iam::*:role/* ]]; then
+            echo "arn=$ROLE" >> "$GITHUB_OUTPUT"
+          else
+            ACCOUNT_ID="${{ secrets.AWS_ACCOUNT_ID }}"
+            if [[ -z "$ACCOUNT_ID" ]]; then
+              echo "AWS_DEPLOY_ROLE_ARN must be a full ARN or AWS_ACCOUNT_ID secret must be set." >&2
+              exit 1
+            fi
+            echo "arn=arn:aws:iam::${ACCOUNT_ID}:role/${ROLE}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ steps.resolve-role.outputs.arn }}
+          role-session-name: loveheartbeat-frontend-deploy
+          audience: sts.amazonaws.com
+
+      - name: Deploy frontend hosting stack
+        id: deploy-hosting
+        run: |
+          STAGE="${{ env.STAGE }}"
+          DOMAIN_NAME="${{ inputs.domain_name || '' }}"
+          HOSTED_ZONE_ID="${{ inputs.hosted_zone_id || '' }}"
+          CERTIFICATE_ARN="${{ inputs.certificate_arn || '' }}"
+
+          if [[ -n "$DOMAIN_NAME" && -z "$HOSTED_ZONE_ID" ]]; then
+            HOSTED_ZONE_ID=$(aws route53 list-hosted-zones --output json | jq -r --arg domain "$DOMAIN_NAME" '.HostedZones[] | select(.Name as $zone | ($domain + ".") | endswith($zone)) | .Id' | head -n1 | sed 's|/hostedzone/||')
+          fi
+          if [[ -n "$DOMAIN_NAME" && -z "$HOSTED_ZONE_ID" ]]; then
+            echo "Could not find Route 53 hosted zone for ${DOMAIN_NAME}. Provide the hosted_zone_id workflow input." >&2
+            exit 1
+          fi
+
+          PARAM_OVERRIDES="Stage=${STAGE}"
+          if [[ -n "$DOMAIN_NAME" ]]; then
+            PARAM_OVERRIDES="${PARAM_OVERRIDES} DomainName=${DOMAIN_NAME} HostedZoneId=${HOSTED_ZONE_ID}"
+            [[ -n "$CERTIFICATE_ARN" ]] && PARAM_OVERRIDES="${PARAM_OVERRIDES} CertificateArn=${CERTIFICATE_ARN}"
+          fi
+
+          STACK_NAME="loveheartbeat-frontend-hosting-${STAGE}"
+          aws cloudformation deploy \
+            --template-file infrastructure/frontend-hosting.yaml \
+            --stack-name "$STACK_NAME" \
+            --parameter-overrides ${PARAM_OVERRIDES} \
+            --capabilities CAPABILITY_IAM \
+            --no-fail-on-empty-changeset
+
+          output() {
+            aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
+              --query "Stacks[0].Outputs[?OutputKey=='$1'].OutputValue" --output text
+          }
+          echo "bucket=$(output FrontendBucket)" >> "$GITHUB_OUTPUT"
+          echo "distribution_id=$(output CloudFrontDistributionId)" >> "$GITHUB_OUTPUT"
+
+          if [[ -n "$DOMAIN_NAME" ]]; then
+            FRONTEND_URL="https://${DOMAIN_NAME}"
+          else
+            FRONTEND_URL="https://$(output FrontendUrl)"
+          fi
+          echo "frontend_url=$FRONTEND_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Read API base URL from Secrets Manager
+        id: app-config
+        run: |
+          aws secretsmanager get-secret-value \
+            --secret-id loveheartbeat/app-config-${{ env.STAGE }} \
+            --query SecretString --output text > /tmp/app-config.json 2>/dev/null || true
+          echo "api_base_url=$(jq -r '.API_BASE_URL // empty' /tmp/app-config.json 2>/dev/null || echo '')" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build static site
+        # MODE=PROD switches Gulp's output directory from public/ to build/.
+        run: npm run build
+
+      - name: Inject runtime configuration
+        # The Pug build is environment-agnostic, so the API base URL and tenant domain
+        # are written afterwards as a small script every page already loads. Rebuilding
+        # per stage just to bake in a URL would make the artifact unpromotable.
+        env:
+          API_BASE_URL: ${{ steps.app-config.outputs.api_base_url }}
+        run: |
+          if [[ -z "$API_BASE_URL" ]]; then
+            echo "No API_BASE_URL in loveheartbeat/app-config-${{ env.STAGE }}." >&2
+            echo "Deploy the backend for this stage first, or the UI will call localhost." >&2
+            exit 1
+          fi
+          mkdir -p build/assets/js
+          cat > build/assets/js/runtime-config.js <<EOF
+          // Generated by deploy-frontend.yml — do not edit.
+          window.__API_BASE_URL__ = '${API_BASE_URL}';
+          window.__TENANT_BASE_DOMAIN__ = 'loveheartbeat.com';
+          EOF
+          # Load it before any page script that reads these globals.
+          find build -name '*.html' -print0 | xargs -0 sed -i \
+            's#</head>#  <script src="/assets/js/runtime-config.js"></script>\n</head>#'
+          echo "Injected runtime config into $(find build -name '*.html' | wc -l) pages"
+
+      - name: Deploy to S3
+        run: |
+          # Fingerprinted assets are immutable; HTML is not, or a deploy would serve
+          # yesterday's pages until the cache expired.
+          aws s3 sync build/ s3://${{ steps.deploy-hosting.outputs.bucket }}/ --delete \
+            --exclude "*.html" --cache-control "public,max-age=31536000,immutable"
+          aws s3 sync build/ s3://${{ steps.deploy-hosting.outputs.bucket }}/ --delete \
+            --exclude "*" --include "*.html" --cache-control "public,max-age=0,must-revalidate"
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ steps.deploy-hosting.outputs.distribution_id }} \
+            --paths "/*"
+          echo "Frontend URL: ${{ steps.deploy-hosting.outputs.frontend_url }}" >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,619 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Loveheartbeat backend infrastructure (Lambda, API Gateway, DynamoDB, Cognito).
+  Multi-tenant: organizations, users, and tenant-scoped data live in DynamoDB.
+  Cognito user pool groups enforce GlobalAdmin / OrgAdmin / User roles.
+
+Parameters:
+  Stage:
+    Type: String
+    Default: prod
+  CognitoDomainPrefix:
+    Type: String
+    Default: loveheartbeat
+  LambdaMemory:
+    Type: Number
+    Default: 512
+  LambdaTimeout:
+    Type: Number
+    Default: 30
+  FrontendUrl:
+    Type: String
+    Default: "*"
+    Description: Origin allowed by API Gateway CORS. Use the CloudFront URL or * for any.
+  WebhookUrl:
+    Type: String
+    Default: ""
+    Description: Optional webhook URL for join request and invite notifications.
+  ElasticsearchHosts:
+    Type: String
+    Default: ""
+    Description: >
+      Comma-separated Elasticsearch/OpenSearch URLs backing the log, metric and trace
+      search endpoints. Optional: when empty, deployed search endpoints return empty
+      results instead of trying localhost inside the Lambda container.
+  DemoAgents:
+    Type: String
+    Default: "0"
+    AllowedValues: ["0", "1"]
+    Description: >
+      Set to 1 to serve seeded agent telemetry instead of DynamoDB records, for demos.
+      The dashboard labels it "Demo data". Use 0 in production.
+  DatabricksHost:
+    Type: String
+    Default: ""
+    Description: Databricks workspace host, e.g. dbc-1234abcd-5678.cloud.databricks.com.
+  DatabricksWarehouseId:
+    Type: String
+    Default: ""
+    Description: SQL warehouse ID used to execute read-only Delta queries.
+  DatabricksTokenSecretArn:
+    Type: String
+    Default: ""
+    Description: >
+      Secrets Manager ARN holding the Databricks PAT. Passed as an ARN, not the token
+      itself — a plaintext token in a CloudFormation parameter is readable by anyone
+      with describe-stacks.
+
+Conditions:
+  HasDatabricksToken: !Not [!Equals [!Ref DatabricksTokenSecretArn, ""]]
+
+Globals:
+  Function:
+    Runtime: python3.11
+    MemorySize: !Ref LambdaMemory
+    Timeout: !Ref LambdaTimeout
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        STAGE: !Ref Stage
+        PINGHOLD_USERS_TABLE: !Ref UsersTable
+        PINGHOLD_ORGANIZATIONS_TABLE: !Ref OrganizationsTable
+        PINGHOLD_INTEGRATIONS_TABLE: !Ref IntegrationsTable
+        PINGHOLD_ETL_STATE_TABLE: !Ref ETLStateTable
+        PINGHOLD_RECORDS_TABLE: !Ref RecordsTable
+        PINGHOLD_JOIN_REQUESTS_TABLE: !Ref JoinRequestsTable
+        PINGHOLD_INVITES_TABLE: !Ref InvitesTable
+        PINGHOLD_WEBHOOK_URL: !Ref WebhookUrl
+        PINGHOLD_FRONTEND_URL: !Ref FrontendUrl
+        # COGNITO_USER_POOL_ID / COGNITO_APP_CLIENT_ID are deliberately NOT set here.
+        # Globals applies to every function, including the Cognito trigger functions —
+        # and a trigger referencing the pool that invokes it is a circular dependency.
+        # They are set on LoveHeartBeatApiFunction only; the triggers read userPoolId off the
+        # event Cognito sends them.
+
+Resources:
+  # ---------------------------------------------------------------------------
+  # DynamoDB tables for multi-tenancy and application state
+  # ---------------------------------------------------------------------------
+  OrganizationsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub loveheartbeat-organizations-${Stage}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: org_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: org_id
+          KeyType: HASH
+      SSESpecification:
+        SSEEnabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub loveheartbeat-users-${Stage}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: email
+          AttributeType: S
+        - AttributeName: org_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: email
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: org-index
+          KeySchema:
+            - AttributeName: org_id
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      SSESpecification:
+        SSEEnabled: true
+
+  IntegrationsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub loveheartbeat-integrations-${Stage}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: tenant_id
+          AttributeType: S
+        - AttributeName: integration
+          AttributeType: S
+      KeySchema:
+        - AttributeName: tenant_id
+          KeyType: HASH
+        - AttributeName: integration
+          KeyType: RANGE
+      SSESpecification:
+        SSEEnabled: true
+
+  # Append-only telemetry streams: events, AI model inferences, agent spans, and agent
+  # evaluations. Every ingest is written through before Lambda acknowledges it, so cold
+  # starts cannot erase accepted telemetry. DynamoDB TTL performs cleanup automatically.
+  RecordsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub loveheartbeat-records-${Stage}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: tenant_id
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: tenant_id
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        AttributeName: expires_at
+        Enabled: true
+      SSESpecification:
+        SSEEnabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+  ETLStateTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub loveheartbeat-etl-state-${Stage}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      SSESpecification:
+        SSEEnabled: true
+
+  JoinRequestsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub loveheartbeat-join-requests-${Stage}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: email
+          AttributeType: S
+        - AttributeName: org_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: email
+          KeyType: HASH
+        - AttributeName: org_id
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: org-index
+          KeySchema:
+            - AttributeName: org_id
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      SSESpecification:
+        SSEEnabled: true
+
+  InvitesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub loveheartbeat-invites-${Stage}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: email
+          AttributeType: S
+      KeySchema:
+        - AttributeName: email
+          KeyType: HASH
+      SSESpecification:
+        SSEEnabled: true
+
+  # ---------------------------------------------------------------------------
+  # Cognito user pool with groups for multi-tenant RBAC
+  # ---------------------------------------------------------------------------
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub loveheartbeat-users-${Stage}
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+      AutoVerifiedAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 12
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          RequireUppercase: true
+      Schema:
+        - Name: org_id
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+        - Name: role
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+      LambdaConfig:
+        PreSignUp: !GetAtt PreSignUpTriggerFunction.Arn
+        PostConfirmation: !GetAtt PostConfirmationTriggerFunction.Arn
+        PreTokenGeneration: !GetAtt PreTokenGenerationTriggerFunction.Arn
+      # Allow Cognito to invoke the Lambda functions.
+      # The functions' permission resources grant invoke rights below.
+
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub loveheartbeat-app-${Stage}
+      UserPoolId: !Ref CognitoUserPool
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_SRP_AUTH
+      SupportedIdentityProviders:
+        - COGNITO
+      # Explicit rather than inherited, and paired with JWT_TTL_SECONDS / REFRESH_TTL_SECONDS
+      # in core/auth.py, which govern the same session on the non-Cognito path. The access
+      # token stays short because /auth/refresh renews it; the refresh token is what decides
+      # how long "stay signed in" actually lasts.
+      TokenValidityUnits:
+        AccessToken: hours
+        IdToken: hours
+        RefreshToken: days
+      AccessTokenValidity: 1
+      IdTokenValidity: 1
+      RefreshTokenValidity: 30
+
+  CognitoUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Sub ${CognitoDomainPrefix}-${Stage}
+      UserPoolId: !Ref CognitoUserPool
+
+  GlobalAdminGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: GlobalAdmin
+      UserPoolId: !Ref CognitoUserPool
+      Description: Platform-wide administrators that manage organizations and users.
+
+  OrgAdminGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: OrgAdmin
+      UserPoolId: !Ref CognitoUserPool
+      Description: Administrators scoped to a single organization.
+
+  UserGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: User
+      UserPoolId: !Ref CognitoUserPool
+      Description: Standard organization user.
+
+  PreSignUpTriggerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub loveheartbeat-cognito-pre-signup-${Stage}
+      CodeUri: ./
+      Handler: handlers.cognito_triggers.pre_sign_up_handler
+      Role: !GetAtt LoveHeartBeatTriggerRole.Arn
+      Environment:
+        Variables:
+          PINGHOLD_USERS_TABLE: !Ref UsersTable
+
+  PostConfirmationTriggerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub loveheartbeat-cognito-post-confirmation-${Stage}
+      CodeUri: ./
+      Handler: handlers.cognito_triggers.post_confirmation_handler
+      Role: !GetAtt LoveHeartBeatTriggerRole.Arn
+      Environment:
+        Variables:
+          PINGHOLD_USERS_TABLE: !Ref UsersTable
+
+  PreTokenGenerationTriggerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub loveheartbeat-cognito-pre-token-generation-${Stage}
+      CodeUri: ./
+      Handler: handlers.cognito_triggers.pre_token_generation_handler
+      Role: !GetAtt LoveHeartBeatTriggerRole.Arn
+      Environment:
+        Variables:
+          PINGHOLD_USERS_TABLE: !Ref UsersTable
+
+  PreSignUpTriggerPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref PreSignUpTriggerFunction
+      Action: lambda:InvokeFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt CognitoUserPool.Arn
+
+  PostConfirmationTriggerPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref PostConfirmationTriggerFunction
+      Action: lambda:InvokeFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt CognitoUserPool.Arn
+
+  PreTokenGenerationTriggerPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref PreTokenGenerationTriggerFunction
+      Action: lambda:InvokeFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt CognitoUserPool.Arn
+
+  # ---------------------------------------------------------------------------
+  # Secrets Manager secret for runtime configuration
+  # ---------------------------------------------------------------------------
+  AppSecrets:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub loveheartbeat/app-secrets-${Stage}
+      Description: Runtime secrets for the Loveheartbeat backend
+      # GenerateSecretString, not a literal: the JWT signing key is created randomly at
+      # stack creation and never exists in this template, in the repository, or in stack
+      # events. The previous placeholder ("change-me-in-production") shipped every
+      # deployment with a signing key published in source control, and the backend now
+      # refuses to start on it. The generated value is only ever read by the Lambda at
+      # cold start (see lambda_handler._load_secrets).
+      #
+      # PINGHOLD_ADMIN_PASSWORD is intentionally absent: leaving it unset disables the
+      # built-in admin login in favour of Cognito. Add it to this secret only if you
+      # want that break-glass account, and give it a real password.
+      GenerateSecretString:
+        SecretStringTemplate: !Sub |
+          {
+            "PINGHOLD_API_KEYS": "",
+            "NEXT_PUBLIC_API_BASE_URL": "",
+            "COGNITO_USER_POOL_ID": "${CognitoUserPool}",
+            "COGNITO_APP_CLIENT_ID": "${CognitoUserPoolClient}"
+          }
+        GenerateStringKey: PINGHOLD_JWT_SECRET
+        PasswordLength: 64
+        # The value is a signing key, never parsed or embedded in a URL — punctuation
+        # buys nothing and makes shell-based rotation error-prone.
+        ExcludePunctuation: true
+
+  # ---------------------------------------------------------------------------
+  # Execution role for the three Cognito trigger functions.
+  #
+  # Separate from LoveHeartBeatLambdaRole to break a circular dependency: the user pool
+  # needs its trigger functions, which need their role, which — if it named the pool
+  # via !GetAtt — would need the pool. The Cognito resource is written as a literal
+  # ARN pattern instead of a reference, which removes that edge.
+  #
+  # Scope is deliberately narrow: only pre_token_generation touches Cognito (one
+  # action), and only post_confirmation touches DynamoDB (one table).
+  # ---------------------------------------------------------------------------
+  LoveHeartBeatTriggerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: LoveHeartBeatTriggerUsersTableAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                Resource: !GetAtt UsersTable.Arn
+        - PolicyName: LoveHeartBeatTriggerCognitoAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: cognito-idp:AdminListGroupsForUser
+                Resource: !Sub arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/*
+
+  # ---------------------------------------------------------------------------
+  # Lambda execution role with least-privilege access
+  # ---------------------------------------------------------------------------
+  LoveHeartBeatLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: LoveHeartBeatDynamoDBAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:DescribeTable
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource:
+                  - !GetAtt OrganizationsTable.Arn
+                  - !Sub ${OrganizationsTable.Arn}/index/*
+                  - !GetAtt UsersTable.Arn
+                  - !Sub ${UsersTable.Arn}/index/*
+                  - !GetAtt JoinRequestsTable.Arn
+                  - !Sub ${JoinRequestsTable.Arn}/index/*
+                  - !GetAtt InvitesTable.Arn
+                  - !Sub ${InvitesTable.Arn}/index/*
+                  - !GetAtt IntegrationsTable.Arn
+                  - !Sub ${IntegrationsTable.Arn}/index/*
+                  - !GetAtt ETLStateTable.Arn
+                  - !Sub ${ETLStateTable.Arn}/index/*
+                  - !GetAtt RecordsTable.Arn
+                  - !Sub ${RecordsTable.Arn}/index/*
+        - PolicyName: LoveHeartBeatApiGatewayMonitoring
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # CloudWatch metric APIs do not support resource-level restrictions.
+              - Effect: Allow
+                Action:
+                  - cloudwatch:GetMetricData
+                  - cloudwatch:ListMetrics
+                Resource: "*"
+              # Used only when an AWS gateway connection leaves api_name blank and
+              # asks Loveheartbeat to discover REST/HTTP APIs in this account.
+              - Effect: Allow
+                Action:
+                  - apigateway:GET
+                Resource:
+                  - !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}::/restapis
+                  - !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}::/restapis/*
+                  - !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}::/apis
+                  - !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}::/apis/*
+        - PolicyName: LoveHeartBeatCognitoAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cognito-idp:SignUp
+                  - cognito-idp:InitiateAuth
+                  - cognito-idp:ConfirmSignUp
+                  - cognito-idp:AdminCreateUser
+                  - cognito-idp:AdminAddUserToGroup
+                  - cognito-idp:AdminUpdateUserAttributes
+                  - cognito-idp:AdminDisableUser
+                  - cognito-idp:AdminListGroupsForUser
+                Resource: !GetAtt CognitoUserPool.Arn
+        - PolicyName: LoveHeartBeatSecretsAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !Ref AppSecrets
+
+  # ---------------------------------------------------------------------------
+  # Lambda function serving the FastAPI application
+  # ---------------------------------------------------------------------------
+  LoveHeartBeatApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub loveheartbeat-api-${Stage}
+      CodeUri: ./
+      Handler: handlers.lambda_handler.handler
+      Role: !GetAtt LoveHeartBeatLambdaRole.Arn
+      # Set here rather than in Globals — nothing in Cognito references this
+      # function, so pointing at the pool from here creates no cycle.
+      Environment:
+        Variables:
+          COGNITO_USER_POOL_ID: !Ref CognitoUserPool
+          COGNITO_APP_CLIENT_ID: !Ref CognitoUserPoolClient
+          ELASTICSEARCH_HOSTS: !Ref ElasticsearchHosts
+          # Default AWS gateway connection: this Lambda monitors the SAM API serving it.
+          # A tenant can still save a different gateway connection from the UI.
+          PINGHOLD_API_GATEWAY_NAME: !Sub loveheartbeat-api-${Stage}
+          # The ARN, not the secret. lambda_handler fetches and merges it at cold start,
+          # which keeps the plaintext out of the function configuration and lets the
+          # secret be rotated without redeploying this stack.
+          PINGHOLD_SECRETS_ARN: !Ref AppSecrets
+          PINGHOLD_DEMO_AGENTS: !Ref DemoAgents
+          PINGHOLD_DATABRICKS_HOST: !Ref DatabricksHost
+          PINGHOLD_DATABRICKS_WAREHOUSE_ID: !Ref DatabricksWarehouseId
+          # Resolved at deploy time from Secrets Manager, so the token never appears
+          # in the template, the parameter list, or the stack events.
+          PINGHOLD_DATABRICKS_TOKEN: !If
+            - HasDatabricksToken
+            - !Sub "{{resolve:secretsmanager:${DatabricksTokenSecretArn}:SecretString:token}}"
+            - ""
+      Events:
+        ApiRoot:
+          Type: Api
+          Properties:
+            Path: /
+            Method: ANY
+            RestApiId: !Ref LoveHeartBeatApiGateway
+        ApiProxy:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+            RestApiId: !Ref LoveHeartBeatApiGateway
+        HealthCheck:
+          Type: Api
+          Properties:
+            Path: /health
+            Method: GET
+            RestApiId: !Ref LoveHeartBeatApiGateway
+
+  LoveHeartBeatApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub loveheartbeat-api-${Stage}
+      StageName: !Ref Stage
+      Cors:
+        AllowMethods: "'*'"
+        AllowHeaders: "'*'"
+        AllowOrigin: !Sub "'${FrontendUrl}'"
+      # Auth is enforced in the FastAPI app (see main.py), which accepts Cognito
+      # tokens, local JWTs, and API keys. A gateway-level Cognito authorizer would
+      # also block /auth/login and the CORS preflight.
+      EndpointConfiguration:
+        Type: REGIONAL
+
+Outputs:
+  ApiBaseUrl:
+    Description: >
+      Isolated API Gateway origin used by the shared environment router, including
+      the /api/v1 prefix.
+    Value: !Sub https://${LoveHeartBeatApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/api/v1
+  CognitoUserPoolId:
+    Description: Cognito User Pool ID
+    Value: !Ref CognitoUserPool
+  CognitoAppClientId:
+    Description: Cognito App Client ID
+    Value: !Ref CognitoUserPoolClient
+  CognitoAuthUrl:
+    Description: Cognito hosted UI / token endpoint base URL
+    Value: !Sub https://${CognitoDomainPrefix}-${Stage}.auth.${AWS::Region}.amazoncognito.com
+  AppSecretsArn:
+    Description: Secrets Manager ARN for runtime secrets
+    Value: !Ref AppSecrets
