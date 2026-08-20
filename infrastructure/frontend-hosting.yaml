@@ -31,14 +31,6 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub loveheartbeat-frontend-${Stage}-${AWS::AccountId}
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: false
-        BlockPublicPolicy: false
-        IgnorePublicAcls: false
-        RestrictPublicBuckets: false
-      WebsiteConfiguration:
-        IndexDocument: index.html
-        ErrorDocument: index.html
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
@@ -51,9 +43,12 @@ Resources:
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - Sid: PublicReadForGetBucketObjects
+          # CloudFront reads through the OAI, so the bucket stays private.
+          # A public policy would fail outright under account-level Block Public Access.
+          - Sid: AllowCloudFrontOAIRead
             Effect: Allow
-            Principal: "*"
+            Principal:
+              CanonicalUser: !GetAtt FrontendOriginAccessIdentity.S3CanonicalUserId
             Action: s3:GetObject
             Resource: !Sub arn:aws:s3:::${FrontendBucket}/*
 

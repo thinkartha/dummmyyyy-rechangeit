@@ -114,6 +114,23 @@ jobs:
           fi
 
           STACK_NAME="loveheartbeat-frontend-hosting-${STAGE}"
+
+          # A stack whose first CREATE failed sits in ROLLBACK_COMPLETE, which `deploy`
+          # refuses to update — so every later run fails for that reason instead of the
+          # real one. Nothing is live in that state, so deleting it is safe.
+          STATUS=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
+            --query 'Stacks[0].StackStatus' --output text 2>/dev/null || true)
+          if [[ "$STATUS" == "ROLLBACK_COMPLETE" || "$STATUS" == "REVIEW_IN_PROGRESS" ]]; then
+            echo "Stack is $STATUS; deleting before redeploy."
+            aws cloudformation delete-stack --stack-name "$STACK_NAME"
+            aws cloudformation wait stack-delete-complete --stack-name "$STACK_NAME"
+          fi
+
+          # Print the failing resource in the log instead of "run describe-stack-events".
+          trap 'aws cloudformation describe-stack-events --stack-name "$STACK_NAME" \
+            --query "reverse(StackEvents)[?ResourceStatusReason!=null] | [:10].[LogicalResourceId,ResourceStatus,ResourceStatusReason]" \
+            --output text >&2' ERR
+
           aws cloudformation deploy \
             --template-file infrastructure/frontend-hosting.yaml \
             --stack-name "$STACK_NAME" \
