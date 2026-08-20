@@ -31,14 +31,18 @@ class ElasticsearchClient:
         """
         if hosts is None:
             hosts = [h.strip() for h in os.getenv(ES_HOSTS_ENV, "").split(",") if h.strip()]
-        # The SAM stack does not provision Elasticsearch. In Lambda, an unset host means
-        # the optional feature is disabled; it must not fall back to the Lambda container.
-        if not hosts and os.getenv("AWS_LAMBDA_FUNCTION_NAME"):
-            self.client = None
-            logger.info("ELASTICSEARCH_HOSTS unset; Elasticsearch features are disabled")
-            return
+        # Unset means the optional feature is off — everywhere, not only in Lambda.
+        #
+        # This used to fall back to http://localhost:9200 outside Lambda, which made
+        # "not configured" indistinguishable from "configured to point at localhost":
+        # search then failed with a connection error and surfaced as a 500 on a feature
+        # the deployment never opted into. Every real local path sets the variable
+        # (docker-compose and .env.example both do), so the fallback bought nothing
+        # and cost a misleading error.
         if not hosts:
-            hosts = ["http://localhost:9200"]
+            self.client = None
+            logger.info("%s unset; Elasticsearch features are disabled", ES_HOSTS_ENV)
+            return
 
         self.client = Elasticsearch(
             hosts=hosts,

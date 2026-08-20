@@ -51,9 +51,13 @@ jobs:
           "
 
       - name: Replay sample API Gateway events
-        # Every file in events/ goes through the real Lambda entrypoint. 5xx means the
-        # handler itself broke; 501 (integration not configured) and 401 (bad demo
-        # password) are the correct answers in an unconfigured environment.
+        # Every file in events/ goes through the real Lambda entrypoint.
+        #
+        # CI configures no integrations, so "this deployment has not wired that up"
+        # is a correct answer, not a failure: 501 (not implemented here) and 503
+        # (dependency absent, e.g. Elasticsearch) both mean that. 401 on the demo
+        # login is likewise correct. Anything else in the 5xx range is the handler
+        # itself breaking, which is what this step exists to catch.
         env:
           PYTHONPATH: .
         run: |
@@ -61,6 +65,7 @@ jobs:
           import json, pathlib, sys
           from handlers.lambda_handler import handler
 
+          DEGRADED_OK = {501, 503}
           ctx = type("C", (), {"aws_request_id": "ci"})()
           failures = []
           for path in sorted(pathlib.Path("events").glob("*.json")):
@@ -69,7 +74,7 @@ jobs:
                   continue
               status = handler(event, ctx)["statusCode"]
               print(f"  {status}  {path.name}")
-              if status >= 500 and status != 501:
+              if status >= 500 and status not in DEGRADED_OK:
                   failures.append(f"{path.name} -> {status}")
           if failures:
               sys.exit("Sample events returned server errors: " + ", ".join(failures))
