@@ -40,18 +40,52 @@ _ALLOWED_ORIGINS = {
     ).split(",")
     if value.strip()
 }
+# Tenant frontends live at https://<slug>.loveheartbeat.com. Set to "" to allow only the
+# hosts named in ALLOWED_FRONTEND_ORIGINS.
+_TENANT_ORIGIN_SUFFIX = os.getenv("TENANT_ORIGIN_SUFFIX", "loveheartbeat.com").strip().lstrip(".")
 _BODY_METHODS = {"POST", "PUT", "PATCH"}
+# Only used when a preflight arrives without Access-Control-Request-Headers, which a
+# browser never omits — this is for curl and health probes.
+_DEFAULT_ALLOW_HEADERS = "Authorization,Content-Type,Accept,X-Tenant-Slug"
 _HOP_HEADERS = {
     "connection", "content-length", "host", "keep-alive", "proxy-authenticate",
     "proxy-authorization", "te", "trailer", "transfer-encoding", "upgrade",
 }
 
 
+def _header(event: dict[str, Any], name: str) -> str:
+    """Header lookup that does not care about casing. API Gateway preserves whatever
+    the client sent, so `Origin` and `origin` both turn up in the wild."""
+    return next(
+        (str(value) for key, value in (event.get("headers") or {}).items()
+         if key.lower() == name.lower() and value),
+        "",
+    )
+
+
+def _origin_allowed(origin: str) -> bool:
+    """Every tenant browses from its own subdomain.
+
+    The product hands each organization `<slug>.loveheartbeat.com`, so an allow-list of
+    three fixed hosts rejects real customers the moment they use the URL they were given.
+    Match the apex and any single-label subdomain of it, over https only — the check is
+    on the suffix *after* a dot, so `evil-loveheartbeat.com` does not slip through."""
+    if origin in _ALLOWED_ORIGINS:
+        return True
+    if not _TENANT_ORIGIN_SUFFIX:
+        return False
+    scheme, _, host = origin.partition("://")
+    if scheme != "https" or not host.endswith(f".{_TENANT_ORIGIN_SUFFIX}"):
+        return False
+    label = host[: -(len(_TENANT_ORIGIN_SUFFIX) + 1)]
+    return bool(label) and "." not in label
+
+
 def _cors_headers(event: dict[str, Any]) -> dict[str, str]:
-    origin = (event.get("headers") or {}).get("origin") or (event.get("headers") or {}).get("Origin")
-    if origin and origin.rstrip("/") in _ALLOWED_ORIGINS:
+    origin = _header(event, "origin").rstrip("/")
+    if origin and _origin_allowed(origin):
         return {
-            "Access-Control-Allow-Origin": origin.rstrip("/"),
+            "Access-Control-Allow-Origin": origin,
             "Access-Control-Allow-Credentials": "true",
             "Vary": "Origin",
         }
@@ -161,9 +195,16 @@ def handler(event: dict[str, Any], _context: Any) -> dict:
     method = event.get("httpMethod", "GET").upper()
     path = event.get("path") or "/"
     if method == "OPTIONS":
+        # Echo back whatever the browser asked to send. The previous fixed list did not
+        # include X-Tenant-Slug — which api-client.js sends on *every* request — so the
+        # preflight failed and the frontend could not even reach the login route. A
+        # hardcoded list goes stale the next time a header is added; this one cannot.
+        # `*` is not an option: with Allow-Credentials it is read literally, not as a
+        # wildcard.
+        requested = _header(event, "access-control-request-headers")
         return _response(event, 204, "", {
             "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
-            "Access-Control-Allow-Headers": "Authorization,Content-Type,Accept",
+            "Access-Control-Allow-Headers": requested or _DEFAULT_ALLOW_HEADERS,
             "Access-Control-Max-Age": "600",
         })
     if method == "GET" and path in {"/health", "/router/health"}:
