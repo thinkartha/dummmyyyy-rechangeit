@@ -110,6 +110,7 @@ export const SOURCES = {
         cells: [r.name, r.trigger || '—', r.action || '—', num(r.execution_count),
                 r.ai_driven ? 'AI' : 'Rule',
                 badge(r.enabled ? 'Enabled' : 'Disabled')],
+        action: { key: 'runAutomationRule', arg: r.id, label: 'Run' },
       })),
   },
 
@@ -137,6 +138,7 @@ export const SOURCES = {
                 d.connections != null ? num(d.connections) : '—',
                 d.replication_lag_seconds != null ? `${num(d.replication_lag_seconds, 1)}s` : '—',
                 badge(d.status || 'unknown')],
+        action: { key: 'removeDatabase', arg: d.id || d.database_id, label: 'Remove' },
       })),
   },
 
@@ -165,6 +167,24 @@ export const SOURCES = {
       })),
   },
 
+  /**
+   * Alert clusters: a storm collapsed into a handful of rows. Each row carries a
+   * Brief button that opens the coding-agent handoff for that cluster.
+   */
+  clusters: {
+    load: (api) => api.alerts.clusters(),
+    rows: (data) =>
+      (data?.clusters || []).map((c) => ({
+        icon: 'fa-layer-group',
+        iconColor: c.severity === 'critical' ? 'danger' : c.severity === 'warning' ? 'warning' : 'info',
+        meta: c.id,
+        cells: [c.title, badge(c.severity), num(c.count),
+                (c.services || []).join(', ') || '—',
+                c.last_seen || '—', badge(c.status)],
+        action: { key: 'clusterBrief', arg: c.id, label: 'Brief' },
+      })),
+  },
+
   alertManagement: {
     load: (api) => api.alertManagement.routingRules(),
     rows: (data) =>
@@ -177,6 +197,7 @@ export const SOURCES = {
                 r.severity || '—',
                 r.escalation_minutes != null ? `${num(r.escalation_minutes)}m` : '—',
                 badge(r.enabled ? 'Enabled' : 'Disabled')],
+        action: { key: 'testRoutingRule', arg: r.id, label: 'Test' },
       })),
   },
 
@@ -210,6 +231,18 @@ function cellHtml(cell, colKey, index, row) {
   return `<td class="align-middle ${colKey}">${esc(cell)}</td>`;
 }
 
+/**
+ * A per-row button, when the source asks for one. The click is handled by the
+ * delegated listener in actions.js, so nothing needs rebinding after a re-render.
+ */
+function actionHtml(row) {
+  if (!row.action) return '';
+  return `<td class="align-middle text-end pe-3">` +
+         `<button type="button" class="btn btn-phoenix-secondary btn-sm" ` +
+         `data-lhb-action="${esc(row.action.key)}" data-lhb-arg="${esc(row.action.arg)}">` +
+         `${esc(row.action.label)}</button></td>`;
+}
+
 function esc(value) {
   return String(value ?? '—').replace(/[&<>"']/g, (c) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -221,7 +254,10 @@ function render(root, rows) {
   if (!tbody) return;
   const keys = Array.from(root.querySelectorAll('thead th[data-sort]')).map((th) => th.dataset.sort);
   tbody.innerHTML = rows
-    .map((row) => '<tr>' + row.cells.map((c, i) => cellHtml(c, keys[i] || `col${i}`, i, row)).join('') + '</tr>')
+    .map((row) => '<tr>' +
+      row.cells.map((c, i) => cellHtml(c, keys[i] || `col${i}`, i, row)).join('') +
+      actionHtml(row) +
+      '</tr>')
     .join('');
 }
 

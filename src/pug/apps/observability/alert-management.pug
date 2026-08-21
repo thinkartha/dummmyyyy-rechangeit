@@ -13,7 +13,8 @@ block content
   +ObsPageHeader({
     title: 'Alert Management',
     subtitle: 'Where alerts go, who owes a response, and when to stay quiet — routing rules, SLA policies, and maintenance windows',
-    action: 'New routing rule'
+    action: 'New routing rule',
+    actionKey: 'routingRule'
   })
 
   +ObsStatCards([
@@ -35,6 +36,7 @@ block content
     .tab-pane.fade.show.active#tab-routing(role='tabpanel')
       +ObsToolTable({
     live: 'alertManagement',
+    rowAction: true,
         title: 'Routing rules',
         subtitle: 'First matching rule wins. Test a rule against a recent alert before enabling it.',
         searchPlaceholder: 'Search rules, services, or destinations',

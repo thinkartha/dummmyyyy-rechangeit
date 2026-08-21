@@ -13,7 +13,8 @@ block content
   +ObsPageHeader({
     title: 'Correlation & Root Cause',
     subtitle: 'Alerts that fired together, collapsed into one incident with a probable cause and the evidence behind it',
-    action: 'Recorrelate'
+    action: 'Recorrelate',
+    actionKey: 'recorrelate'
   })
 
   +ObsStatCards([
@@ -67,6 +68,33 @@ block content
               | overlapped the window
             li No deploy, config change, or scaling event in the window
             li Recovery order matched the failure order in reverse
+
+  //- Alert clustering. The storm on the left of an incident is hundreds of near-identical
+  //- alerts; the backend collapses them by message template and returns one row each.
+  //- Every live row carries a Brief button: the facts, the deduplicated logs, and a
+  //- ready-to-send prompt for whichever coding agent you run.
+  +ObsToolTable({
+    live: 'clusters',
+    rowAction: true,
+    title: 'Alert clusters',
+    subtitle: 'Near-identical alerts collapsed by message template — open a brief to hand one to a coding agent',
+    searchPlaceholder: 'Search clusters or services',
+    pageSize: 6,
+    columns: [
+      { label: 'Cluster', className: 'ps-3' },
+      { label: 'Severity' },
+      { label: 'Alerts' },
+      { label: 'Services' },
+      { label: 'Last seen' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-layer-group', iconColor: 'danger', meta: 'clu-sample-1', cells: ['Connection pool exhausted on <host>', { text: 'critical', badge: 'danger' }, '86', 'checkout-api, orders-db', '14:11:02', { text: 'firing', badge: 'danger' }] },
+      { icon: 'fa-layer-group', iconColor: 'warning', meta: 'clu-sample-2', cells: ['Upstream timeout after <ms>ms', { text: 'warning', badge: 'warning' }, '41', 'gateway-edge', '14:09:37', { text: 'firing', badge: 'danger' }] },
+      { icon: 'fa-layer-group', iconColor: 'warning', meta: 'clu-sample-3', cells: ['Talend job <job> exited non-zero', { text: 'warning', badge: 'warning' }, '12', 'etl-nightly', '13:58:14', { text: 'resolved', badge: 'success' }] },
+      { icon: 'fa-layer-group', iconColor: 'info', meta: 'clu-sample-4', cells: ['Cache miss ratio above <pct>%', { text: 'info', badge: 'info' }, '9', 'search-api', '13:44:51', { text: 'resolved', badge: 'success' }] }
+    ]
+  })
 
   +ObsToolTable({
     live: 'correlation',
