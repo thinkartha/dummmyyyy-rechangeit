@@ -3,7 +3,7 @@ include ../../../layouts/LayoutCardAuth
 
 block wrapperContent
   +LayoutCardBasic({img:37, page: 'sign-up'})
-    .auth-form-box
+    .auth-form-box(data-lhb-auth='signup' data-lhb-signin=`${CWD}${paths['card-signin']}` data-lhb-confirm=`${CWD}${paths['card-2FA']}` data-lhb-reset=`${CWD}${paths['card-reset-password']}`)
       .text-center.mb-7
         a(href=`${CWD}${paths['default-dashboard']}`).d-flex.flex-center.text-decoration-none.mb-4
           +Logo({text:false,width:58}).fw-bolder.fs-3.d-inline-block
@@ -16,33 +16,54 @@ block wrapperContent
       form
         .mb-3.text-start
           label.form-label(for='name') Name
-          input#name.form-control(type='text' placeholder='Name')
+          input#name.form-control(type='text' placeholder='Name' name='name')
         .mb-3.text-start
           label.form-label(for='email') Email address
-          input#email.form-control(type='email' placeholder='name@example.com')
+          input#email.form-control(type='email' placeholder='name@example.com' name='email')
         .row.g-3.mb-3
           .col-sm-6
             label.form-label(for='password') Password
             .position-relative(data-password)
-              input#password.form-control.form-icon-input.pe-6(type='password' placeholder='Password' data-password-input)
+              input#password.form-control.form-icon-input.pe-6(type='password' placeholder='Password' data-password-input name='password')
               button.btn.px-3.py-0.h-100.position-absolute.top-0.end-0.fs-7.text-body-tertiary(data-password-toggle)
                 span.uil.uil-eye.show
                 span.uil.uil-eye-slash.hide
           .col-sm-6
             label.form-label(for='confirmPassword') Confirm Password
             .position-relative(data-password)
-              input#confirmPassword.form-control.form-icon-input.pe-6(type='password' placeholder='Confirm Password' data-password-input)
+              input#confirmPassword.form-control.form-icon-input.pe-6(type='password' placeholder='Confirm Password' data-password-input name='confirmPassword')
               button.btn.px-3.py-0.h-100.position-absolute.top-0.end-0.fs-7.text-body-tertiary(data-password-toggle)
                 span.uil.uil-eye.show
                 span.uil.uil-eye-slash.hide
+        //- The backend supports four registration intents and they land in different
+        //- places: solo signs you straight in, create_org and join_org both wait on an
+        //- approval, accept_invite redeems a token. Without this picker every sign-up was
+        //- silently a solo account.
+        .mb-3.text-start
+          label.form-label(for='intent') I want to
+          select#intent.form-select(name='intent' data-lhb-intent)
+            option(value='solo') Create a personal account
+            option(value='create_org') Create a new organization
+            option(value='join_org') Join an existing organization
+            option(value='accept_invite') Redeem an invite
+        .mb-3.text-start.d-none(data-lhb-intent-field='create_org')
+          label.form-label(for='org_name') Organization name
+          input#org_name.form-control(type='text' placeholder='Acme Corp' name='org_name')
+        .mb-3.text-start.d-none(data-lhb-intent-field='join_org')
+          label.form-label(for='org_identifier') Organization name or ID
+          input#org_identifier.form-control(type='text' placeholder='acme' name='org_identifier')
+          .form-text.fs-10 An administrator there has to approve your request before you can sign in.
+        .mb-3.text-start.d-none(data-lhb-intent-field='accept_invite')
+          label.form-label(for='invite_token') Invite token
+          input#invite_token.form-control(type='text' placeholder='Paste the token from your invite' name='invite_token')
         .form-check.mb-3
-          input#termsService.form-check-input(type='checkbox')
+          input#termsService.form-check-input(type='checkbox' name='termsService')
           label.form-label.fs-9.text-transform-none(for='termsService')
             | I accept the 
             a(href='#!') terms 
             | and 
             a(href='#!') privacy policy
 
-        button.btn.btn-primary.w-100.mb-3 Sign up
+        button.btn.btn-primary.w-100.mb-3(type='button' data-lhb-auth-submit) Sign up
         .text-center
           a.fs-9.fw-bold(href=`${CWD}${paths['card-signin']}`) Sign in to an existing account

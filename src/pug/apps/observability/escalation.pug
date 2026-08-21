@@ -1,0 +1,182 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Observability', href: '#!' },
+      { label: 'Escalation & Approval', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'Escalation & Approval',
+    subtitle: 'Who gets woken when nobody answers, and what a machine is not allowed to do without a human saying yes',
+    action: 'New escalation path',
+    actionKey: 'escalationPath'
+  })
+
+  +ObsStatCards([
+    { label: 'Awaiting approval', value: '4', delta: '2 expiring', badge: 'warning' },
+    { label: 'Escalation paths', value: '6', delta: 'all active', badge: 'success' },
+    { label: 'Reached level 3+', value: '3', delta: 'last 7d', badge: 'danger' },
+    { label: 'Median time to ack', value: '4m 12s', delta: '-38s', badge: 'success' }
+  ])
+
+  //- Pending approvals are the automation engine's predictive insights: the engine
+  //- proposes an action and waits rather than acting. Approve and Reject on each row
+  //- POST to /automation/insights/{id}/{decision}, which is the only approval gate the
+  //- backend actually enforces — the workflow definitions below it are configuration.
+  +ObsToolTable({
+    live: 'pendingApprovals',
+    title: 'Pending approvals',
+    subtitle: 'Actions the automation engine has proposed and is holding until a human decides',
+    searchPlaceholder: 'Search proposals',
+    pageSize: 8,
+    rowAction: true,
+    columns: [
+      { label: 'Proposed action', className: 'ps-3' },
+      { label: 'Requested by' },
+      { label: 'Confidence' },
+      { label: 'Impact' },
+      { label: 'Waiting' },
+      { label: 'Priority' }
+    ],
+    rows: [
+      { icon: 'fa-rotate-right', iconColor: 'danger', meta: 'Production Restart Approval', cells: ['Restart user-service in production', 'Automation engine', '92%', 'user-service, auth-service · ~3m downtime', '5m', { text: 'High', badge: 'danger' }] },
+      { icon: 'fa-database', iconColor: 'warning', meta: 'Database Performance Approval', cells: ['Scale orders connection pool 450 → 600', 'Database monitor', '87%', 'orders-db · no downtime', '12m', { text: 'Medium', badge: 'warning' }] },
+      { icon: 'fa-arrows-up-down', iconColor: 'warning', meta: 'Capacity Approval', cells: ['Scale checkout-api to 6 replicas', 'Predictive scaler', '81%', 'checkout-api · +$34/day', '21m', { text: 'Medium', badge: 'warning' }] },
+      { icon: 'fa-shield-halved', iconColor: 'info', meta: 'Security Policy Changes', cells: ['Rotate the expiring Databricks PAT', 'Credential monitor', '99%', 'Data Observability, ETL collection', '2h', { text: 'Low', badge: 'info' }] }
+    ]
+  })
+
+  .row.g-4.my-0
+    .col-12.col-xl-7
+      .card.h-100
+        .card-header.border-bottom.border-translucent.py-3
+          h4.mb-0 Escalation paths
+          p.text-body-tertiary.fs-9.mb-0 Each level is given its timeout to acknowledge before the next one is paged
+        .card-body.p-0
+          .table-responsive.scrollbar
+            table.table.table-sm.fs-9.mb-0
+              thead
+                tr
+                  th.ps-3.text-uppercase Path
+                  th.text-uppercase Trigger
+                  th.text-uppercase Levels
+                  th.text-uppercase Success
+                  th.text-uppercase Status
+              tbody
+                tr
+                  td.ps-3
+                    h6.mb-0 Critical Infrastructure
+                    p.text-body-tertiary.fs-10.mb-0 On-call → Team lead → Eng manager → VP
+                  td.font-monospace.fs-10 severity=critical AND category=infrastructure
+                  td 4 · 15m/30m/60m/120m
+                  td 94%
+                  td
+                    span.badge.badge-phoenix.badge-phoenix-success Active
+                tr
+                  td.ps-3
+                    h6.mb-0 Security Incident
+                    p.text-body-tertiary.fs-10.mb-0 Analyst → Security lead → CISO → Exec
+                  td.font-monospace.fs-10 category=security
+                  td 4 · 10m/20m/30m/60m
+                  td 98%
+                  td
+                    span.badge.badge-phoenix.badge-phoenix-success Active
+                tr
+                  td.ps-3
+                    h6.mb-0 Database Performance
+                    p.text-body-tertiary.fs-10.mb-0 DBA → Senior DBA → Architect
+                  td.font-monospace.fs-10 source=database AND response_time>5s
+                  td 3 · 20m/45m/90m
+                  td 91%
+                  td
+                    span.badge.badge-phoenix.badge-phoenix-success Active
+                tr
+                  td.ps-3
+                    h6.mb-0 ETL Freshness
+                    p.text-body-tertiary.fs-10.mb-0 Data engineer → Platform lead
+                  td.font-monospace.fs-10 category=etl AND freshness_breached
+                  td 2 · 30m/90m
+                  td 88%
+                  td
+                    span.badge.badge-phoenix.badge-phoenix-success Active
+        .card-footer.border-top.border-translucent
+          p.fs-9.text-body-tertiary.mb-0
+            | The routing rule a path belongs to carries its first timeout —
+            a.ms-1(href=`${CWD}${paths['obs-alert-management']}`) Alert Management
+            |  is where that number is set.
+
+    .col-12.col-xl-5
+      .card.h-100
+        .card-header.border-bottom.border-translucent.py-3
+          h4.mb-0 Approval workflows
+          p.text-body-tertiary.fs-9.mb-0 What automation may not do on its own
+        .card-body.p-0
+          .table-responsive.scrollbar
+            table.table.table-sm.fs-9.mb-0
+              thead
+                tr
+                  th.ps-3.text-uppercase Workflow
+                  th.text-uppercase Approvers
+                  th.text-uppercase Timeout
+                  th.text-uppercase Pending
+              tbody
+                tr
+                  td.ps-3
+                    h6.mb-0 Production Restart
+                    p.text-body-tertiary.fs-10.mb-0 Emergency override allowed
+                  td Team lead (required), Eng manager
+                  td 30m
+                  td 3
+                tr
+                  td.ps-3
+                    h6.mb-0 Database Schema Changes
+                    p.text-body-tertiary.fs-10.mb-0 No override
+                  td DBA, Architect, Eng manager — all required
+                  td 60m
+                  td 1
+                tr
+                  td.ps-3
+                    h6.mb-0 Security Policy Changes
+                    p.text-body-tertiary.fs-10.mb-0 Emergency override allowed
+                  td Security lead, CISO — both required
+                  td 45m
+                  td 0
+                tr
+                  td.ps-3
+                    h6.mb-0 Cost-increasing scale-up
+                    p.text-body-tertiary.fs-10.mb-0 Auto-approves under $50/day
+                  td FinOps owner
+                  td 120m
+                  td 0
+
+  .card
+    .card-header.border-bottom.border-translucent.py-3
+      h4.mb-0 Escalation analytics
+      p.text-body-tertiary.fs-9.mb-0 How far up the chain incidents actually travelled, last 5 days
+    .card-body
+      .table-responsive.scrollbar
+        table.table.table-sm.fs-9.mb-0
+          thead
+            tr
+              th.ps-3.text-uppercase Day
+              th.text-uppercase Level 1
+              th.text-uppercase Level 2
+              th.text-uppercase Level 3
+              th.text-uppercase Level 4
+              th.text-uppercase Escaped L1
+          tbody
+            each row in [{ day: 'Mon', l1: 45, l2: 12, l3: 3, l4: 1 }, { day: 'Tue', l1: 52, l2: 15, l3: 4, l4: 0 }, { day: 'Wed', l1: 38, l2: 8, l3: 2, l4: 1 }, { day: 'Thu', l1: 41, l2: 11, l3: 3, l4: 0 }, { day: 'Fri', l1: 47, l2: 13, l3: 2, l4: 0 }]
+              tr
+                td.ps-3= row.day
+                td= row.l1
+                td= row.l2
+                td= row.l3
+                td= row.l4
+                td= Math.round((row.l2 / row.l1) * 100) + '%'
+    .card-footer.border-top.border-translucent
+      p.fs-9.text-body-tertiary.mb-0 An incident escaping level 1 usually means the first responder was already busy, not that the alert was hard. That ratio is the one worth watching.

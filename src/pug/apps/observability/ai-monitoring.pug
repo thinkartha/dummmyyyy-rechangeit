@@ -26,6 +26,7 @@ block content
 
   +ObsToolTable({
     title: 'AI tools & providers',
+    live: 'aiAgents',
     subtitle: 'Claude · Cursor · Lovable · Grok · ChatGPT · BabyLoveGrowth · DeepSeek · GitHub Copilot and more',
     searchPlaceholder: 'Search AI tools',
     columns: [
@@ -50,3 +51,57 @@ block content
       { icon: 'fa-fire', iconColor: 'danger', meta: 'mistral', cells: ['Mistral', 'Mistral AI', '14', '0.9M', '$80', { text: 'Healthy', badge: 'success' }] }
     ]
   })
+
+  //- Agentic workflows and evaluations: the two things that separate agent monitoring
+  //- from plain LLM call logging. A single call either worked or did not; a workflow
+  //- can complete with a step that quietly failed, and an answer can be well-formed and
+  //- still wrong — which is what the eval scores are for.
+  .row.g-4.mt-0
+    .col-12.col-xl-7
+      +ObsToolTable({
+        live: 'agentWorkflows',
+        title: 'Agentic workflows',
+        subtitle: 'Multi-step runs reconstructed from trace parentage, newest first',
+        searchPlaceholder: 'Search workflows',
+        pageSize: 6,
+        columns: [
+          { label: 'Workflow', className: 'ps-3' },
+          { label: 'Agents' },
+          { label: 'Steps' },
+          { label: 'Duration' },
+          { label: 'Started' },
+          { label: 'Status' }
+        ],
+        rows: [
+          { icon: 'fa-code-branch', iconColor: 'success', meta: 'wf-9f2a41c8', cells: ['nightly-triage', '3', '12 / 12', '48.2s', '14:02 UTC', { text: 'Completed', badge: 'success' }] },
+          { icon: 'fa-code-branch', iconColor: 'danger', meta: 'wf-1b77de03', cells: ['incident-summariser', '2', '5 / 7', '19.4s', '13:58 UTC', { text: 'Failed', badge: 'danger' }] },
+          { icon: 'fa-code-branch', iconColor: 'success', meta: 'wf-4c0e9a15', cells: ['pr-reviewer', '4', '21 / 21', '2m 11s', '13:44 UTC', { text: 'Completed', badge: 'success' }] },
+          { icon: 'fa-code-branch', iconColor: 'success', meta: 'wf-77ba2e60', cells: ['runbook-drafter', '2', '8 / 8', '31.7s', '13:30 UTC', { text: 'Completed', badge: 'success' }] },
+          { icon: 'fa-code-branch', iconColor: 'danger', meta: 'wf-2ed4b099', cells: ['schema-migrator', '3', '4 / 9', '1m 02s', '13:12 UTC', { text: 'Failed', badge: 'danger' }] },
+          { icon: 'fa-code-branch', iconColor: 'success', meta: 'wf-8a31cc27', cells: ['cost-explainer', '1', '6 / 6', '12.9s', '12:55 UTC', { text: 'Completed', badge: 'success' }] }
+        ]
+      })
+
+    .col-12.col-xl-5
+      +ObsToolTable({
+        live: 'agentEvaluations',
+        title: 'Observations & evaluations',
+        subtitle: 'Scored annotations on stored spans, rolled up per metric',
+        searchPlaceholder: 'Search metrics',
+        pageSize: 6,
+        columns: [
+          { label: 'Metric', className: 'ps-3' },
+          { label: 'Annotations' },
+          { label: 'Avg score' },
+          { label: 'Pass rate' },
+          { label: 'Spans' },
+          { label: 'Status' }
+        ],
+        rows: [
+          { icon: 'fa-flask', iconColor: 'success', meta: '412 annotations', cells: ['faithfulness', '412', '0.918', '96.4%', '388', { text: 'Passing', badge: 'success' }] },
+          { icon: 'fa-flask', iconColor: 'warning', meta: '406 annotations', cells: ['relevance', '406', '0.874', '89.1%', '388', { text: 'Below target', badge: 'warning' }] },
+          { icon: 'fa-flask', iconColor: 'success', meta: '388 annotations', cells: ['toxicity', '388', '0.996', '99.7%', '388', { text: 'Passing', badge: 'success' }] },
+          { icon: 'fa-flask', iconColor: 'success', meta: '201 annotations', cells: ['tool-choice', '201', '0.931', '94.5%', '196', { text: 'Passing', badge: 'success' }] },
+          { icon: 'fa-flask', iconColor: 'secondary', meta: 'human review', cells: ['helpfulness', '64', 'not scored', '—', '64', { text: 'Unscored', badge: 'secondary' }] }
+        ]
+      })

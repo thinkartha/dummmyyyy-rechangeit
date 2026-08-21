@@ -96,16 +96,40 @@ Static admin UI (Phoenix theme) compiled with Gulp:
 - AI Automation (rules, predictive insights, ML models, remediation agents)
 - SLO & Error Budgets, Drift Detection
 - Cloud Monitoring (multi-account), Cloud Cost, AI Cost & Usage
+- Escalation & Approval (pending approvals, escalation paths, approval workflows)
+- Service Topology & Dependencies
 
 **Platform**
 
 - Command Center, Administration (orgs / users / join requests), Integrations, Health & Connectivity
+- Databricks (connection, Unity Catalog browser, query console)
 
 **Organization (SaaS)**
 
 - Organizations, Multi-tenant overview, Onboarding, Members, Authentication / SSO
 
 Tables use shared search / filter / sort / pagination (`src/pug/mixins/observability/Common.pug`).
+
+### Static markup, live data
+
+Every page ships a full table of sample rows. That markup is the fallback, not decoration:
+a page opts into live data with `live: '<source>'`, and `integration/live-data.js` swaps the
+rows for the API's, with a badge on the card header saying which you are looking at — `Live`,
+`Sample data — API unreachable`, `Sign in for live data`, or `Not connected`. Nobody has to
+guess whether a number is real.
+
+Buttons work the same way through `integration/actions.js`: an `actionKey` with no endpoint
+behind it renders disabled with the reason on hover, rather than opening a form that posts
+nowhere.
+
+### Signing in
+
+The auth screens (`src/pug/pages/authentication/`) are wired to the Cognito-backed
+`/api/v1/auth` routes: sign-in, sign-up across all four registration intents, email
+confirmation, password reset and sign-out, in each of the simple / card / split layouts.
+Pages under `apps/observability`, `apps/platform` and `apps/organization` are behind a guard
+and bounce signed-out visitors to sign-in, remembering where they were going. See
+[`integration/README.md`](integration/README.md#auth).
 
 ### Local frontend
 

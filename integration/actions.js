@@ -657,6 +657,117 @@ export const ACTIONS = {
     },
   },
 
+  /* The two halves of /automation/insights/{id}/{decision}. */
+  approveInsight: {
+    direct: true,
+    confirm: 'Approve this proposal? The automation engine will carry it out.',
+    run: async (api, id) => {
+      await api.automation.decideInsight(id, 'approve');
+      return 'Approved — the automation engine will carry it out.';
+    },
+  },
+
+  rejectInsight: {
+    direct: true,
+    run: async (api, id) => {
+      await api.automation.decideInsight(id, 'reject');
+      return 'Rejected.';
+    },
+  },
+
+  disconnectDatabricks: {
+    direct: true,
+    confirm: 'Disconnect Databricks? Data Observability and the ETL connector both stop collecting.',
+    run: async (api) => { await api.databricks.deleteConfig(); return 'Databricks disconnected.'; },
+  },
+
+  /** Run the console's SQL and draw the result set under it. */
+  runDatabricksQuery: {
+    custom: async (api) => {
+      const input = document.getElementById('dbx-query');
+      const host = document.querySelector('[data-lhb-query-results]');
+      if (!input || !host) throw new Error('The query console is not on this page.');
+      const statement = input.value.trim();
+      if (!statement) throw new Error('Enter a query first.');
+
+      host.textContent = 'Running…';
+      const result = await api.databricks.query({ statement });
+      const columns = result.columns || result.schema || [];
+      const rows = result.rows || result.data || [];
+      if (!rows.length) {
+        host.textContent = 'No rows.';
+        return;
+      }
+
+      const table = document.createElement('table');
+      table.className = 'table table-sm fs-10 mb-0';
+      const head = table.createTHead().insertRow();
+      for (const col of columns) {
+        const th = document.createElement('th');
+        th.className = 'text-uppercase';
+        th.textContent = typeof col === 'string' ? col : col.name;
+        head.appendChild(th);
+      }
+      const body = table.createTBody();
+      for (const row of rows.slice(0, 100)) {
+        const tr = body.insertRow();
+        const cells = Array.isArray(row) ? row : columns.map((c) => row[typeof c === 'string' ? c : c.name]);
+        for (const cell of cells) tr.insertCell().textContent = cell == null ? '—' : String(cell);
+      }
+      host.replaceChildren(table);
+    },
+  },
+
+  retrainModel: {
+    direct: true,
+    run: async (api, id) => {
+      const result = await api.automation.retrainModel(id);
+      return (result && result.message) || 'Retraining queued.';
+    },
+  },
+
+  rotateAgentKey: {
+    direct: true,
+    confirm: 'Rotate this agent\'s key? The agent stops reporting until it is restarted with the new one.',
+    run: async (api, id) => {
+      const result = await api.automation.rotateAgentKey(id);
+      return result && result.key
+        ? 'Key rotated — copy it from the agent install page before leaving.'
+        : 'Key rotated.';
+    },
+  },
+
+  startMaintenanceWindow: {
+    direct: true,
+    run: async (api, id) => {
+      await api.alertManagement.maintenanceWindowAction(id, 'start');
+      return 'Window started — matching alerts are suppressed.';
+    },
+  },
+
+  endMaintenanceWindow: {
+    direct: true,
+    confirm: 'End this window now? Suppressed alerts resume routing immediately.',
+    run: async (api, id) => {
+      await api.alertManagement.maintenanceWindowAction(id, 'end');
+      return 'Window ended.';
+    },
+  },
+
+  retryEtlExecution: {
+    direct: true,
+    run: async (api, id) => {
+      const result = await api.etl.retry(id);
+      return `Retry queued — execution is ${(result && result.status) || 'running'}.`;
+    },
+  },
+
+  removeAdminUser: {
+    direct: true,
+    confirm: 'Remove this user from the platform? They lose access to every organization.',
+    run: async (api, email) => { await api.admin.deleteUser(email); return 'User removed.'; },
+  },
+
   removeDatabase: {
     direct: true,
     // Deleting a registration drops the credential with it, so this one asks first.
@@ -698,6 +809,8 @@ export const UNSUPPORTED = {
   exportTraces: 'No trace export endpoint yet.',
   acknowledgeAll: 'No bulk acknowledge endpoint yet.',
   saveAuthSettings: 'No organization authentication-settings endpoint yet — Cognito policy is set in the stack.',
+  escalationPath: 'No escalation-path endpoint yet — routing rules in Alert Management carry the first timeout.',
+  rebuildTopology: 'No topology rebuild endpoint yet — the graph is derived from spans on every read.',
 };
 
 /* --------------------------------------------------------------------- bind */

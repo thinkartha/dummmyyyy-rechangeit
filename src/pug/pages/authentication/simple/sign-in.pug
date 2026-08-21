@@ -3,7 +3,7 @@ include ../../../layouts/LayoutSimpleAuth
 
 
 block wrapperContent
-  +LayoutBasic
+  +LayoutBasic()(data-lhb-auth='signin')
     .text-center.mb-7
       h3.text-body-highlight Sign In
       p.text-body-tertiary Get access to your account
@@ -11,18 +11,17 @@ block wrapperContent
     .position-relative
       hr.bg-body-secondary.mt-5.mb-4
       .divider-content-center or use email
-    #signin-error.alert.alert-subtle-danger.d-none.text-start.py-2.fs-9(role='alert')
     .mb-3.text-start
       label.form-label(for='email') Email address
       .form-icon-container
         //- type='text', not 'email': the built-in platform admin signs in as "admin",
         //- which a type='email' field refuses to submit.
-        input#email.form-control.form-icon-input(type='text' placeholder='name@example.com' autocomplete='username')
+        input#email.form-control.form-icon-input(type='text' placeholder='name@example.com' autocomplete='username' name='email')
         span.fas.fa-user.text-body.fs-9.form-icon
     .mb-3.text-start
       label.form-label(for='password') Password
       .form-icon-container(data-password)
-        input#password.form-control.form-icon-input.pe-6(type='password' placeholder='Password' autocomplete='current-password' data-password-input)
+        input#password.form-control.form-icon-input.pe-6(type='password' placeholder='Password' autocomplete='current-password' data-password-input name='password')
         span.fas.fa-key.text-body.fs-9.form-icon
         button.btn.px-3.py-0.h-100.position-absolute.top-0.end-0.fs-7.text-body-tertiary(data-password-toggle)
           span.uil.uil-eye.show
@@ -34,47 +33,6 @@ block wrapperContent
           label.form-check-label.mb-0(for='basic-checkbox') Remember me
       .col-auto
         a.fs-9.fw-semibold(href=`${CWD}pages/authentication/simple/forgot-password.html`) Forgot Password?
-    button#signin-submit.btn.btn-primary.w-100.mb-3(type='button') Sign In
+    button.btn.btn-primary.w-100.mb-3(type='button' data-lhb-auth-submit) Sign In
     .text-center
       a.fs-9.fw-bold(href=`${CWD}${paths['simple-signup']}`) Create an account
-
-  script.
-    (function () {
-      var btn = document.getElementById('signin-submit');
-      var err = document.getElementById('signin-error');
-      var form = btn.closest('form') || document;
-
-      function fail(message) {
-        err.textContent = message;
-        err.classList.remove('d-none');
-      }
-
-      function submit() {
-        var email = document.getElementById('email').value.trim();
-        var password = document.getElementById('password').value;
-        if (!email || !password) return fail('Enter an email and password.');
-
-        err.classList.add('d-none');
-        btn.disabled = true;
-        btn.textContent = 'Signing in…';
-
-        window.lhbReady.then(function (lhb) {
-          return lhb.api.auth.login(email, password);
-        }).then(function () {
-          //- api.auth.login stores the token, so the dashboard's tables can use it.
-          window.location.href = '#{CWD}index.html';
-        }).catch(function (e) {
-          var status = /API (\d{3})/.exec(e.message);
-          fail(status && status[1] === '401'
-            ? 'Invalid email or password.'
-            : 'Could not reach the API. Check that the backend is running.');
-          btn.disabled = false;
-          btn.textContent = 'Sign In';
-        });
-      }
-
-      btn.addEventListener('click', submit);
-      form.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') { e.preventDefault(); submit(); }
-      });
-    })();

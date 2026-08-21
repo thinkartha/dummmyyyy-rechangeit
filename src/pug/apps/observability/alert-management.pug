@@ -62,6 +62,7 @@ block content
     .tab-pane.fade#tab-sla(role='tabpanel')
       +ObsToolTable({
         title: 'SLA policies',
+        live: 'sla',
         subtitle: 'Acknowledgement and resolution targets by severity. Breaches escalate to the next tier automatically.',
         searchPlaceholder: 'Search SLA policies',
         pageSize: 6,
@@ -84,6 +85,7 @@ block content
     .tab-pane.fade#tab-maintenance(role='tabpanel')
       +ObsToolTable({
         title: 'Maintenance windows',
+        live: 'maintenanceWindows',
         subtitle: 'Alerts matching a window are suppressed, not dropped — they stay queryable and resume routing when the window closes.',
         searchPlaceholder: 'Search maintenance windows',
         pageSize: 6,

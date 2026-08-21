@@ -1,0 +1,100 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Observability', href: '#!' },
+      { label: 'Service Topology', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'Service Topology & Dependencies',
+    subtitle: 'What calls what, inferred from span parentage rather than from a diagram somebody drew once and stopped updating',
+    action: 'Rebuild graph',
+    actionKey: 'rebuildTopology'
+  })
+
+  +ObsStatCards([
+    { label: 'Services', value: '38', delta: '+2', badge: 'info' },
+    { label: 'Dependencies', value: '112', delta: 'edges', badge: 'primary' },
+    { label: 'Unhealthy edges', value: '5', delta: '2 critical', badge: 'danger' },
+    { label: 'Single points of failure', value: '3', delta: 'no fallback', badge: 'warning' }
+  ])
+
+  .row.g-4.mb-4
+    .col-12.col-lg-7
+      .card.h-100
+        .card-header.border-bottom.border-translucent.py-3
+          h4.mb-0 Critical paths
+          p.text-body-tertiary.fs-9.mb-0 The chains a single failure takes the most services down with
+        .card-body
+          each path in [{ name: 'Checkout', hops: ['edge', 'api-gateway', 'checkout-api', 'orders-db'], risk: 'danger', note: 'orders-db has no read replica in the write path' }, { name: 'Sign-in', hops: ['edge', 'api-gateway', 'auth-service', 'user-service', 'sessions-cache'], risk: 'warning', note: 'sessions-cache is single-node' }, { name: 'Nightly load', hops: ['talend', 'staging-s3', 'databricks', 'warehouse'], risk: 'warning', note: 'no retry between staging and Databricks' }, { name: 'Search', hops: ['edge', 'api-gateway', 'search-api', 'elasticsearch'], risk: 'success', note: 'three replicas, degrades to cached results' }]
+            .border.border-translucent.rounded-3.p-3.mb-3
+              .d-flex.justify-content-between.align-items-center.mb-2
+                h6.mb-0= path.name
+                span.badge.badge-phoenix(class=`badge-phoenix-${path.risk}`)= path.hops.length + ' hops'
+              .d-flex.flex-wrap.align-items-center.gap-1.fs-10.mb-2
+                each hop, i in path.hops
+                  span.badge.bg-body-secondary.text-body-emphasis.fw-normal= hop
+                  if i < path.hops.length - 1
+                    span.fa-solid.fa-arrow-right.text-body-quaternary.mx-1
+              p.text-body-tertiary.fs-10.mb-0= path.note
+
+    .col-12.col-lg-5
+      .card.h-100
+        .card-header.border-bottom.border-translucent.py-3
+          h4.mb-0 Most depended on
+          p.text-body-tertiary.fs-9.mb-0 Fan-in: how many services break if this one does
+        .card-body.p-0
+          .table-responsive.scrollbar
+            table.table.table-sm.fs-9.mb-0
+              thead
+                tr
+                  th.ps-3.text-uppercase Service
+                  th.text-uppercase Callers
+                  th.text-uppercase Calls (1h)
+                  th.text-uppercase Health
+              tbody
+                each s in [{ name: 'api-gateway', callers: 14, calls: '2.4M', pct: 99, badge: 'success' }, { name: 'auth-service', callers: 11, calls: '840K', pct: 99, badge: 'success' }, { name: 'orders-db', callers: 7, calls: '612K', pct: 82, badge: 'warning' }, { name: 'user-service', callers: 6, calls: '431K', pct: 98, badge: 'success' }, { name: 'sessions-cache', callers: 5, calls: '1.1M', pct: 91, badge: 'warning' }, { name: 'notifications', callers: 4, calls: '96K', pct: 97, badge: 'success' }]
+                  tr
+                    td.ps-3= s.name
+                    td= s.callers
+                    td= s.calls
+                    td
+                      span.badge.badge-phoenix(class=`badge-phoenix-${s.badge}`)= s.pct + '%'
+        .card-footer.border-top.border-translucent
+          p.fs-9.text-body-tertiary.mb-0
+            | Edges come from the same spans as
+            a.mx-1(href=`${CWD}${paths['obs-traces']}`) Traces
+            | — a service missing here is a service that is not instrumented, not one with no callers.
+
+  //- Same source as the Traces page: the dependency edges the backend derives from span
+  //- parentage. Two pages, one endpoint — this one is the graph view of it.
+  +ObsToolTable({
+    live: 'traces',
+    title: 'Dependency edges',
+    subtitle: 'Caller → callee, with the volume and error rate of that specific pair',
+    searchPlaceholder: 'Search services or dependencies',
+    pageSize: 8,
+    columns: [
+      { label: 'Service', className: 'ps-3' },
+      { label: 'Depends on' },
+      { label: 'Calls (1h)' },
+      { label: 'p99' },
+      { label: 'Error rate' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-sitemap', iconColor: 'danger', meta: 'synchronous', cells: ['checkout-api', 'orders-db', '612K', '2.9s', '4.10%', { text: 'Degraded', badge: 'danger' }] },
+      { icon: 'fa-sitemap', iconColor: 'warning', meta: 'synchronous', cells: ['api-gateway', 'checkout-api', '418K', '1.4s', '1.80%', { text: 'Watch', badge: 'warning' }] },
+      { icon: 'fa-sitemap', iconColor: 'success', meta: 'synchronous', cells: ['api-gateway', 'auth-service', '840K', '86ms', '0.04%', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-sitemap', iconColor: 'warning', meta: 'cache', cells: ['auth-service', 'sessions-cache', '1.1M', '310ms', '0.90%', { text: 'Watch', badge: 'warning' }] },
+      { icon: 'fa-sitemap', iconColor: 'success', meta: 'synchronous', cells: ['auth-service', 'user-service', '431K', '54ms', '0.02%', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-sitemap', iconColor: 'success', meta: 'asynchronous', cells: ['orders-worker', 'notifications', '96K', '120ms', '0.10%', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-sitemap', iconColor: 'success', meta: 'synchronous', cells: ['search-api', 'elasticsearch', '288K', '71ms', '0.03%', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-sitemap', iconColor: 'secondary', meta: 'batch', cells: ['databricks', 'warehouse', '1.2K', '18s', '0.00%', { text: 'Healthy', badge: 'success' }] }
+    ]
+  })

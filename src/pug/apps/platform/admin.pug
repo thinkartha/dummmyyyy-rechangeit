@@ -36,6 +36,7 @@ block content
     .tab-pane.fade.show.active#tab-orgs(role='tabpanel')
       +ObsToolTable({
         title: 'Organizations',
+        live: 'adminOrganizations',
         subtitle: 'Every tenant on the platform. Each owns its slug subdomain, members, connectors, and billing.',
         searchPlaceholder: 'Search organizations or slugs',
         pageSize: 8,
@@ -62,6 +63,7 @@ block content
     .tab-pane.fade#tab-users(role='tabpanel')
       +ObsToolTable({
         title: 'Users',
+        live: 'adminUsers',
         subtitle: 'Platform-wide directory. A user belongs to one or more organizations; roles are scoped per organization.',
         searchPlaceholder: 'Search users or emails',
         pageSize: 8,

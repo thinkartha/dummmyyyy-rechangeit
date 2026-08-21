@@ -50,6 +50,54 @@ await api.databases.health();
 
 ## Auth
 
-`api.auth.login()` stores the access token in `localStorage` and every later call sends it
-as a bearer token. `api.auth.logout()` clears it. The backend re-verifies on every request,
-so this is convenience, not a trust boundary.
+`auth.js` owns the six auth screens, the route guard, and the signed-in user in the navbar.
+It follows the same rule as the other two modules: markup opts in with an attribute, and a
+registry entry says what that attribute means.
+
+```pug
++LayoutBasic()(data-lhb-auth='signin')
+  input#email.form-control(type='text' name='email')
+  input#password.form-control(type='password' name='password')
+  button.btn.btn-primary(type='button' data-lhb-auth-submit) Sign In
+```
+
+| Flow | Calls | Ends at |
+|------|-------|---------|
+| `signin` | `/auth/login` | `?next=`, or the command center |
+| `signup` | `/auth/register` | the code form, or a "waiting on approval" message |
+| `confirm` | `/auth/confirm` | sign-in |
+| `forgot` | `/auth/forgot-password` | the reset form |
+| `reset` | `/auth/reset-password` | sign-in |
+| `signout` | — | clears the session where it stands |
+
+Sign-up covers all four registration intents (`solo`, `create_org`, `join_org`,
+`accept_invite`); the picker shows only the extra field the chosen one needs.
+
+### Tokens
+
+`api.auth.login()` stores the access token **and** the refresh token. When a call 401s,
+`request()` spends the refresh token once and retries — access tokens last an hour, and
+without this every dashboard silently died after one. Only a refresh the *server rejected*
+ends the session; a 5xx or a timeout leaves the tokens alone and the next call tries again.
+When the session really is over, api-client fires `lhb:session-expired` and the guard turns
+that into a redirect. The backend re-verifies every request, so stored tokens are
+convenience, not a trust boundary.
+
+### Guard
+
+Pages under `/apps/observability/`, `/apps/platform/` and `/apps/organization/` show one
+tenant's data and redirect signed-out visitors to sign-in, remembering where they were
+going. The rest of the site is theme demonstration and stays open.
+
+Publishing a public, API-less demo of these pages? Set `window.__LHB_REQUIRE_AUTH__ = false`
+in `runtime-config.js` — otherwise the guard bounces every visitor to a sign-in page with no
+backend behind it.
+
+### Session in the UI
+
+| Attribute | Effect |
+|-----------|--------|
+| `data-lhb-user` / `data-lhb-role` | filled with the signed-in email and role |
+| `data-lhb-signed-in` / `data-lhb-signed-out` | shown only in that state |
+| `data-lhb-requires-role="platform_admin"` | hidden unless the role matches |
+| `data-lhb-signout` | clears the session and returns to sign-in |
