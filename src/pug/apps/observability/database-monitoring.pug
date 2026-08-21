@@ -13,7 +13,8 @@ block content
   +ObsPageHeader({
     title: 'Database Monitoring',
     subtitle: 'Connection health, replication lag, and slow queries across every engine an org has registered',
-    action: 'Add database'
+    action: 'Add database',
+    actionKey: 'addDatabase'
   })
 
   +ObsStatCards([
@@ -25,6 +26,7 @@ block content
 
   +ObsToolTable({
     live: 'databases',
+    rowAction: true,
     title: 'Registered databases',
     subtitle: 'PostgreSQL · MySQL / MariaDB · SQL Server · Oracle · Aurora · Redshift — credentials stored per organization',
     searchPlaceholder: 'Search databases or hosts',

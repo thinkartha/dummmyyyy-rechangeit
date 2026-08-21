@@ -3,7 +3,7 @@ include ../../../layouts/LayoutCardAuth
 
 block wrapperContent
   +LayoutCardBasic({img:37})
-    .auth-form-box
+    .auth-form-box(data-lhb-auth='confirm' data-lhb-signin=`${CWD}${paths['card-signin']}` data-lhb-confirm=`${CWD}${paths['card-2FA']}` data-lhb-reset=`${CWD}${paths['card-reset-password']}`)
       .text-center
         a(href=`${CWD}${paths['default-dashboard']}`).d-flex.flex-center.text-decoration-none.mb-4
           +Logo({text:false,width:58}).fw-bolder.fs-3.d-inline-block
@@ -11,17 +11,22 @@ block wrapperContent
         p.text-body-tertiary.mb-0 An email containing a 6-digit verification code has been sent to the email address - exa*********.com 
         P.fs-10.mb-5 Don’t have access? 
           a(href="#!") Use another method
+        //- The account being confirmed. Prefilled from the sign-up that sent you here;
+        //- typed in only when someone opens this page cold or on another device.
+        .mb-3.text-start
+          label.form-label(for='confirm-email') Email address
+          input#confirm-email.form-control(type='text' placeholder='name@example.com' name='email')
         form.verification-form(data-2fa-form)
           .d-flex.align-items-center.gap-2.mb-3
-            input.form-control.px-2.text-center(type="number")
-            input.form-control.px-2.text-center(type="number")
-            input.form-control.px-2.text-center(type="number")
+            input.form-control.px-2.text-center(type="text" inputmode="numeric" maxlength="1" data-lhb-code)
+            input.form-control.px-2.text-center(type="text" inputmode="numeric" maxlength="1" data-lhb-code)
+            input.form-control.px-2.text-center(type="text" inputmode="numeric" maxlength="1" data-lhb-code)
             span -
-            input.form-control.px-2.text-center(type="number")
-            input.form-control.px-2.text-center(type="number")
-            input.form-control.px-2.text-center(type="number")
+            input.form-control.px-2.text-center(type="text" inputmode="numeric" maxlength="1" data-lhb-code)
+            input.form-control.px-2.text-center(type="text" inputmode="numeric" maxlength="1" data-lhb-code)
+            input.form-control.px-2.text-center(type="text" inputmode="numeric" maxlength="1" data-lhb-code)
           .form-check.text-start.mb-4
             input.form-check-input#2fa-checkbox(type="checkbox")
             label(for="2fa-checkbox") Don’t ask again on this device
-          Button.btn.btn-primary.w-100.mb-5(type='submit' disabled) Verify
-          a.fs-9(href="#!") Didn’t receive the code? 
+          Button.btn.btn-primary.w-100.mb-5(type='button' data-lhb-auth-submit) Verify
+          a.fs-9(href="#!") Didn’t receive the code?

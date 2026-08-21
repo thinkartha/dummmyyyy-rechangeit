@@ -13,7 +13,8 @@ block content
   +ObsPageHeader({
     title: 'Integrations & Config Management',
     subtitle: 'Every source this organization has connected, what it is feeding, and whether its credentials still work',
-    action: 'Add integration'
+    action: 'Add integration',
+    actionKey: 'addIntegration'
   })
 
   +ObsStatCards([
@@ -31,6 +32,7 @@ block content
 
   +ObsToolTable({
     title: 'Connected integrations',
+    live: 'integrations',
     subtitle: 'Credentials are stored as secret references under org_id and never returned to the browser',
     searchPlaceholder: 'Search integrations',
     pageSize: 10,

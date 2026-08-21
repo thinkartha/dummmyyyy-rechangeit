@@ -19,6 +19,10 @@ const TENANT_BASE_DOMAIN =
 
 const API_PREFIX = '/api/v1';
 const TOKEN_KEY = 'lhb_access_token';
+const REFRESH_KEY = 'lhb_refresh_token';
+/* Cached copy of who the token says you are. Cleared with the token, never trusted on
+   its own: the backend re-derives the principal from the bearer token on every call. */
+const SESSION_KEY = 'lhb_session';
 
 /* Environment selector for the shared API domain.
  *
@@ -62,15 +66,113 @@ function tenantUrl(slug) {
 
 /* Session token. Stored so a reload keeps the user signed in; the backend still
    re-verifies it on every request, so this is a convenience, not a trust boundary. */
+function read(key) {
+  if (typeof window === 'undefined') return null;
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function write(key, value) {
+  if (typeof window === 'undefined') return;
+  try {
+    if (value) localStorage.setItem(key, value);
+    else localStorage.removeItem(key);
+  } catch {
+    /* private mode, quota — a session that cannot be cached still works for this tab */
+  }
+}
+
 function getToken() {
   if (typeof window === 'undefined') return null;
-  return window.__API_TOKEN__ || localStorage.getItem(TOKEN_KEY);
+  return window.__API_TOKEN__ || read(TOKEN_KEY);
 }
 
 function setToken(token) {
-  if (typeof window === 'undefined') return;
-  if (token) localStorage.setItem(TOKEN_KEY, token);
-  else localStorage.removeItem(TOKEN_KEY);
+  write(TOKEN_KEY, token);
+}
+
+function getRefreshToken() {
+  return read(REFRESH_KEY);
+}
+
+function setRefreshToken(token) {
+  write(REFRESH_KEY, token);
+}
+
+/** Who the current token belongs to, as the API last reported it. Null when signed out. */
+function getSession() {
+  const raw = read(SESSION_KEY);
+  if (!raw || !getToken()) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function setSession(session) {
+  write(SESSION_KEY, session ? JSON.stringify(session) : null);
+}
+
+/** The one role the UI branches on, collapsed from the backend's role list. */
+function roleOf(roles = []) {
+  if (roles.includes('platform_admin')) return 'platform_admin';
+  if (roles.includes('org_admin')) return 'org_admin';
+  return 'member';
+}
+
+/** Drop every trace of the session. After this the password is the only way back in. */
+function clearSession() {
+  setToken(null);
+  setRefreshToken(null);
+  setSession(null);
+}
+
+/* One refresh at a time. A dashboard fires a dozen calls at once and an expired token
+ * 401s all of them; without this they would race a dozen /auth/refresh calls, each
+ * overwriting the last and all but one of the rotated refresh tokens being spent. */
+let refreshInFlight = null;
+
+/**
+ * Trade the refresh token for a fresh access token.
+ *
+ * Returns the new token, or why there isn't one. The distinction matters: `expired`
+ * ends the session, `unavailable` must not — a 503 or a cold Lambda is not a reason to
+ * throw someone back to the sign-in page.
+ *
+ * Deliberately a bare fetch: a 401 from this call must not recurse into refresh again.
+ */
+function refreshAccessToken() {
+  if (refreshInFlight) return refreshInFlight;
+
+  const refresh_token = getRefreshToken();
+  if (!refresh_token) return Promise.resolve({ reason: 'expired' });
+
+  refreshInFlight = (async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(withEnv({ refresh_token }))
+      });
+      if (response.status === 401) return { reason: 'expired' };
+      if (!response.ok) return { reason: 'unavailable' };
+      const payload = await response.json().catch(() => null);
+      if (!payload || !payload.access_token) return { reason: 'unavailable' };
+      setToken(payload.access_token);
+      if (payload.refresh_token) setRefreshToken(payload.refresh_token);
+      return { token: payload.access_token };
+    } catch {
+      return { reason: 'unavailable' };
+    } finally {
+      refreshInFlight = null;
+    }
+  })();
+
+  return refreshInFlight;
 }
 
 function query(params = {}) {
@@ -90,16 +192,36 @@ function withEnv(body) {
 
 async function request(path, options = {}) {
   const slug = currentTenantSlug();
+
+  const send = (token) =>
+    fetch(`${API_BASE_URL}${path}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(slug ? { 'X-Tenant-Slug': slug } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(options.headers || {})
+      },
+      ...options
+    });
+
   const token = getToken();
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(slug ? { 'X-Tenant-Slug': slug } : {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers || {})
-    },
-    ...options
-  });
+  let response = await send(token);
+
+  /* Access tokens last an hour. Rather than surfacing that to every panel as an auth
+     error, spend the refresh token and retry once. Only a refresh the server actually
+     rejected ends the session; an unreachable auth service leaves the tokens alone so
+     the next attempt can try again. */
+  if (response.status === 401 && token) {
+    const fresh = await refreshAccessToken();
+    if (fresh.token) {
+      response = await send(fresh.token);
+    } else if (fresh.reason === 'expired') {
+      clearSession();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('lhb:session-expired'));
+      }
+    }
+  }
 
   if (!response.ok) {
     const detail = await response.text();
@@ -135,21 +257,46 @@ export const api = {
   organizations: () => get('/organizations'),
   onboardOrganization: (body) => post('/organizations', body),
 
-  /* Auth — login stores the token so later calls carry it automatically */
+  /* Auth — login stores the tokens so later calls carry them automatically */
   auth: {
+    /**
+     * Exchange credentials for a session.
+     *
+     * Returns the raw token response. A Cognito account that has not confirmed its
+     * email comes back with no access_token; the caller sends that user to /confirm
+     * rather than treating it as a failure.
+     */
     login: async (email, password) => {
-      const session = await post('/auth/login', { email, password });
-      if (session && session.access_token) setToken(session.access_token);
-      return session;
+      const result = await post('/auth/login', { email, password });
+      if (result && result.access_token) {
+        setToken(result.access_token);
+        setRefreshToken(result.refresh_token || null);
+        /* Roles come from /auth/me — the token's own claims, verified server-side —
+           rather than from whatever login happened to echo back. If that call fails the
+           token is still good, so fall back to the login payload. */
+        let roles = result.roles || [];
+        let orgId = result.org_id || null;
+        try {
+          const me = await get('/auth/me');
+          roles = me.roles || roles;
+          orgId = me.org_id ?? orgId;
+        } catch {
+          /* keep what login returned */
+        }
+        setSession({ email: result.sub || email, sub: result.sub || email, roles, orgId, role: roleOf(roles) });
+      }
+      return result;
     },
     register: (body) => post('/auth/register', body),
     confirm: (body) => post('/auth/confirm', body),
     forgotPassword: (email) => post('/auth/forgot-password', { email }),
     resetPassword: (body) => post('/auth/reset-password', body),
     refresh: (body) => post('/auth/refresh', body),
+    apiKeyToken: (apiKey) => post('/auth/token', { api_key: apiKey }),
     me: () => get('/auth/me'),
     adminCheck: () => get('/auth/admin-check'),
-    logout: () => setToken(null)
+    session: getSession,
+    logout: clearSession
   },
 
   /* API monitoring */
@@ -188,7 +335,6 @@ export const api = {
     config: () => get('/gateways/config'),
     saveConfig: (body) => put('/gateways/config', body),
     deleteConfig: () => del('/gateways/config'),
-    enroll: (body) => post('/gateways/enroll', body),
     createCustomer: (body) => post('/gateways/customer', body),
     customer: (id) => get(`/gateways/customer/${id}`),
     validateCutover: (id, body) => post(`/gateways/${id}/validate-cutover`, body)
@@ -203,6 +349,8 @@ export const api = {
     incidents: (params) => get('/integrations/etl/incidents', params),
     retry: (id) => post(`/integrations/etl/executions/${id}/retry`),
     poll: (platform) => post(`/integrations/etl/${platform}/poll`),
+    /* Push one execution event in, for platforms that webhook rather than being polled. */
+    event: (platform, body) => post(`/integrations/etl/${platform}`, body),
     execute: (platform, body) => post(`/integrations/etl/${platform}/execute`, body),
     /* platform is 'talend' | 'boomi' | 'databricks'. Databricks keeps its
        connection config under api.databricks.* — it is shared with Data
@@ -233,6 +381,9 @@ export const api = {
     updateMaintenanceWindow: (id, body) =>
       patch(`/alert-management/maintenance-windows/${id}`, body),
     deleteMaintenanceWindow: (id) => del(`/alert-management/maintenance-windows/${id}`),
+    /* action is 'start' | 'end' | 'cancel' — the backend validates which it accepts. */
+    maintenanceWindowAction: (id, action) =>
+      post(`/alert-management/maintenance-windows/${id}/${action}`),
     sla: () => get('/alert-management/sla'),
     createSlaRule: (body) => post('/alert-management/sla/rules', body),
     updateSlaRule: (id, body) => patch(`/alert-management/sla/rules/${id}`, body),
@@ -254,11 +405,14 @@ export const api = {
     decideInsight: (id, decision) => post(`/automation/insights/${id}/${decision}`),
     models: () => get('/automation/models'),
     model: (id) => get(`/automation/models/${id}`),
+    updateModel: (id, body) => patch(`/automation/models/${id}`, body),
     retrainModel: (id) => post(`/automation/models/${id}/retrain`),
     trainingRuns: () => get('/automation/training-runs'),
     agents: () => get('/automation/agents'),
     createAgent: (body) => post('/automation/agents', body),
+    updateAgent: (id, body) => patch(`/automation/agents/${id}`, body),
     deleteAgent: (id) => del(`/automation/agents/${id}`),
+    agentHeartbeat: (id, body) => post(`/automation/agents/${id}/heartbeat`, body),
     agentInstall: (id) => get(`/automation/agents/${id}/install`),
     rotateAgentKey: (id) => post(`/automation/agents/${id}/rotate-key`)
   },
@@ -303,6 +457,7 @@ export const api = {
     catalogs: () => get('/databricks/catalogs'),
     schemas: (params) => get('/databricks/schemas', params),
     tables: (params) => get('/databricks/tables', params),
+    table: (fullName) => get(`/databricks/tables/${fullName}`),
     query: (body) => post('/databricks/query', body)
   },
 
@@ -310,7 +465,11 @@ export const api = {
   finops: { recommendations: () => get('/finops/recommendations') },
   slo: { list: () => get('/slo') },
   drift: { list: () => get('/drift') },
-  correlation: { incidents: (params) => get('/correlated-incidents', params) },
+  correlation: {
+    incidents: (params) => get('/correlated-incidents', params),
+    /* Same correlation, recomputed from the live event spine rather than the store. */
+    stream: () => get('/stream/incidents')
+  },
   rca: { forIncident: (id) => get(`/incidents/${id}/rca`) },
 
   /* AWS Lambda integration */
@@ -330,6 +489,9 @@ export const api = {
     searchLogs: (params) => get('/logs/search', params),
     searchMetrics: (params) => get('/metrics/search', params),
     searchTraces: (params) => get('/traces/search', params),
+    ingestLog: (body) => post('/logs/ingest', body),
+    ingestMetric: (body) => post('/metrics/ingest', body),
+    ingestTrace: (body) => post('/traces/ingest', body),
     ingestLogs: (body) => post('/logs/ingest-batch', body),
     ingestMetrics: (body) => post('/metrics/ingest-batch', body),
     ingestTraces: (body) => post('/traces/ingest-batch', body)
@@ -348,6 +510,7 @@ export const api = {
     analytics: () => get('/admin/analytics'),
     users: (params) => get('/admin/users', params),
     createUser: (body) => post('/admin/users', body),
+    user: (email) => get(`/admin/users/${email}`),
     updateUser: (email, body) => put(`/admin/users/${email}`, body),
     deleteUser: (email) => del(`/admin/users/${email}`),
     approveUser: (email) => post(`/admin/users/${email}/approve`),
@@ -381,7 +544,12 @@ export {
   ENV_TOKEN,
   TENANT_BASE_DOMAIN,
   currentTenantSlug,
+  clearSession,
+  getSession,
   getToken,
+  refreshAccessToken,
+  roleOf,
+  setSession,
   setToken,
   tenantUrl,
   request

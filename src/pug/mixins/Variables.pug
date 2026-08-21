@@ -199,6 +199,16 @@ append variables
                 path: 'apps/observability/drift',
                 pathName: 'obs-drift',
               },
+              {
+                name: 'escalation-approval',
+                path: 'apps/observability/escalation',
+                pathName: 'obs-escalation',
+              },
+              {
+                name: 'service-topology',
+                path: 'apps/observability/service-topology',
+                pathName: 'obs-service-topology',
+              },
             ]
           },
           {
@@ -224,6 +234,11 @@ append variables
                 name: 'health-connectivity',
                 path: 'apps/platform/health-connectivity',
                 pathName: 'platform-health',
+              },
+              {
+                name: 'databricks',
+                path: 'apps/platform/databricks',
+                pathName: 'platform-databricks',
               },
             ]
           },
@@ -345,4 +360,33 @@ append variables
       },
     ];
 
-  - var paths = flatSitemap(sitemap);
+  -
+    /* The authentication screens are not product navigation — they are where you are
+       before there is any — so they stay out of `sitemap` and out of the sidebar. They
+       still need names: every "Create an account" and "Forgot password?" link resolves
+       through `paths`, and without these entries each one compiled to `undefined`. */
+    var authPaths = {
+      'simple-signin': 'pages/authentication/simple/sign-in.html',
+      'simple-login': 'pages/authentication/simple/sign-in.html',
+      'simple-signup': 'pages/authentication/simple/sign-up.html',
+      'simple-signout': 'pages/authentication/simple/sign-out.html',
+      'simple-forgot-password': 'pages/authentication/simple/forgot-password.html',
+      'simple-reset-password': 'pages/authentication/simple/reset-password.html',
+      'simple-2FA': 'pages/authentication/simple/2FA.html',
+      'simple-lock-screen': 'pages/authentication/simple/lock-screen.html',
+      'card-signin': 'pages/authentication/card/sign-in.html',
+      'card-signup': 'pages/authentication/card/sign-up.html',
+      'card-signout': 'pages/authentication/card/sign-out.html',
+      'card-forgot-password': 'pages/authentication/card/forgot-password.html',
+      'card-reset-password': 'pages/authentication/card/reset-password.html',
+      'card-2FA': 'pages/authentication/card/2FA.html',
+      'card-lock-screen': 'pages/authentication/card/lock-screen.html',
+      'split-signin': 'pages/authentication/split/sign-in.html',
+      'split-signup': 'pages/authentication/split/sign-up.html',
+      'split-signout': 'pages/authentication/split/sign-out.html',
+      'split-forgot-password': 'pages/authentication/split/forgot-password.html',
+      'split-reset-password': 'pages/authentication/split/reset-password.html',
+      'split-2FA': 'pages/authentication/split/2FA.html',
+      'split-lock-screen': 'pages/authentication/split/lock-screen.html'
+    };
+  - var paths = Object.assign(authPaths, flatSitemap(sitemap));

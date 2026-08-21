@@ -6,7 +6,9 @@ mixin ObsPageHeader(config)
         h5.text-body-tertiary.fw-semibold.mb-0= config.subtitle
       if config.action
         .col-auto
-          button.btn.btn-primary(type='button')= config.action
+          //- actionKey names an entry in integration/actions.js. Without one the button
+          //- stays inert, which is what every page did before the write layer existed.
+          button.btn.btn-primary(type='button' data-lhb-action=config.actionKey)= config.action
 
 mixin ObsStatCards(stats)
   .row.g-3.mb-6
@@ -81,6 +83,8 @@ mixin ObsToolTable(config)
                     scope='col'
                     data-sort=valueNames[idx]
                   )= col.label
+                if config.rowAction
+                  th.align-middle.text-end.pe-3(scope='col')
             tbody.list
               each row in config.rows
                 tr
@@ -99,6 +103,18 @@ mixin ObsToolTable(config)
                         span.badge.badge-phoenix(class=`badge-phoenix-${cell.badge}`)= cell.text
                     else
                       td.align-middle(class=colKey)= cell
+                  if row.action
+                    td.align-middle.text-end.pe-3
+                      button.btn.btn-phoenix-secondary.btn-sm(
+                        type='button'
+                        data-lhb-action=row.action.key
+                        data-lhb-arg=row.action.arg
+                      )= row.action.label
+                  else if config.rowAction
+                    //- Sample rows get an empty cell, not a button: the id behind a
+                    //- placeholder row does not exist, and a Brief that 404s is worse
+                    //- than no Brief. Live rows carry their own action.
+                    td.align-middle.pe-3
         .text-center.p-3.fallback.d-none
           p.mb-0.text-body-tertiary No matching results
       .card-footer.border-top.border-translucent

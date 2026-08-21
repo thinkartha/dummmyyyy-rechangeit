@@ -13,7 +13,8 @@ block content
   +ObsPageHeader({
     title: 'API Monitoring',
     subtitle: 'Latency, errors, and throughput for your APIs — gateways live under API Gateway',
-    action: 'Add API'
+    action: 'Add API',
+    actionKey: 'addApi'
   })
 
   +ObsStatCards([
@@ -25,6 +26,7 @@ block content
 
   +ObsToolTable({
     title: 'API services & gateways',
+    live: 'apiRoutes',
     subtitle: 'AWS API Gateway · Azure API Management · GCP Apigee and internal APIs',
     searchPlaceholder: 'Search APIs or gateways',
     columns: [

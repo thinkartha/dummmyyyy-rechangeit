@@ -358,7 +358,10 @@ mixin ProfileDropdown
       .card-body.p-0
         .text-center.pt-4.pb-3
           +Avatar({img: 'team/72x72/57.webp', size: 'xl', status: '', round: 'circle'})
-          h6.mt-2.text-body-emphasis Jerry Seinfield
+          //- Filled from the cached session by integration/auth.js. The placeholder name
+          //- the theme shipped read as the signed-in user next to live tenant data.
+          h6.mt-2.text-body-emphasis(data-lhb-user) Not signed in
+          p.fs-10.text-body-tertiary.mb-0(data-lhb-role) —
         .mb-3.mx-3
           input#statusUpdateInput.form-control.form-control-sm(type='text' placeholder='Update your status')
       .overflow-auto.scrollbar(style="height: 10rem;")
@@ -396,10 +399,13 @@ mixin ProfileDropdown
               | Add another account
 
         hr
-        .px-3 
-          a.btn.btn-phoenix-secondary.d-flex.flex-center.w-100(href="#!") 
-            span.me-2(data-feather="log-out") 
+        .px-3
+          a.btn.btn-phoenix-secondary.d-flex.flex-center.w-100.d-none(href="#!" data-lhb-signed-in data-lhb-signout)
+            span.me-2(data-feather="log-out")
             | Sign out
+          a.btn.btn-primary.d-flex.flex-center.w-100.d-none(href=`${CWD}${paths['simple-signin']}` data-lhb-signed-out)
+            span.me-2(data-feather="log-in")
+            | Sign in
 
         .my-2.text-center.fw-bold.fs-10.text-body-quaternary
           a.text-body-quaternary.me-1(href="#!") Privacy policy

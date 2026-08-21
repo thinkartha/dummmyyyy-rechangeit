@@ -13,7 +13,8 @@ block content
   +ObsPageHeader({
     title: 'API Gateway',
     subtitle: 'Monitor AWS API Gateway, Azure API Management, and GCP Apigee across accounts',
-    action: 'Connect gateway'
+    action: 'Connect gateway',
+    actionKey: 'connectGateway'
   })
 
   +ObsStatCards([
@@ -25,6 +26,7 @@ block content
 
   +ObsToolTable({
     title: 'API gateways',
+    live: 'gateways',
     subtitle: 'AWS API Gateway · Azure API Management · GCP Apigee',
     searchPlaceholder: 'Search API gateways',
     columns: [

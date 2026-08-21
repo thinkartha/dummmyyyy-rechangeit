@@ -61,9 +61,15 @@ append layoutScripts
   script(type='module').
     import { api, currentTenantSlug, tenantUrl, getToken, setToken } from '#{CWD}assets/js/integration/api-client.js';
     import { hydrate } from '#{CWD}assets/js/integration/live-data.js';
+    import { bind } from '#{CWD}assets/js/integration/actions.js';
+    import { init as initAuth } from '#{CWD}assets/js/integration/auth.js';
     window.lhb = { api, currentTenantSlug, tenantUrl, getToken, setToken };
     window.__lhbResolve(window.lhb);
-    hydrate(api);
+    //- The guard runs first: a page about to redirect a signed-out visitor should not
+    //- spend a round trip per table finding out it had no session.
+    //- .catch, not .then alone: a guard that throws must not take the page's data with
+    //- it — an unhydrated dashboard is a silent one.
+    initAuth().catch(() => {}).then(() => { hydrate(api); bind(api); });
 
   script(src=`${CWD}vendors/fontawesome/all.min.js`)
   script(src=`${CWD}vendors/lodash/lodash.min.js`)

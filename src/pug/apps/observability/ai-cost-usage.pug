@@ -13,7 +13,8 @@ block content
   +ObsPageHeader({
     title: 'AI Cost & Usage',
     subtitle: 'Token usage and billing for ChatGPT, Claude, Cursor, Copilot, Grok, Lovable, and more',
-    action: 'Set AI budget'
+    action: 'Set AI budget',
+    actionKey: 'setAiBudget'
   })
 
   +ObsStatCards([
@@ -25,6 +26,7 @@ block content
 
   +ObsToolTable({
     title: 'Cost by AI tool',
+    live: 'aiCost',
     subtitle: 'Organization-wide AI FinOps',
     searchPlaceholder: 'Search tools',
     columns: [

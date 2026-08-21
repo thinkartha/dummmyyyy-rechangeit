@@ -13,7 +13,8 @@ block content
   +ObsPageHeader({
     title: 'Alerts Monitoring',
     subtitle: 'Unified alerts from APIs, AI tools, ETL jobs, and multi-cloud accounts',
-    action: 'Create alert rule'
+    action: 'Create alert rule',
+    actionKey: 'createAlertRule'
   })
 
   +ObsStatCards([
@@ -25,6 +26,7 @@ block content
 
   +ObsToolTable({
     title: 'Active alerts',
+    live: 'alerts',
     subtitle: 'Cross-domain signal stream',
     searchPlaceholder: 'Search alerts',
     columns: [

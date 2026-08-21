@@ -13,7 +13,8 @@ block content
   +ObsPageHeader({
     title: 'AI Automation',
     subtitle: 'Rules that act on signals, models that predict them, and the agents that carry out remediation',
-    action: 'New rule'
+    action: 'New rule',
+    actionKey: 'automationRule'
   })
 
   +ObsStatCards([
@@ -27,6 +28,7 @@ block content
     .col-12.col-lg-7
       +ObsToolTable({
     live: 'automationRules',
+    rowAction: true,
         title: 'Automation rules',
         subtitle: 'Trigger → condition → action. High-impact actions require approval before they run.',
         searchPlaceholder: 'Search automation rules',
@@ -77,6 +79,7 @@ block content
 
   +ObsToolTable({
     title: 'ML models & remediation agents',
+    live: 'automationModels',
     subtitle: 'Models scoring signals, and the agents installed in customer environments that execute approved actions',
     searchPlaceholder: 'Search models or agents',
     pageSize: 8,

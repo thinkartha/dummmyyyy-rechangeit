@@ -13,7 +13,8 @@ block content
   +ObsPageHeader({
     title: 'AI Gateway',
     subtitle: 'Route, rate-limit, observe, and fall back across AI tools and model providers',
-    action: 'Add AI route'
+    action: 'Add AI route',
+    actionKey: 'addAiRoute'
   })
 
   +ObsStatCards([
@@ -25,6 +26,7 @@ block content
 
   +ObsToolTable({
     title: 'AI tool routes',
+    live: 'aiGateway',
     subtitle: 'Claude · Cursor · ChatGPT · Grok · Lovable · DeepSeek · Copilot · BabyLoveGrowth and more',
     searchPlaceholder: 'Search AI routes',
     columns: [

@@ -13,7 +13,8 @@ block content
   +ObsPageHeader({
     title: 'Orchestration Monitoring',
     subtitle: 'DAGs, workflows, and scheduled jobs — the layer that decides when your ETL actually runs',
-    action: 'Connect orchestrator'
+    action: 'Connect orchestrator',
+    actionKey: 'connectOrchestrator'
   })
 
   +ObsStatCards([
@@ -48,6 +49,7 @@ block content
 
   +ObsToolTable({
     title: 'Recent workflow runs',
+    live: 'orchestration',
     subtitle: 'Newest first. A failed run raises an event into the same alert pipeline as API, ETL, and database signals.',
     searchPlaceholder: 'Search runs, DAGs, or owners',
     pageSize: 8,

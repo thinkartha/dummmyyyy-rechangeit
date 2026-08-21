@@ -13,7 +13,8 @@ block content
   +ObsPageHeader({
     title: 'Traces & Service Topology',
     subtitle: 'OpenTelemetry spans and the dependency graph derived from them — which service called what, and where the time went',
-    action: 'Export traces'
+    action: 'Export traces',
+    actionKey: 'exportTraces'
   })
 
   +ObsStatCards([
@@ -65,6 +66,7 @@ block content
 
   +ObsToolTable({
     title: 'Service dependencies',
+    live: 'traces',
     subtitle: 'Edges inferred from span parentage — call volume, error rate, and latency per caller → callee pair',
     searchPlaceholder: 'Search services or dependencies',
     pageSize: 8,

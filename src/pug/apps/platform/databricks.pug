@@ -1,0 +1,104 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Platform', href: '#!' },
+      { label: 'Databricks', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'Databricks',
+    subtitle: 'One workspace connection, shared by Data Observability and the ETL connector — the catalog browser and query console that sit behind both',
+    action: 'Connect Databricks',
+    actionKey: 'connectDatabricks'
+  })
+
+  +ObsStatCards([
+    { label: 'Catalogs', value: '4', delta: 'Unity Catalog', badge: 'info' },
+    { label: 'Watched tables', value: '86', delta: '+6', badge: 'primary' },
+    { label: 'SQL warehouse', value: 'Serverless', delta: 'auto-stop 10m', badge: 'success' },
+    { label: 'Credential', value: 'PAT', delta: '12d left', badge: 'warning' }
+  ])
+
+  .alert.alert-subtle-warning.d-flex.align-items-center.mb-4(role='alert')
+    span.fa-solid.fa-key.me-2
+    div
+      strong The personal access token expires in 12 days.
+      span.ms-1 Rotate it before it lapses — table scans and ETL polling both stop silently when it does, and neither raises an alert of its own.
+
+  .row.g-4.mb-4
+    .col-12.col-lg-5
+      .card.h-100
+        .card-body
+          h4.mb-3 Connection
+          p.text-body-tertiary.fs-9 Stored server-side as a secret reference under this organization's id. The token is never returned to the browser once saved, so the field below is write-only.
+          .table-responsive
+            table.table.table-sm.fs-9.mb-3
+              tbody
+                tr
+                  td.text-body-tertiary Workspace host
+                  td.text-end.font-monospace.fs-10 dbc-1a2b3c4d.cloud.databricks.com
+                tr
+                  td.text-body-tertiary SQL warehouse
+                  td.text-end.font-monospace.fs-10 a1b2c3d4e5f6
+                tr
+                  td.text-body-tertiary Auth
+                  td.text-end
+                    span.badge.badge-phoenix.badge-phoenix-warning PAT · expiring
+                tr
+                  td.text-body-tertiary Last successful query
+                  td.text-end 9m ago
+          .d-flex.gap-2
+            button.btn.btn-phoenix-primary.btn-sm(type='button' data-lhb-action='connectDatabricks') Update connection
+            button.btn.btn-phoenix-danger.btn-sm(type='button' data-lhb-action='disconnectDatabricks') Disconnect
+
+    .col-12.col-lg-7
+      .card.h-100
+        .card-header.border-bottom.border-translucent.py-3
+          h4.mb-0 Query console
+          p.text-body-tertiary.fs-9.mb-0 Runs against the configured SQL warehouse, scoped to this organization
+        .card-body
+          .mb-3
+            label.form-label.fs-9(for='dbx-query') SQL
+            textarea#dbx-query.form-control.form-control-sm.font-monospace(rows='4' spellcheck='false').
+              SELECT table_name, row_count, last_altered
+              FROM system.information_schema.tables
+              WHERE table_catalog = 'main'
+              ORDER BY last_altered DESC
+              LIMIT 20
+          .d-flex.justify-content-between.align-items-center
+            p.text-body-tertiary.fs-10.mb-0 Read-only. The warehouse's own permissions decide what this can see.
+            button.btn.btn-primary.btn-sm(type='button' data-lhb-action='runDatabricksQuery') Run query
+          //- Results land here. Empty until a query runs, rather than seeded with a
+          //- sample result set that would be indistinguishable from a real one.
+          .table-responsive.scrollbar.mt-3(data-lhb-query-results)
+
+  +ObsToolTable({
+    live: 'dataTables',
+    title: 'Catalog browser',
+    subtitle: 'Unity Catalog tables in the first catalog this workspace exposes, most recently altered first',
+    searchPlaceholder: 'Search catalogs, schemas, or tables',
+    pageSize: 8,
+    columns: [
+      { label: 'Table', className: 'ps-3' },
+      { label: 'Catalog' },
+      { label: 'Rows' },
+      { label: 'Freshness' },
+      { label: 'Null rate' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-table', iconColor: 'success', meta: 'sales', cells: ['main.sales.orders', 'main', '48.2M', '9m ago', '0.02%', { text: 'Fresh', badge: 'success' }] },
+      { icon: 'fa-table', iconColor: 'success', meta: 'sales', cells: ['main.sales.order_items', 'main', '211.4M', '9m ago', '0.01%', { text: 'Fresh', badge: 'success' }] },
+      { icon: 'fa-table', iconColor: 'warning', meta: 'crm', cells: ['main.crm.customers', 'main', '3.1M', '4h ago', '1.80%', { text: 'Stale', badge: 'warning' }] },
+      { icon: 'fa-table', iconColor: 'success', meta: 'crm', cells: ['main.crm.contacts', 'main', '5.9M', '22m ago', '0.40%', { text: 'Fresh', badge: 'success' }] },
+      { icon: 'fa-table', iconColor: 'danger', meta: 'finance', cells: ['main.finance.ledger', 'main', '12.7M', '2d ago', '0.00%', { text: 'Stale', badge: 'danger' }] },
+      { icon: 'fa-table', iconColor: 'success', meta: 'product', cells: ['main.product.events', 'main', '904.6M', '2m ago', '0.09%', { text: 'Fresh', badge: 'success' }] },
+      { icon: 'fa-table', iconColor: 'success', meta: 'product', cells: ['main.product.catalog', 'main', '184K', '1h ago', '0.30%', { text: 'Fresh', badge: 'success' }] },
+      { icon: 'fa-table', iconColor: 'warning', meta: 'staging', cells: ['main.staging.nightly_load', 'main', '4.2M', '6h ago', '2.10%', { text: 'Stale', badge: 'warning' }] }
+    ]
+  })

@@ -13,7 +13,8 @@ block content
   +ObsPageHeader({
     title: 'Logs',
     subtitle: 'Search across every service, gateway, and pipeline — indexed per organization in Elasticsearch',
-    action: 'Save search'
+    action: 'Save search',
+    actionKey: 'saveSearch'
   })
 
   +ObsStatCards([
@@ -55,7 +56,9 @@ block content
         .col-6.col-lg-1
           button.btn.btn-primary.btn-sm.w-100(type='button') Search
 
-  .card
+  //- live='logs' replaces these rows with a real Elasticsearch search; the sample lines
+  //- below stay as the fallback when nothing is indexed or the user is signed out.
+  .card(data-live-table='logs')
     .card-header.border-bottom.border-translucent.py-3
       h4.mb-0 Matching lines
       p.text-body-tertiary.fs-9.mb-0 1,482 hits · newest first
