@@ -1,0 +1,72 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/common/Logo
+include ../../mixins/authentication/ProductAuth
+
+append variables
+  - var disableNavigationType = true;
+  - var disableVerticalNavbarAppearance = true;
+  - var disableHorizontalNavbarShape = true;
+  - var disableHorizontalNavbarAppearance = true;
+  - var hideSettingPanel = true;
+  -
+    var intents = [
+      { id: 'solo', icon: 'fa-user', label: 'Personal account', help: 'Just me, no organization' },
+      { id: 'create_org', icon: 'fa-building', label: 'New organization', help: 'I am setting one up' },
+      { id: 'join_org', icon: 'fa-users', label: 'Join an organization', help: 'An admin approves it' },
+      { id: 'accept_invite', icon: 'fa-envelope-open-text', label: 'Redeem an invite', help: 'I have a token' }
+    ];
+
+block mainContent
+  +ProductAuthShell({
+    title: 'Create your account',
+    subtitle: 'Join the LoveHeartBeat observability platform.'
+  })(data-lhb-auth='signup')
+    //- All four intents the backend supports. They end in different places — solo signs
+    //- you straight in, the other three wait on a code or an approval — so the choice
+    //- has to be made here rather than assumed.
+    .mb-4
+      label.form-label.fs-9 Account type
+      .row.g-2
+        each intent, i in intents
+          .col-6
+            input.btn-check(type='radio' name='intent' id=`intent-${intent.id}` value=intent.id checked=(i === 0) data-lhb-intent)
+            label.btn.btn-phoenix-secondary.w-100.h-100.text-start.p-3(for=`intent-${intent.id}`)
+              span.fa-solid.d-block.mb-2(class=intent.icon)
+              span.d-block.fs-9.fw-semibold= intent.label
+              span.d-block.fs-10.text-body-tertiary.fw-normal= intent.help
+
+    .mb-4.d-none(data-lhb-intent-field='create_org')
+      label.form-label.fs-9(for='org_name') Organization name
+      input#org_name.form-control(type='text' name='org_name' placeholder='Acme Corp')
+    .mb-4.d-none(data-lhb-intent-field='join_org')
+      label.form-label.fs-9(for='org_identifier') Organization name or ID
+      input#org_identifier.form-control(type='text' name='org_identifier' placeholder='acme')
+      .form-text.fs-10 An administrator there approves your request before you can sign in.
+    .mb-4.d-none(data-lhb-intent-field='accept_invite')
+      label.form-label.fs-9(for='invite_token') Invite token
+      input#invite_token.form-control(type='text' name='invite_token' placeholder='Paste the token from your invite')
+
+    +ProductAuthField({
+      id: 'name', name: 'name', label: 'Full name', icon: 'fa-user',
+      placeholder: 'Ada Lovelace', autocomplete: 'name'
+    })
+    +ProductAuthField({
+      id: 'email', name: 'email', label: 'Email', icon: 'fa-envelope',
+      placeholder: 'you@company.com', autocomplete: 'email'
+    })
+    +ProductAuthField({
+      id: 'password', name: 'password', label: 'Password', icon: 'fa-lock',
+      type: 'password', placeholder: 'At least 8 characters',
+      autocomplete: 'new-password', reveal: true, inputClass: 'pe-6'
+    })
+    +ProductAuthField({
+      id: 'confirmPassword', name: 'confirmPassword', label: 'Confirm password', icon: 'fa-lock',
+      type: 'password', placeholder: 'Repeat your password',
+      autocomplete: 'new-password', reveal: true, inputClass: 'pe-6'
+    })
+
+    button.btn.btn-primary.w-100(type='button' data-lhb-auth-submit) Create account
+
+    p.text-center.fs-9.text-body-tertiary.mt-4.mb-0
+      | Already have an account?
+      a.fw-semibold.ms-1(href=`${CWD}${paths['product-signin']}`) Sign in

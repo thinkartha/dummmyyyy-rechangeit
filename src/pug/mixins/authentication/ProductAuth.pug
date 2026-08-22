@@ -1,0 +1,54 @@
+//- The product's own auth shell, matching the command-center app: a thin header with
+//- the wordmark, then one centred column — title, subtitle, and a bordered card holding
+//- the form. The theme's simple/card/split variants stay where they are as theme
+//- demonstrations; these are the pages the product actually sends people to.
+
+mixin ProductAuthShell(config)
+  .min-vh-100.d-flex.flex-column.bg-body
+    header.border-bottom.border-translucent.bg-body
+      .container
+        .d-flex.align-items-center(style='height: 4rem;')
+          a.d-flex.align-items-center.gap-2.text-decoration-none.fw-bolder.fs-7.text-body-emphasis(href=`${CWD}${paths['landing-home']}`)
+            +Logo({text: true, width: 40})
+    main.flex-grow-1.d-flex.align-items-center.justify-content-center.px-3.py-8
+      .w-100(style='max-width: 28rem;')
+        .text-center.mb-6
+          h1.fs-5.fw-bold.mb-2= config.title
+          p.fs-9.text-body-tertiary.mb-0= config.subtitle
+        .card.border.border-translucent
+          .card-body.p-4&attributes(attributes)
+            block
+
+//- An input with an icon inside it — the shape every field on these pages uses.
+mixin ProductAuthField(config)
+  .mb-4
+    if config.label
+      if config.link
+        .d-flex.align-items-center.justify-content-between.mb-1
+          label.form-label.fs-9.mb-0(for=config.id)= config.label
+          a.fs-10(href=config.link.href)= config.link.label
+      else
+        label.form-label.fs-9(for=config.id)= config.label
+    //- data-password scopes the theme's reveal toggle, which looks for its input and
+    //- its button inside this element. Set here rather than by every caller.
+    .position-relative(data-password=config.reveal ? true : false)
+      if config.icon
+        span.fa-solid.position-absolute.top-50.translate-middle-y.text-body-tertiary.fs-9(class=config.icon style='left: .85rem; pointer-events: none;')
+      input.form-control(
+        id=config.id
+        name=config.name
+        type=config.type || 'text'
+        placeholder=config.placeholder
+        autocomplete=config.autocomplete
+        maxlength=config.maxlength
+        class=config.inputClass
+        style=config.icon ? 'padding-left: 2.4rem;' : false
+        data-password-input=config.reveal ? true : false
+      )
+      if config.reveal
+        //- Same toggle the theme ships, so the eye icon behaves identically here.
+        button.btn.px-3.py-0.h-100.position-absolute.top-0.end-0.fs-8.text-body-tertiary(type='button' data-password-toggle)
+          span.uil.uil-eye.show
+          span.uil.uil-eye-slash.hide
+    if config.help
+      .form-text.fs-10= config.help

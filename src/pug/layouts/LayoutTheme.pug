@@ -66,11 +66,16 @@ append layoutScripts
     //- matters. Set it yourself in runtime-config.js to publish a public demo.
     script.
       window.__LHB_REQUIRE_AUTH__ = false;
+  //- CWD is empty on a page at the site root, which would leave these as bare specifiers
+  //- ("assets/js/...") — legal in a plain <script src>, but a hard error in a module, and
+  //- one that takes the whole bootstrap down with it. `./` is the same path, spelled the
+  //- way the module resolver requires.
+  - var MOD = CWD || './';
   script(type='module').
-    import { api, currentTenantSlug, tenantUrl, getToken, setToken } from '#{CWD}assets/js/integration/api-client.js';
-    import { hydrate } from '#{CWD}assets/js/integration/live-data.js';
-    import { bind } from '#{CWD}assets/js/integration/actions.js';
-    import { init as initAuth } from '#{CWD}assets/js/integration/auth.js';
+    import { api, currentTenantSlug, tenantUrl, getToken, setToken } from '#{MOD}assets/js/integration/api-client.js';
+    import { hydrate } from '#{MOD}assets/js/integration/live-data.js';
+    import { bind } from '#{MOD}assets/js/integration/actions.js';
+    import { init as initAuth } from '#{MOD}assets/js/integration/auth.js';
     window.lhb = { api, currentTenantSlug, tenantUrl, getToken, setToken };
     window.__lhbResolve(window.lhb);
     //- The guard runs first: a page about to redirect a signed-out visitor should not

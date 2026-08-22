@@ -181,5 +181,11 @@
       "vendors.json"
     ]
   },
-  "watch": ["assets/img", "assets/data", "assets/video", "vendors"]
+  "watch": [
+    "assets/img",
+    "assets/data",
+    "assets/video",
+    "vendors",
+    "docs/video"
+  ]
 }

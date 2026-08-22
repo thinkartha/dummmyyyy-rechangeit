@@ -122,11 +122,38 @@ Buttons work the same way through `integration/actions.js`: an `actionKey` with 
 behind it renders disabled with the reason on hover, rather than opening a form that posts
 nowhere.
 
+### Public pages
+
+`/` is the marketing landing page — the same sections as the command-center app: hero,
+six feature cards, the integration catalogue, the mobile section, CTA and footer. Its
+**Watch Demo** button opens the product overview recording (see below).
+
+The observability dashboard that used to sit at `/` now lives at
+`dashboard/observability.html`; `paths['default-dashboard']` points there, so every logo
+link still lands on it.
+
+### Product overview video
+
+The landing page plays `/docs/video/overview.mp4`. At ~53 MB the file is not in git; the
+`video` Gulp task downloads it from the Loom share link and `gulp build` runs that before
+copying `docs/video` into `build/`, so every build produces it and every deploy uploads it.
+
+That ordering matters: the deploy runs `aws s3 sync build/ --delete`, so a file missing
+from `build/` is deleted from S3 — uploading the video by hand would last exactly until
+the next deploy. Point it at a different recording with `OVERVIEW_LOOM_ID=<id> npm run build`.
+If the fetch fails the build carries on and the page offers the Loom link instead of an
+empty player. Details in [`public/docs/video/README.md`](public/docs/video/README.md).
+
 ### Signing in
 
-The auth screens (`src/pug/pages/authentication/`) are wired to the Cognito-backed
-`/api/v1/auth` routes: sign-in, sign-up across all four registration intents, email
-confirmation, password reset and sign-out, in each of the simple / card / split layouts.
+The product's auth screens live at `src/pug/pages/authentication/{sign-in,sign-up,confirm,
+forgot-password,reset-password}.pug` and match the command-center app: wordmark header,
+one centred card, an organization picker on sign-in, and account-type tiles on sign-up
+covering all four registration intents. They are wired to the Cognito-backed
+`/api/v1/auth` routes.
+
+The theme's `simple/`, `card/` and `split/` variants are still there and still wired, but
+they are theme demonstration — the app links to the pages above.
 Pages under `apps/observability`, `apps/platform` and `apps/organization` are behind a guard
 and bounce signed-out visitors to sign-in, remembering where they were going. See
 [`integration/README.md`](integration/README.md#auth).

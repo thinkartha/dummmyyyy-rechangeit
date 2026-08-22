@@ -14,7 +14,9 @@ gulp.task('compile:all', gulp.parallel('compile', 'pug'));
 /*= -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 |  Deploy
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*/
-gulp.task('build', gulp.series('clean:build', 'build:static', 'compile:all'));
+// 'video' runs before build:static, which is what copies docs/video into build/. The
+// deploy syncs build/ with --delete, so a file missing here is a file deleted from S3.
+gulp.task('build', gulp.series('clean:build', 'video', 'build:static', 'compile:all'));
 gulp.task('build:test', gulp.series('build', 'watch'));
 gulp.task('live', gulp.series('clean:live', 'build', 'build:push'));
 

@@ -66,3 +66,7 @@ build/
 git.js
 .npm
 .cache/
+
+# Product video — shipped from public/docs/video, not stored in git (see the README there).
+public/docs/video/*.mp4
+build/docs/
