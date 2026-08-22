@@ -83,7 +83,7 @@ append variables
             pages: [
               {
                 name: 'observability',
-                path: 'index',
+                path: 'dashboard/observability',
                 pathName: 'default-dashboard',
                 topNavIcon: 'activity',
               },
@@ -365,7 +365,17 @@ append variables
        before there is any — so they stay out of `sitemap` and out of the sidebar. They
        still need names: every "Create an account" and "Forgot password?" link resolves
        through `paths`, and without these entries each one compiled to `undefined`. */
+    var publicPaths = {
+      'landing-home': 'index.html'
+    };
     var authPaths = {
+      //- The product's own auth screens. The simple/card/split trio below them is theme
+      //- demonstration and is not what the app links to.
+      'product-signin': 'pages/authentication/sign-in.html',
+      'product-signup': 'pages/authentication/sign-up.html',
+      'product-confirm': 'pages/authentication/confirm.html',
+      'product-forgot-password': 'pages/authentication/forgot-password.html',
+      'product-reset-password': 'pages/authentication/reset-password.html',
       'simple-signin': 'pages/authentication/simple/sign-in.html',
       'simple-login': 'pages/authentication/simple/sign-in.html',
       'simple-signup': 'pages/authentication/simple/sign-up.html',
@@ -389,4 +399,4 @@ append variables
       'split-2FA': 'pages/authentication/split/2FA.html',
       'split-lock-screen': 'pages/authentication/split/lock-screen.html'
     };
-  - var paths = Object.assign(authPaths, flatSitemap(sitemap));
+  - var paths = Object.assign(publicPaths, authPaths, flatSitemap(sitemap));

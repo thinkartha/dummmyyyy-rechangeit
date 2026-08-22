@@ -89,9 +89,11 @@ Pages under `/apps/observability/`, `/apps/platform/` and `/apps/organization/` 
 tenant's data and redirect signed-out visitors to sign-in, remembering where they were
 going. The rest of the site is theme demonstration and stays open.
 
-Publishing a public, API-less demo of these pages? Set `window.__LHB_REQUIRE_AUTH__ = false`
-in `runtime-config.js` — otherwise the guard bounces every visitor to a sign-in page with no
-backend behind it.
+Local builds (`npm start`, output `public/`) emit `window.__LHB_REQUIRE_AUTH__ = false` so
+you can browse without a backend to sign in against. The production build (`npm run build`,
+`MODE=PROD`, output `build/`) does not, so the guard is on where it matters. Publishing a
+public API-less demo? Set the same flag in `runtime-config.js`, or the guard bounces every
+visitor to a sign-in page with nothing behind it.
 
 ### Session in the UI
 

@@ -98,6 +98,13 @@ jobs:
           print('standalone handlers ok')
           "
 
+      - name: Check the shared router's CORS preflight
+        # The failure this catches is invisible from the server side: the router answers
+        # 204 and curl looks healthy, while the browser rejects every request because a
+        # header it asked to send was missing from the response.
+        working-directory: .
+        run: python3 infrastructure/router/test_cors.py
+
       - name: Validate SAM template
         uses: aws-actions/setup-sam@v2
       - name: sam validate
@@ -162,3 +169,10 @@ jobs:
 
       - name: Check the API client parses
         run: node --input-type=module -e "import('./integration/api-client.js').then(m => console.log(Object.keys(m.api).length + ' api namespaces'))"
+
+      - name: Check every page's actions and auth forms resolve
+        # A page naming an action or auth flow that does not exist fails silently: the
+        # button does nothing in production and nothing else in the build reads it.
+        run: |
+          node integration/check-actions.mjs
+          node integration/check-auth.mjs

@@ -1,0 +1,41 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/common/Logo
+include ../../mixins/authentication/ProductAuth
+
+append variables
+  - var disableNavigationType = true;
+  - var disableVerticalNavbarAppearance = true;
+  - var disableHorizontalNavbarShape = true;
+  - var disableHorizontalNavbarAppearance = true;
+  - var hideSettingPanel = true;
+
+block mainContent
+  +ProductAuthShell({
+    title: 'Sign in to your workspace',
+    subtitle: 'Access the LoveHeartBeat multi-tenant observability platform.'
+  })(data-lhb-auth='signin')
+    //- Which organization you belong to normally comes from the host
+    //- (<slug>.loveheartbeat.com). On the apex domain there is no slug to read, so this
+    //- picker supplies one; api-client stores it and sends it as X-Tenant-Slug.
+    .mb-4
+      label.form-label.fs-9(for='organization') Organization
+      select#organization.form-select(data-lhb-org-picker)
+        option(value='') Loading organizations…
+
+    +ProductAuthField({
+      id: 'email', name: 'email', label: 'Email', icon: 'fa-envelope',
+      placeholder: 'you@company.com', autocomplete: 'username'
+    })
+
+    +ProductAuthField({
+      id: 'password', name: 'password', label: 'Password', icon: 'fa-lock',
+      type: 'password', placeholder: 'Enter your password',
+      autocomplete: 'current-password', reveal: true,
+      inputClass: 'pe-6', link: { label: 'Forgot password?', href: `${CWD}${paths['product-forgot-password']}` }
+    })
+
+    button.btn.btn-primary.w-100(type='button' data-lhb-auth-submit) Sign in
+
+    p.text-center.fs-9.text-body-tertiary.mt-4.mb-0
+      | Don't have an account?
+      a.fw-semibold.ms-1(href=`${CWD}${paths['product-signup']}`) Sign up

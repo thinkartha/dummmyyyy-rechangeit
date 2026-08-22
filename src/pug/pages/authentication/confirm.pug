@@ -1,0 +1,31 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/common/Logo
+include ../../mixins/authentication/ProductAuth
+
+append variables
+  - var disableNavigationType = true;
+  - var disableVerticalNavbarAppearance = true;
+  - var disableHorizontalNavbarShape = true;
+  - var disableHorizontalNavbarAppearance = true;
+  - var hideSettingPanel = true;
+
+block mainContent
+  +ProductAuthShell({
+    title: 'Verify your email',
+    subtitle: 'We sent a verification code to your email. Enter it below to activate your account.'
+  })(data-lhb-auth='confirm')
+    //- Prefilled from the sign-up that sent you here; typed in only when the page is
+    //- opened cold or on a different device.
+    +ProductAuthField({
+      id: 'email', name: 'email', label: 'Email', icon: 'fa-envelope',
+      placeholder: 'you@company.com', autocomplete: 'email'
+    })
+    +ProductAuthField({
+      id: 'code', name: 'code', label: 'Verification code', icon: 'fa-key',
+      placeholder: 'Enter 6-digit code', maxlength: 10, inputClass: 'font-monospace'
+    })
+
+    button.btn.btn-primary.w-100(type='button' data-lhb-auth-submit) Verify email
+
+    p.text-center.fs-9.text-body-tertiary.mt-4.mb-0
+      a(href=`${CWD}${paths['product-signin']}`) Back to sign in

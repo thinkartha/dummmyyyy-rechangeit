@@ -28,11 +28,11 @@ function siteRoot() {
 }
 
 const AUTH_PAGES = {
-  signin: 'pages/authentication/simple/sign-in.html',
-  signup: 'pages/authentication/simple/sign-up.html',
-  confirm: 'pages/authentication/simple/2FA.html',
-  forgot: 'pages/authentication/simple/forgot-password.html',
-  reset: 'pages/authentication/simple/reset-password.html',
+  signin: 'pages/authentication/sign-in.html',
+  signup: 'pages/authentication/sign-up.html',
+  confirm: 'pages/authentication/confirm.html',
+  forgot: 'pages/authentication/forgot-password.html',
+  reset: 'pages/authentication/reset-password.html',
   home: 'apps/platform/command-center.html'
 };
 
@@ -305,15 +305,22 @@ function bindFlow(root) {
 
   /* The intent picker on sign-up shows a different extra field per choice. One listener,
      because the fields are already in the markup — only their visibility changes. */
-  for (const picker of root.querySelectorAll('[data-lhb-intent]')) {
-    picker.addEventListener('change', () => {
-      const chosen = picker.value;
-      for (const el of root.querySelectorAll('[data-lhb-intent-field]')) {
-        el.classList.toggle('d-none', el.dataset.lhbIntentField !== chosen);
-      }
-    });
-    picker.dispatchEvent(new Event('change'));
-  }
+  const pickers = root.querySelectorAll('[data-lhb-intent]');
+  const chosenIntent = () => {
+    for (const picker of pickers) {
+      if (picker.type === 'radio') { if (picker.checked) return picker.value; }
+      else return picker.value;
+    }
+    return '';
+  };
+  const showIntentFields = () => {
+    const chosen = chosenIntent();
+    for (const el of root.querySelectorAll('[data-lhb-intent-field]')) {
+      el.classList.toggle('d-none', el.dataset.lhbIntentField !== chosen);
+    }
+  };
+  for (const picker of pickers) picker.addEventListener('change', showIntentFields);
+  if (pickers.length) showIntentFields();
 }
 
 /* -------------------------------------------------------------------- guard */
@@ -404,8 +411,53 @@ function paint() {
 
 /* --------------------------------------------------------------------- init */
 
+/**
+ * Fill the sign-in page's organization picker.
+ *
+ * On `<slug>.loveheartbeat.com` the slug comes from the hostname and this is redundant.
+ * On the apex domain there is nothing to read, so without a choice here every sign-in
+ * would resolve to whatever default api-client falls back to. /organizations is public,
+ * so this works before anybody is signed in — which is the point.
+ */
+async function fillOrgPicker() {
+  const picker = document.querySelector('[data-lhb-org-picker]');
+  if (!picker) return;
+  const remembered = (() => {
+    try { return localStorage.getItem('lhb_tenant_slug') || ''; } catch { return ''; }
+  })();
+
+  picker.addEventListener('change', () => {
+    try { localStorage.setItem('lhb_tenant_slug', picker.value); } catch { /* ignore */ }
+  });
+
+  try {
+    const data = await api.organizations();
+    const orgs = (data && data.organizations) || [];
+    if (!orgs.length) throw new Error('none');
+    picker.replaceChildren(...orgs.map((org) => {
+      const option = document.createElement('option');
+      option.value = org.slug;
+      option.textContent = org.name;
+      if (org.slug === remembered) option.selected = true;
+      return option;
+    }));
+    /* Nothing remembered means the first entry is what will be sent — store it, so the
+       value the form uses is the value the box shows. */
+    if (!remembered) picker.dispatchEvent(new Event('change'));
+  } catch {
+    /* The list is a convenience. If it cannot be loaded, say so instead of leaving
+       "Loading…" sitting there forever, and let the host-derived slug stand. */
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = 'Organization list unavailable — sign in anyway';
+    picker.replaceChildren(option);
+    picker.disabled = true;
+  }
+}
+
 export function init() {
   for (const root of document.querySelectorAll('[data-lhb-auth]')) bindFlow(root);
+  fillOrgPicker();
   paint();
 
   /* A refresh token the server rejected mid-session: api-client clears the tokens and

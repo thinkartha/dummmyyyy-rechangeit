@@ -1,59 +1,246 @@
-extends layouts/LayoutTheme
-include mixins/dashboard/common
-include mixins/dashboard/e-commerce/Stats
-include mixins/dashboard/e-commerce/EcomCharts
-include mixins/dashboard/e-commerce/TotalSalesChart
-include mixins/dashboard/e-commerce/StatCard
-include mixins/dashboard/e-commerce/TopRegions
-include mixins/dashboard/e-commerce/LatestReviews
+//- Marketing landing page — the public front door, matching the command-center app
+//- where `/` is the landing page and the product lives behind sign-in. The observability
+//- dashboard that used to be here now lives at dashboard/observability; paths
+//- ['default-dashboard'] still points at it, so every logo link keeps working.
 
-prepend scripts
-  script(src=`${CWD}vendors/leaflet/leaflet.js`)
-  script(src=`${CWD}vendors/leaflet.markercluster/leaflet.markercluster.js`)
-  script(src=`${CWD}vendors/leaflet.tilelayer.colorfilter/leaflet-tilelayer-colorfilter.min.js`)
+extends layouts/LayoutTheme
+include mixins/common/Logo
+
+append variables
+  - var disableNavigationType = true;
+  - var disableVerticalNavbarAppearance = true;
+  - var disableHorizontalNavbarShape = true;
+  - var disableHorizontalNavbarAppearance = true;
+  - var hideSettingPanel = true;
+  -
+    var features = [
+      { icon: 'fa-database', tone: 'primary', title: 'ETL Pipeline Monitoring',
+        body: 'Monitor data flows across Talend, Qlik, Informatica, SnapLogic, AWS Glue, Dell Boomi, and more with real-time pipeline health tracking.' },
+      { icon: 'fa-diagram-project', tone: 'success', title: 'Orchestration Intelligence',
+        body: 'Track Control-M, Airflow, Camunda, Ansible, Tidal, AutoSys, and Jenkins workflows with AI-powered failure prediction and auto-remediation.' },
+      { icon: 'fa-cloud', tone: 'info', title: 'Multi-Cloud Observability',
+        body: 'Unified monitoring across AWS CloudWatch, BigPanda, AppDynamics with intelligent correlation and cross-platform insights.' },
+      { icon: 'fa-bolt', tone: 'warning', title: 'AI-Powered Automation',
+        body: 'Machine learning algorithms predict failures, automate incident response, and optimize resource allocation across your entire stack.' },
+      { icon: 'fa-chart-simple', tone: 'danger', title: 'Intelligent Alerts & Notifications',
+        body: 'Smart alerting with noise reduction, priority scoring, and contextual notifications that help you focus on what matters most.' },
+      { icon: 'fa-shield-halved', tone: 'primary', title: 'Predictive Health Monitoring',
+        body: 'AI-driven health scoring and predictive analytics identify potential issues before they impact your business operations.' }
+    ];
+    var integrations = [
+      { icon: 'fa-cloud', tone: 'primary', title: 'Integration Platforms',
+        items: ['AWS CloudWatch', 'BigPanda', 'AppDynamics', 'Azure Monitor', 'Google Cloud Operations', 'Oracle OCI Monitoring'] },
+      { icon: 'fa-database', tone: 'success', title: 'ETL & Data Integration',
+        items: ['Talend', 'Qlik', 'Informatica', 'SnapLogic', 'AWS Glue', 'Dell Boomi', 'SAP Integrators', 'Kinaxis', 'Ab Initio'] },
+      { icon: 'fa-diagram-project', tone: 'info', title: 'Orchestration & Workflow',
+        items: ['Control-M', 'Apache Airflow', 'Camunda', 'Ansible', 'Tidal', 'AutoSys', 'Jenkins'] }
+    ];
+
+block mainContent
+  //- ---------------------------------------------------------------- header
+  nav.navbar.navbar-expand-lg.sticky-top.bg-body.border-bottom.border-translucent.py-3
+    .container
+      a.navbar-brand.d-flex.align-items-center.gap-2.fw-bolder.fs-6.text-body-emphasis(href='#top')
+        +Logo({text: true, width: 40})
+      button.navbar-toggler(type='button' data-bs-toggle='collapse' data-bs-target='#landing-nav' aria-controls='landing-nav' aria-expanded='false' aria-label='Toggle navigation')
+        span.navbar-toggler-icon
+      #landing-nav.collapse.navbar-collapse.justify-content-end
+        ul.navbar-nav.align-items-lg-center.gap-lg-2.mt-3.mt-lg-0
+          li.nav-item
+            a.nav-link.fw-semibold(href='#features') Features
+          li.nav-item
+            a.nav-link.fw-semibold(href='#integrations') Integrations
+          li.nav-item
+            a.nav-link.fw-semibold(href='#mobile') Mobile
+          li.nav-item
+            a.nav-link.fw-semibold(href=`${CWD}${paths['product-signin']}`) Sign In
+          li.nav-item.mt-2.mt-lg-0
+            a.btn.btn-primary.px-4(href=`${CWD}${paths['product-signup']}`) Start Free Trial
+
+  //- ------------------------------------------------------------------ hero
+  section.py-8.py-md-11
+    .container
+      .row.justify-content-center.text-center
+        .col-12.col-lg-10.col-xl-9
+          span.badge.badge-phoenix.badge-phoenix-primary.mb-4 AI-Powered Enterprise Monitoring Platform
+          h1.fw-bolder.mb-4(style='font-size: clamp(2.25rem, 5vw, 3.75rem); line-height: 1.1;')
+            | Monitor Everything.
+            br
+            span.text-primary AI Automate Everything.
+          p.fs-6.text-body-secondary.mb-6.mx-auto(style='max-width: 48rem;')
+            | Your one-stop platform for ETL monitoring, orchestration monitoring, multi-cloud monitoring, and multi-platform health management. Powered by AI-driven automation, intelligent alerts, and predictive analytics to keep your entire data ecosystem running flawlessly.
+          .d-flex.flex-column.flex-sm-row.gap-3.justify-content-center
+            a.btn.btn-primary.btn-lg.px-5(href=`${CWD}${paths['product-signup']}`)
+              | Start Free Trial
+              span.fa-solid.fa-arrow-right.ms-2
+            //- Opens the overview recording. See the modal at the foot of this page.
+            button.btn.btn-phoenix-secondary.btn-lg.px-5(type='button' data-bs-toggle='modal' data-bs-target='#demo-video')
+              span.fa-solid.fa-circle-play.me-2
+              | Watch Demo
+
+  //- -------------------------------------------------------------- features
+  section#features.bg-body-highlight.py-8.py-md-11
+    .container
+      .text-center.mb-8
+        h2.fw-bolder.mb-3 Complete Observability for Your Data Ecosystem
+        p.fs-7.text-body-secondary.mx-auto(style='max-width: 48rem;')
+          | From ETL pipelines to orchestration workflows, get comprehensive visibility across your entire data infrastructure with AI-powered insights and automation.
+      .row.g-4
+        each feature in features
+          .col-12.col-md-6.col-lg-4
+            .card.h-100.border.border-translucent
+              .card-body.p-4
+                .d-flex.align-items-center.justify-content-center.rounded-3.mb-4(class=`bg-${feature.tone}-subtle` style='height: 3rem; width: 3rem;')
+                  span.fa-solid.fs-6(class=`${feature.icon} text-${feature.tone}`)
+                h4.mb-3= feature.title
+                p.text-body-secondary.mb-0= feature.body
+
+  //- ---------------------------------------------------------- integrations
+  section#integrations.py-8.py-md-11
+    .container
+      .text-center.mb-8
+        h2.fw-bolder.mb-3 Seamless Integration with Your Existing Tools
+        p.fs-7.text-body-secondary.mx-auto(style='max-width: 42rem;')
+          | Connect with 100+ tools across integration platforms, ETL solutions, and orchestration systems
+      .row.g-6
+        each group in integrations
+          .col-12.col-lg-4.text-center
+            .d-flex.align-items-center.justify-content-center.rounded-3.mx-auto.mb-5(class=`bg-${group.tone}-subtle` style='height: 4rem; width: 4rem;')
+              span.fa-solid.fs-4(class=`${group.icon} text-${group.tone}`)
+            h4.mb-4= group.title
+            .d-flex.flex-wrap.justify-content-center.gap-2
+              each item in group.items
+                span.badge.border.border-translucent.bg-body.text-body-emphasis.fw-normal.px-3.py-2= item
+
+  //- --------------------------------------------------------------- mobile
+  section#mobile.bg-body-highlight.py-8.py-md-11
+    .container
+      .text-center.mb-8
+        h2.fw-bolder.mb-3 Monitor On-the-Go with LoveHeartBeat Mobile
+        p.fs-7.text-body-secondary.mx-auto(style='max-width: 42rem;')
+          | Stay connected to your data infrastructure anywhere, anytime. Get real-time alerts, monitor system health, and manage incidents directly from your mobile device.
+      .row.g-6.align-items-center
+        .col-12.col-lg-6
+          .d-flex.align-items-center.justify-content-center.bg-primary-subtle.rounded-3.mb-5(style='height: 4rem; width: 4rem;')
+            span.fa-solid.fa-mobile-screen-button.fs-4.text-primary
+          h3.fw-bold.mb-4 Full-Featured Mobile Experience
+          ul.list-unstyled.text-body-secondary.mb-6
+            each line in ['Real-time alerts and notifications', 'Interactive dashboards and metrics', 'Incident management and escalation', 'AI-powered insights and recommendations']
+              li.d-flex.align-items-center.gap-3.mb-3
+                span.bg-primary.rounded-circle.flex-shrink-0(style='height: .5rem; width: .5rem;')
+                span= line
+          .d-flex.flex-column.flex-sm-row.gap-3
+            a.btn.btn-dark.btn-lg(href='#!')
+              span.fa-solid.fa-download.me-2
+              | Download for iOS
+            a.btn.btn-phoenix-secondary.btn-lg(href='#!')
+              span.fa-solid.fa-download.me-2
+              | Download for Android
+        .col-12.col-lg-6
+          .bg-primary-subtle.rounded-3.p-5.p-md-7
+            .card.border-0.shadow.mx-auto(style='max-width: 22rem;')
+              .card-body
+                .d-flex.align-items-center.gap-2.mb-4
+                  span.d-flex.flex-center.bg-primary.rounded(style='height: 1.5rem; width: 1.5rem;')
+                    span.fa-solid.fa-shield-halved.text-white.fs-10
+                  span.fw-semibold.text-body-emphasis LoveHeartBeat Mobile
+                .alert.alert-subtle-success.d-flex.align-items-center.gap-2.py-2.mb-3
+                  span.bg-success.rounded-circle(style='height: .5rem; width: .5rem;')
+                  span.fs-9.fw-medium All Systems Operational
+                .alert.alert-subtle-warning.d-flex.align-items-center.gap-2.py-2.mb-3
+                  span.bg-warning.rounded-circle(style='height: .5rem; width: .5rem;')
+                  span.fs-9.fw-medium 2 Warnings Detected
+                .alert.alert-subtle-info.py-2.mb-0
+                  span.fs-9 ETL Pipeline: 98.5% Success Rate
+
+  //- ------------------------------------------------------------------ cta
+  section.bg-primary.py-8.py-md-11
+    .container.text-center
+      h2.fw-bolder.text-white.mb-3 Ready to Transform Your Data Operations?
+      p.fs-7.text-white.opacity-75.mb-6.mx-auto(style='max-width: 42rem;')
+        | Join thousands of companies using LoveHeartBeat's AI-powered platform to monitor, automate, and optimize their entire data ecosystem.
+      .d-flex.flex-column.flex-sm-row.gap-3.justify-content-center
+        a.btn.btn-light.btn-lg.px-5.text-primary(href=`${CWD}${paths['product-signup']}`)
+          | Start Free Trial
+          span.fa-solid.fa-arrow-right.ms-2
+        a.btn.btn-outline-light.btn-lg.px-5(href='mailto:sales@loveheartbeat.com') Contact Sales
+
+  //- --------------------------------------------------------------- footer
+  footer.bg-body-highlight.py-8
+    .container
+      .row.g-5
+        .col-12.col-md-3
+          h5.fw-bold.mb-3 LoveHeartBeat
+          p.text-body-secondary.mb-0 AI-powered monitoring and automation platform for modern data infrastructure.
+        .col-6.col-md-3
+          h6.fw-semibold.mb-3 Product
+          ul.list-unstyled.mb-0
+            each link in [{ label: 'ETL Monitoring', path: 'obs-etl-monitoring' }, { label: 'Orchestration', path: 'obs-orchestration' }, { label: 'Integrations', path: 'platform-integrations' }, { label: 'AI Automation', path: 'obs-automation' }]
+              li.mb-2
+                a.text-body-secondary.text-decoration-none(href=`${CWD}${paths[link.path]}`)= link.label
+        .col-6.col-md-3
+          h6.fw-semibold.mb-3 Company
+          ul.list-unstyled.mb-0
+            each label in ['About', 'Blog', 'Careers', 'Contact']
+              li.mb-2
+                a.text-body-secondary.text-decoration-none(href='#!')= label
+        .col-6.col-md-3
+          h6.fw-semibold.mb-3 Support
+          ul.list-unstyled.mb-0
+            li.mb-2
+              a.text-body-secondary.text-decoration-none(href=`${CWD}${paths['getting-started']}`) Documentation
+            li.mb-2
+              a.text-body-secondary.text-decoration-none(href='#!') Help Center
+            li.mb-2
+              a.text-body-secondary.text-decoration-none(href=`${CWD}${paths['platform-health']}`) Status
+            li.mb-2
+              a.text-body-secondary.text-decoration-none(href=`${CWD}${paths['platform-command-center']}`) Command Center
+      hr.border-translucent.my-6
+      p.text-center.text-body-secondary.mb-0
+        | &copy; #{new Date().getFullYear()} LoveHeartBeat. All rights reserved. A Product from
+        a.ms-1(href='https://www.thinkartha.com/' target='_blank' rel='noopener noreferrer') Artha Solutions
+
+  //- ----------------------------------------------------------- demo video
+  //- Self-hosted at /docs/video/overview.mp4 so the page does not depend on a third
+  //- party staying up. The Loom link below is the fallback and stays useful either way:
+  //- if the file is missing the <video> fires an error and the notice takes over, rather
+  //- than leaving a black rectangle nobody can explain.
+  #demo-video.modal.fade(tabindex='-1' aria-labelledby='demo-video-label' aria-hidden='true')
+    .modal-dialog.modal-lg.modal-dialog-centered
+      .modal-content
+        .modal-header.border-bottom.border-translucent
+          h5#demo-video-label.modal-title.mb-0 LoveHeartBeat overview
+          button.btn-close(type='button' data-bs-dismiss='modal' aria-label='Close')
+        .modal-body.p-0
+          video#demo-video-player.w-100.d-block(controls preload='none' playsinline poster=`${CWD}assets/img/spot-illustrations/auth.png`)
+            source(src=`${CWD}docs/video/overview.mp4` type='video/mp4')
+          .alert.alert-subtle-info.d-none.m-3(data-demo-video-fallback role='alert')
+            | The overview recording is not available on this server yet.
+            a.ms-1(href='https://www.loom.com/share/be36e76dd2e2460b818d6b45158a9341' target='_blank' rel='noopener noreferrer') Watch it on Loom instead.
+        .modal-footer.border-top.border-translucent.justify-content-between
+          a.fs-9(href='https://www.loom.com/share/be36e76dd2e2460b818d6b45158a9341' target='_blank' rel='noopener noreferrer')
+            span.fa-solid.fa-arrow-up-right-from-square.me-1
+            | Watch on Loom
+          button.btn.btn-phoenix-secondary.btn-sm(type='button' data-bs-dismiss='modal') Close
 
 append scripts
-  script(src=`${CWD}vendors/echarts/echarts.min.js`)
-  script(src=`${CWD}assets/js/dashboards/ecommerce-dashboard.js`)
+  script.
+    (function () {
+      var modal = document.getElementById('demo-video');
+      var player = document.getElementById('demo-video-player');
+      if (!modal || !player) return;
+      var fallback = modal.querySelector('[data-demo-video-fallback]');
 
-append styles
-  link(href=`${CWD}vendors/leaflet/leaflet.css`, rel='stylesheet')
-  link(href=`${CWD}vendors/leaflet.markercluster/MarkerCluster.css`, rel='stylesheet')
-  link(href=`${CWD}vendors/leaflet.markercluster/MarkerCluster.Default.css`, rel='stylesheet')
+      //- The error fires on the <source>, not the <video>, and does not bubble — so
+      //- listen in the capture phase or a missing file just shows an empty player.
+      player.addEventListener('error', show, true);
+      function show() {
+        player.classList.add('d-none');
+        if (fallback) fallback.classList.remove('d-none');
+      }
 
-block content
-  .pb-5
-    .row.g-4
-      .col-12.col-xxl-6
-        .mb-8
-          h2.mb-2 Observability Dashboard
-          h5.text-body-tertiary.fw-semibold LoveHeartBeat — APIs, AI tools, ETL, alerts, and multi-cloud cost in one place
-        +Stats
-
-        hr.bg-body-secondary.mb-6.mt-4
-        +TotalSalesChart
-      .col-12.col-xxl-6
-        .row.g-3
-          .col-12.col-md-6
-            +TotalOrders
-          .col-12.col-md-6
-            +NewCustomers
-          .col-12.col-md-6
-            +TopCoupons
-          .col-12.col-md-6
-            +PayingCustomer
-  .row.gx-6
-    .col-12.col-xl-6
-      +TopRegionsTable
-    .col-12.col-xl-6
-      .mx-n4.mx-lg-n6.ms-xl-0.h-100
-        .h-100.w-100
-          #map.h-100.bg-body-emphasis(style="min-height: 300px;")
-  .mx-n4.px-4.mx-lg-n6.px-lg-6.bg-body-emphasis.pt-6.pb-9.border-top
-    .row.g-6
-      .col-12.col-xl-6
-        +ProjectionVsActual
-      .col-12.col-xl-6
-        +ReturningCustomerRate
-  .mx-n4.px-4.mx-lg-n6.px-lg-6.bg-body-emphasis.pt-7.pb-7.border-top
-    +LatestReviews
+      //- preload='none' means nothing is fetched until the modal opens, and stopping on
+      //- close keeps audio from playing on into a page nobody is looking at.
+      modal.addEventListener('shown.bs.modal', function () { player.play().catch(function () {}); });
+      modal.addEventListener('hidden.bs.modal', function () { player.pause(); });
+    })();
