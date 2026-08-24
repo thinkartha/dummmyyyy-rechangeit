@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3001",
-    "build": "next build && node scripts/mirror-legacy-html.mjs",
+    "build": "next build",
     "start": "next start",
     "port": "node scripts/port-html.mjs"
   },

@@ -286,6 +286,37 @@ ${jsx}
 }
 
 /* -------------------------------------------------------------------------- */
+/*                          legacy .html redirects                             */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * A stub at every page's old `.html` path.
+ *
+ * ponytail: `assets/js/integration/auth.js` redirects to hardcoded targets like
+ * `pages/authentication/sign-in.html` and `apps/platform/command-center.html`, and it
+ * is shared with the still-live gulp build — so answering at the old URL is cheaper
+ * than forking that file. Old bookmarks and emailed links keep working too.
+ *
+ * These live in `public/` rather than being generated after the build so that `next
+ * dev` serves them as well; a successful sign-in redirects to one of them.
+ *
+ * A stub, not a copy of the page: Next's client router normalises the URL it is served
+ * from, and a real page served at `/x.html` bounces between that and `/x/` forever.
+ */
+function writeRedirectStub(page) {
+  const route = rewritePath(page)
+  if (route === '/') return
+  const out = join(ROOT, 'public', page)
+  mkdirSync(dirname(out), { recursive: true })
+  writeFileSync(out, `<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Redirecting…</title>
+<script>location.replace(${JSON.stringify(route)} + location.search + location.hash)</script>
+<meta http-equiv="refresh" content="0;url=${route}">
+`)
+}
+
+/* -------------------------------------------------------------------------- */
 
 const layoutSource = readFileSync(join(SRC, 'dashboard/observability.html'), 'utf8')
 mkdirSync(join(ROOT, 'components'), { recursive: true })
@@ -301,5 +332,6 @@ for (const page of PAGES) {
   const out = join(ROOT, routeDir(page), 'page.tsx')
   mkdirSync(dirname(out), { recursive: true })
   writeFileSync(out, buildPage(page, readFileSync(file, 'utf8')))
+  writeRedirectStub(page)
   console.log(out.replace(ROOT + '/', ''))
 }

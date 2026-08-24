@@ -51,9 +51,19 @@ Both diff the ported page against the pug page tag-for-tag.
 - **LTR only.** The pug build shipped an RTL copy of every stylesheet plus a head script
   that disabled one set at runtime; nothing sets `phoenixIsRTL`.
 - **All vendor stylesheets load on every page** (9 small files) rather than per-page.
-- **Legacy `.html` URLs redirect.** `npm run build` writes a stub at every route's old
-  path, because `assets/js/integration/auth.js` — shared with the gulp build — redirects
-  to hardcoded `.html` targets.
+- **Legacy `.html` URLs redirect.** `scripts/port-html.mjs` writes a stub at every
+  route's old path into `public/`, because `assets/js/integration/auth.js` — shared with
+  the gulp build — redirects to hardcoded `.html` targets (sign-in, and the
+  `apps/platform/command-center.html` a successful sign-in lands on). They sit in
+  `public/` rather than being generated after the build so `next dev` serves them too.
+
+## The API
+
+`assets/js/integration/api-client.js` talks to `window.__API_BASE_URL__`, defaulting to
+`http://localhost:8000`. The backend's CORS allowlist is `localhost:3000-3003`
+(`backend/handlers/api.py`), which is why `npm run dev` uses **port 3001**. Serving the
+static `out/` build from any other port makes every API call fail CORS, and the sign-in
+form reports it as "Could not reach the API".
 
 ## Scope
 
