@@ -47,6 +47,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link href="/vendors/dropzone/dropzone.css" rel="stylesheet" />
         <link href="/vendors/glightbox/glightbox.min.css" rel="stylesheet" />
         <link href="/vendors/dhtmlx-gantt/dhtmlxgantt.css" rel="stylesheet" />
+        {/* Written per stage by deploy-frontend.yml; the repo copy holds the local
+            defaults. A raw blocking tag, not next/script: beforeInteractive only
+            emits a preload in a static export and the real script lands at hydration,
+            racing the integration modules that read these globals. Losing that race
+            means API_BASE_URL falls back to http://localhost:8000 in production. */}
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+        <script src="/assets/js/runtime-config.js"></script>
         {/* Both must run before first paint: config.js reads the persisted theme and
             simplebar is queried by the vertical navbar during init. */}
         <Script src="/vendors/simplebar/simplebar.min.js" strategy="beforeInteractive" />
