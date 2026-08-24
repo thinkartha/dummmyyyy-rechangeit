@@ -24,10 +24,16 @@ export default function Scripts({ items }: { items: ScriptItem[] }) {
       } else if (item.module) {
         // A module has to stay a real inline script: from a blob: URL the browser
         // cannot resolve "/assets/..." ("base scheme isn't hierarchical"), and the
-        // whole API bootstrap dies with it. Inline modules are deferred anyway, which
-        // is the position the pug build gave them.
+        // whole API bootstrap dies with it.
         el.type = 'module'
         el.textContent = item.code ?? ''
+        // Not "deferred anyway": a script built with createElement carries the
+        // force-async flag, so without this the module leaves the in-order queue and
+        // runs whenever its imports resolve — usually before the classic script two
+        // slots earlier that defines window.__lhbResolve. The module then dies on
+        // "__lhbResolve is not a function" and takes initAuth() with it, which is a
+        // sign-in page with an unbound button and a picker stuck on "Loading…".
+        el.async = false
         document.body.appendChild(el)
         return el
       } else {
