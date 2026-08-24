@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import Script from 'next/script'
 
 export const metadata: Metadata = {
   title: 'LoveHeartBeat',
@@ -55,9 +54,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script src="/assets/js/runtime-config.js"></script>
         {/* Both must run before first paint: config.js reads the persisted theme and
-            simplebar is queried by the vertical navbar during init. */}
-        <Script src="/vendors/simplebar/simplebar.min.js" strategy="beforeInteractive" />
-        <Script src="/assets/js/config.js" strategy="beforeInteractive" />
+            simplebar is queried by the vertical navbar during init. Raw blocking tags
+            for the same reason as runtime-config.js above — under `output: export`
+            next/script beforeInteractive emits only a <link rel=preload>, and Chrome
+            says so out loud: "preloaded using link preload but not used". Neither file
+            was running on any page. */}
+        <script src="/vendors/simplebar/simplebar.min.js"></script>
+        <script src="/assets/js/config.js"></script>
       </head>
       <body>{children}</body>
     </html>
