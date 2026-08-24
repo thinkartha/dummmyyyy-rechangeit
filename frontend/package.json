@@ -1,0 +1,23 @@
+{
+  "name": "loveheartbeat-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build && node scripts/mirror-legacy-html.mjs",
+    "start": "next start",
+    "port": "node scripts/port-html.mjs"
+  },
+  "dependencies": {
+    "next": "15.2.8",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "parse5": "^7.1.2",
+    "typescript": "^5"
+  }
+}
