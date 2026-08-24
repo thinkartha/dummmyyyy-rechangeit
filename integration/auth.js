@@ -27,13 +27,17 @@ function siteRoot() {
   return path.replace(/[^/]*$/, '');
 }
 
+/* Routes, not files: the app is a Next.js export with trailingSlash, so the page
+   lives at .../sign-in/ and .../sign-in.html only exists as a 301 for old bookmarks.
+   Redirecting through that one costs a round trip in production and 404s under
+   `next dev`, which has no CloudFront function in front of it. */
 const AUTH_PAGES = {
-  signin: 'pages/authentication/sign-in.html',
-  signup: 'pages/authentication/sign-up.html',
-  confirm: 'pages/authentication/confirm.html',
-  forgot: 'pages/authentication/forgot-password.html',
-  reset: 'pages/authentication/reset-password.html',
-  home: 'apps/platform/command-center.html'
+  signin: 'pages/authentication/sign-in/',
+  signup: 'pages/authentication/sign-up/',
+  confirm: 'pages/authentication/confirm/',
+  forgot: 'pages/authentication/forgot-password/',
+  reset: 'pages/authentication/reset-password/',
+  home: 'apps/platform/command-center/'
 };
 
 /**
