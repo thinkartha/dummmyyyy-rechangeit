@@ -563,23 +563,31 @@ def admin_check(principal: Principal = Depends(require_role(ROLE_PLATFORM_ADMIN)
 @router.post("/forgot-password", response_model=ForgotPasswordResponse)
 def forgot_password(body: ForgotPasswordRequest) -> ForgotPasswordResponse:
     """Request a password reset code. Cognito sends the code by email; local fallback returns it in the response."""
-    user = users.get_user(body.email)
-    if not user:
-        # Do not reveal whether the email exists.
-        return ForgotPasswordResponse()
-
     if _cognito_enabled():
         client = cognito_client()
         if not client:
             raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Cognito unavailable")
+        # Cognito is asked directly, without first looking the address up in the local
+        # table. Cognito is the account of record here, and gating on a local row meant
+        # any user it does not have — created in the console, or whose PostConfirmation
+        # write failed — got "a reset code is on its way" and no email, forever.
         try:
             client.forgot_password(
                 ClientId=os.getenv("COGNITO_APP_CLIENT_ID"),
                 Username=body.email,
             )
+        except client.exceptions.UserNotFoundException:
+            # Same silent success as any unknown address: this form must not become a
+            # way to test who has an account here.
+            pass
         except Exception as exc:
             log.warning("Cognito forgot_password failed: %s", exc)
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unable to process reset request") from exc
+        return ForgotPasswordResponse()
+
+    user = users.get_user(body.email)
+    if not user:
+        # Do not reveal whether the email exists.
         return ForgotPasswordResponse()
 
     # Local fallback: generate and store a reset code.

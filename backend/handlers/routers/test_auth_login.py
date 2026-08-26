@@ -41,6 +41,28 @@ def _fake_client(raises):
     return Client()
 
 
+def forgot(known_to_cognito):
+    """Run forgot_password() and report whether Cognito was asked to send the mail."""
+    auth._cognito_enabled = lambda: True
+    errors = _Errors()
+    errors.UserNotFoundException = type("UserNotFoundException", (Exception,), {})
+    sent = []
+
+    class Client:
+        exceptions = errors
+
+        def forgot_password(self, **_):
+            if not known_to_cognito:
+                raise errors.UserNotFoundException("no such user")
+            sent.append(True)
+
+    auth.cognito_client = lambda: Client()
+    # The local table is empty on purpose: Cognito is the account of record.
+    auth.users.get_user = lambda _email: None
+    auth.forgot_password(auth.ForgotPasswordRequest(email="a@b.com"))
+    return bool(sent)
+
+
 def call(raises):
     """Run login() against a Cognito that raises `raises`, return (status, detail|body)."""
     auth._cognito_enabled = lambda: True
@@ -69,6 +91,11 @@ def main():
     code, detail = call("PasswordResetRequiredException")
     assert code == 401, f"reset-required must not 400: {code} {detail}"
     assert "Forgot password" in detail, detail
+
+    # A user Cognito knows but the local table does not must still get the email.
+    assert forgot(known_to_cognito=True), "forgot-password never asked Cognito to send"
+    # An address nobody has stays a silent success — no leak, no 400.
+    assert not forgot(known_to_cognito=False)
 
     print("ok")
 
