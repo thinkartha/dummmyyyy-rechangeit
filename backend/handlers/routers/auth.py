@@ -429,9 +429,34 @@ def login(body: LoginRequest) -> TokenResponse:
             )
         except client.exceptions.NotAuthorizedException as exc:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password") from exc
+        except client.exceptions.UserNotFoundException as exc:
+            # Same answer as a wrong password. Which of the two it was is not the
+            # caller's business, and the old 400 read as "the site is broken" for the
+            # most ordinary mistake there is — an email that was never registered.
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password") from exc
+        except client.exceptions.UserNotConfirmedException:
+            # Not a failed sign-in — an unfinished sign-up. The token-less response is
+            # the shape the sign-in page already watches for to send the user to the
+            # code form; a 400 here strands them with no way to finish.
+            user = users.get_user(body.email) or {}
+            return TokenResponse(
+                access_token="",
+                sub=body.email,
+                org_id=user.get("org_id", ""),
+                roles=user.get("roles") or [ROLE_USER],
+                status="pending_confirmation",
+            )
+        except client.exceptions.PasswordResetRequiredException as exc:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Password reset required — use Forgot password to set a new one.",
+            ) from exc
         except HTTPException:
             raise
         except Exception as exc:
+            # Whatever is left is a misconfiguration, not a user error: a client id that
+            # does not exist, USER_PASSWORD_AUTH disabled on the app client, an app
+            # client with a secret. Keep the 400, but say where to look.
             log.warning("Cognito login failed: %s", exc)
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Login failed") from exc
 
