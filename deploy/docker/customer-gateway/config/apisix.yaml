@@ -1,0 +1,18 @@
+routes:
+  - id: default-route
+    uri: /*
+    host: api.customer.com
+    plugins:
+      request-id: {}
+      header-rewrite:
+        headers:
+          set:
+            X-Forwarded-Host: api.customer.com
+            X-Forwarded-Proto: http
+            X-Request-ID: $request_id
+    upstream:
+      type: roundrobin
+      pass_host: rewrite
+      upstream_host: api.customer.com
+      nodes:
+        "mock-upstream:80": 1

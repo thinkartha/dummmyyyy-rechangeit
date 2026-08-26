@@ -1,0 +1,6 @@
+apiVersion: v2
+name: customer-gateway
+description: Customer-hosted APISIX gateway with onboarding agent and transparent reverse-proxy configuration
+version: 0.1.0
+appVersion: "3.17.0"
+type: application

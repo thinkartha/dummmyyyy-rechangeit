@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-gateway
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-gateway
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-gateway
+    spec:
+      serviceAccountName: {{ .Release.Name }}-gateway
+      initContainers:
+        - name: bootstrap-apisix-config
+          image: busybox:1.36
+          command: ["/bin/sh", "-c", "cp /bootstrap/config.yaml /shared/config.yaml && cp /bootstrap/apisix.yaml /shared/apisix.yaml"]
+          volumeMounts:
+            - name: bootstrap-config
+              mountPath: /bootstrap
+              readOnly: true
+            - name: shared-config
+              mountPath: /shared
+      containers:
+        - name: apisix
+          image: {{ .Values.image.apisix.repository }}:{{ .Values.image.apisix.tag }}
+          imagePullPolicy: {{ .Values.image.apisix.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 9080
+          volumeMounts:
+            - name: shared-config
+              mountPath: /usr/local/apisix/conf
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          readinessProbe:
+            tcpSocket:
+              port: 9080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 9080
+            initialDelaySeconds: 15
+            periodSeconds: 20
+        - name: gateway-agent
+          image: {{ .Values.image.agent.repository }}:{{ .Values.image.agent.tag }}
+          imagePullPolicy: {{ .Values.image.agent.pullPolicy }}
+          env:
+            - name: CONTROL_PLANE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-gateway-config
+                  key: CONTROL_PLANE_URL
+            - name: GATEWAY_PUBLIC_HOSTNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-gateway-config
+                  key: PUBLIC_HOSTNAME
+            - name: GATEWAY_ENROLLMENT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.enrollmentSecret.name }}
+                  key: {{ .Values.enrollmentSecret.tokenKey }}
+            - name: APISIX_CONFIG_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-gateway-config
+                  key: APISIX_CONFIG_PATH
+            - name: AGENT_STATE_DIR
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-gateway-config
+                  key: AGENT_STATE_DIR
+          volumeMounts:
+            - name: shared-config
+              mountPath: /shared
+            - name: agent-state
+              mountPath: /var/lib/gateway-agent
+          readinessProbe:
+            exec:
+              command: ["/bin/sh", "-c", "test -f /tmp/agent-ready"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["/bin/sh", "-c", "test -f /tmp/agent-ready"]
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: bootstrap-config
+          configMap:
+            name: {{ .Release.Name }}-gateway-config
+        - name: shared-config
+          emptyDir: {}
+        - name: agent-state
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-gateway-state
+          {{- else }}
+          emptyDir: {}
+          {{- end }}

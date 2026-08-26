@@ -1,0 +1,101 @@
+# APISIX AI Gateway route table (standalone mode — no etcd; APISIX reloads on change).
+#
+# One OpenAI-compatible endpoint, /ai/chat/completions, fronts every LLM provider.
+# Applications point their SDK at the gateway instead of at a provider, and the gateway
+# owns the API keys, the token budget, the prompt guard and the tracing. That is what
+# makes the agent dashboard possible: telemetry is collected at the gateway, so an agent
+# needs no instrumentation of its own to show up.
+routes:
+  - id: ai-chat
+    uri: /ai/chat/completions
+    methods:
+      - POST
+    plugins:
+      ai-proxy-multi:
+        # Fall through to the next instance when one is rate limited, over quota, or
+        # erroring — a provider outage degrades to a slower model instead of a 503.
+        fallback_strategy:
+          - rate_limiting
+          - http_429
+          - http_5xx
+        max_retries: 2
+        timeout: 60000
+        balancer:
+          algorithm: roundrobin
+        instances:
+          - name: openai-primary
+            provider: openai
+            weight: 8
+            priority: 1
+            auth:
+              header:
+                Authorization: "Bearer ${{OPENAI_API_KEY:=}}"
+            options:
+              model: gpt-4o-mini
+              max_tokens: 2048
+          - name: anthropic-fallback
+            provider: anthropic
+            weight: 2
+            priority: 0
+            auth:
+              header:
+                x-api-key: "${{ANTHROPIC_API_KEY:=}}"
+            options:
+              model: claude-sonnet-4-5
+              max_tokens: 2048
+        logging:
+          # Token counts and model names — this is what feeds apisix_llm_* metrics.
+          summaries: true
+          # Never true: prompts and completions routinely carry customer data, and
+          # this writes them to the gateway's access log.
+          payloads: false
+
+      # A runaway agent loop is the expensive failure mode here, not request volume.
+      # Budget tokens, not calls.
+      ai-rate-limiting:
+        limit: 200000
+        time_window: 3600
+        limit_strategy: total_tokens
+        show_limit_quota_header: true
+        rejected_code: 429
+        rejected_msg: "Token budget exhausted for this window"
+
+      ai-prompt-guard:
+        deny_patterns:
+          - "(?i)ignore (all )?previous instructions"
+          - "(?i)disregard (the )?(system|above) prompt"
+          - "(?i)reveal your (system )?prompt"
+
+      opentelemetry:
+        sampler:
+          name: always_on
+      prometheus:
+        prefer_name: true
+
+  # The plain reverse proxy to the Loveheartbeat API stays: it is what produces the
+  # non-AI gateway traces, and it is a useful control when comparing latency.
+  - id: pinghold-api
+    uri: /api/v1/*
+    upstream_id: pinghold-backend
+    plugins:
+      opentelemetry:
+        sampler:
+          name: always_on
+      prometheus:
+        prefer_name: true
+      cors: {}
+
+  - id: pinghold-health
+    uri: /health*
+    upstream_id: pinghold-backend
+    plugins:
+      prometheus:
+        prefer_name: true
+
+upstreams:
+  - id: pinghold-backend
+    type: roundrobin
+    nodes:
+      "${{PINGHOLD_UPSTREAM:=backend:8002}}": 1
+
+#END

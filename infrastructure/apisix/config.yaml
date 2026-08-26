@@ -1,0 +1,39 @@
+# APISIX static config. Standalone mode reads routes from apisix.yaml instead of etcd.
+apisix:
+  node_listen: 9080
+  enable_admin: false          # standalone: routes are file-driven, Admin API would be a lie
+  proxy_mode: http
+
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+
+plugin_attr:
+  prometheus:
+    export_addr:
+      ip: 0.0.0.0
+      port: 9091
+  # This is the join: every span APISIX records for proxied traffic is exported
+  # over OTLP to Phoenix, which becomes the trace store the UI reads from.
+  opentelemetry:
+    trace_id_source: x-request-id
+    resource:
+      service.name: apisix-gateway
+    collector:
+      address: "${{PHOENIX_OTLP_ADDRESS:=phoenix:4317}}"
+      request_timeout: 3
+    batch_span_processor:
+      max_export_batch_size: 256
+      inactive_timeout: 2
+
+plugins:
+  # AI gateway plugins. ai-proxy-multi requires APISIX >= 3.17 — the image tag in
+  # docker-compose.yml is pinned accordingly. This configuration is local-only.
+  - ai-proxy-multi
+  - ai-rate-limiting
+  - ai-prompt-guard
+  - opentelemetry
+  - prometheus
+  - proxy-rewrite
+  - cors

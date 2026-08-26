@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-gateway-config
+  namespace: {{ .Release.Namespace }}
+data:
+  CONTROL_PLANE_URL: {{ .Values.controlPlane.url | quote }}
+  PUBLIC_HOSTNAME: {{ .Values.config.publicHostname | quote }}
+  ORIGIN_HOSTNAME: {{ .Values.config.originHostname | quote }}
+  ORIGIN_SCHEME: {{ .Values.config.originScheme | quote }}
+  ORIGIN_PORT: {{ .Values.config.originPort | quote }}
+  ORIGIN_HOST_HEADER: {{ .Values.config.originHostHeader | quote }}
+  APISIX_CONFIG_PATH: "/shared/apisix.yaml"
+  AGENT_STATE_DIR: "/var/lib/gateway-agent"
+  config.yaml: |
+    deployment:
+      role: data_plane
+      role_data_plane:
+        config_provider: yaml
+    apisix:
+      node_listen: 9080
+      enable_admin: false
+    nginx_config:
+      error_log: /dev/stderr
+      access_log: /dev/stdout
+  apisix.yaml: |
+    routes:
+      - id: bootstrap-health
+        uri: /healthz
+        methods:
+          - GET
+        plugins:
+          mock:
+            status: 200
+            content_type: application/json
+            response_example: '{"status":"starting"}'

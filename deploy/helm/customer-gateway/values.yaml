@@ -1,0 +1,66 @@
+controlPlane:
+  url: "https://control.example.com"
+  timeoutSeconds: 30
+
+enrollmentSecret:
+  # Create this Secret out-of-band with the one-time token returned by the platform.
+  # The chart intentionally does not template token material.
+  name: gateway-enrollment
+  tokenKey: token
+
+replicaCount: 2
+
+service:
+  type: LoadBalancer
+  port: 443
+  targetPort: 9080
+
+image:
+  apisix:
+    repository: apache/apisix
+    tag: 3.17.0-debian
+    pullPolicy: IfNotPresent
+  agent:
+    repository: ghcr.io/example/customer-gateway-agent
+    tag: latest
+    pullPolicy: IfNotPresent
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+
+networkPolicy:
+  enabled: false
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+config:
+  publicHostname: "api.customer.com"
+  originHostname: "customer-alb-123.amazonaws.com"
+  originScheme: "https"
+  originPort: 443
+  originHostHeader: "api.customer.com"
+
+serviceAccount:
+  create: true
+
+secure:
+  existingTLSSecret: ""
+
+persistence:
+  enabled: true
+  size: 1Gi
+  accessModes:
+    - ReadWriteOnce
