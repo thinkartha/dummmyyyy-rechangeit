@@ -66,12 +66,12 @@ export default function Page() {
               Cloud Monitoring
             </h2>
             <h5 className="text-body-tertiary fw-semibold mb-0">
-              Health and inventory across AWS, GCP, and Azure — multiple accounts per organization
+              Health and inventory across AWS, GCP, and Azure — accounts are connected under Orchestration, and their functions and anomalies surface here
             </h5>
           </div>
           <div className="col-auto">
-            <button className="btn btn-primary" type="button" data-lhb-action="addCloudAccount">
-              Add cloud account
+            <button className="btn btn-primary" type="button" data-lhb-action="refreshData">
+              Refresh
             </button>
           </div>
         </div>

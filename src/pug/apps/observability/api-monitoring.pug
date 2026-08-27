@@ -12,9 +12,9 @@ append variables
 block content
   +ObsPageHeader({
     title: 'API Monitoring',
-    subtitle: 'Latency, errors, and throughput for your APIs — gateways live under API Gateway',
-    action: 'Add API',
-    actionKey: 'addApi'
+    subtitle: 'Latency, errors, and throughput for the APIs behind your gateways — register them under API Gateway and their traffic shows up here',
+    action: 'Refresh',
+    actionKey: 'refreshData'
   })
 
   +ObsStatCards([
@@ -24,25 +24,28 @@ block content
     { label: 'Gateways', value: '12', delta: '3 clouds', badge: 'info' }
   ])
 
+  //- Columns follow what /observability/routes actually returns — route, requests, 5xx,
+  //- error rate and the status-code breakdown. The previous set promised Provider, Env
+  //- and p99, which that endpoint has never carried: three of six columns rendered "—"
+  //- on live data and only looked populated because of the sample rows below.
   +ObsToolTable({
-    title: 'API services & gateways',
+    title: 'Route traffic',
     live: 'apiRoutes',
-    subtitle: 'AWS API Gateway · Azure API Management · GCP Apigee and internal APIs',
-    searchPlaceholder: 'Search APIs or gateways',
+    subtitle: 'Per-route request counts derived from stored spans — send an agent telemetry batch to populate',
+    searchPlaceholder: 'Search routes',
     columns: [
-      { label: 'Service', className: 'ps-3' },
-      { label: 'Provider' },
-      { label: 'Env' },
-      { label: 'p99' },
-      { label: 'Errors' },
+      { label: 'Route', className: 'ps-3' },
+      { label: 'Requests' },
+      { label: '5xx' },
+      { label: 'Error rate' },
+      { label: 'Status codes' },
       { label: 'Status' }
     ],
     rows: [
-      { icon: 'fa-cloud', iconColor: 'warning', meta: 'api-prod-us-east-1', cells: ['Checkout API', 'AWS API Gateway', 'prod', '380ms', '0.4%', { text: 'Healthy', badge: 'success' }] },
-      { icon: 'fa-cloud', iconColor: 'info', meta: 'apim-eastus', cells: ['Identity API', 'Azure API Management', 'prod', '210ms', '0.1%', { text: 'Healthy', badge: 'success' }] },
-      { icon: 'fa-cloud', iconColor: 'danger', meta: 'org-apigee-prod', cells: ['Partner API', 'GCP Apigee', 'prod', '920ms', '2.8%', { text: 'Degraded', badge: 'warning' }] },
-      { icon: 'fa-server', iconColor: 'primary', meta: '/v1/billing', cells: ['Billing Service', 'Internal', 'prod', '145ms', '0.2%', { text: 'Healthy', badge: 'success' }] },
-      { icon: 'fa-server', iconColor: 'primary', meta: '/v1/inventory', cells: ['Inventory Service', 'Internal', 'stage', '510ms', '1.1%', { text: 'Watch', badge: 'info' }] },
-      { icon: 'fa-cloud', iconColor: 'warning', meta: 'websocket-gateway', cells: ['Realtime Gateway', 'AWS API Gateway', 'prod', '88ms', '0.0%', { text: 'Healthy', badge: 'success' }] }
+      { icon: 'fa-route', iconColor: 'success', meta: '200×18270 422×78 503×72', cells: ['POST /api/v1/observability/agents/telemetry', '18,420', '72', '0.39%', '200, 422, 503', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-route', iconColor: 'success', meta: '200×23843 502×47', cells: ['GET /api/v1/observability/agents', '23,890', '47', '0.20%', '200, 502', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-route', iconColor: 'success', meta: '200×11212 500×18', cells: ['GET /api/v1/traces/search', '11,230', '18', '0.16%', '200, 500', { text: 'Healthy', badge: 'success' }] },
+      { icon: 'fa-route', iconColor: 'warning', meta: '200×4120 503×96', cells: ['POST /api/v1/ingest/events', '4,216', '96', '2.28%', '200, 503', { text: 'Degraded', badge: 'warning' }] },
+      { icon: 'fa-route', iconColor: 'danger', meta: '200×512 500×61', cells: ['GET /api/v1/finops/recommendations', '573', '61', '10.65%', '200, 500', { text: 'Down', badge: 'danger' }] }
     ]
   })

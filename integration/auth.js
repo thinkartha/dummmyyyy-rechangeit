@@ -113,6 +113,13 @@ export function explain(error, fallback) {
   if (status === '401') return 'Invalid email or password.';
   if (status && status.startsWith('5')) return 'The API is having trouble. Try again in a moment.';
   if (body && body.length < 200) return body;
+  /* Not every error reaching here came from the API. The action layer throws its own —
+     "Enter a query first", a connection string the probe refused — and those were
+     written for a person already. Replacing them with the network line says something
+     untrue about the backend, so only an actual fetch failure gets it. */
+  if (!detail && message && !/failed to fetch|networkerror|load failed/i.test(message)) {
+    return message;
+  }
   return fallback || 'Could not reach the API. Check that the backend is running.';
 }
 

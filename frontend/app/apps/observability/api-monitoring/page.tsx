@@ -66,12 +66,12 @@ export default function Page() {
               API Monitoring
             </h2>
             <h5 className="text-body-tertiary fw-semibold mb-0">
-              Latency, errors, and throughput for your APIs — gateways live under API Gateway
+              Latency, errors, and throughput for the APIs behind your gateways — register them under API Gateway and their traffic shows up here
             </h5>
           </div>
           <div className="col-auto">
-            <button className="btn btn-primary" type="button" data-lhb-action="addApi">
-              Add API
+            <button className="btn btn-primary" type="button" data-lhb-action="refreshData">
+              Refresh
             </button>
           </div>
         </div>
@@ -160,10 +160,10 @@ export default function Page() {
             <div className="row align-items-center g-2 mb-3">
               <div className="col">
                 <h4 className="mb-0">
-                  API services & gateways
+                  Route traffic
                 </h4>
                 <p className="text-body-tertiary fs-9 mb-0">
-                  AWS API Gateway · Azure API Management · GCP Apigee and internal APIs
+                  Per-route request counts derived from stored spans — send an agent telemetry batch to populate
                 </p>
               </div>
             </div>
@@ -171,7 +171,7 @@ export default function Page() {
               <div className="col-12 col-md">
                 <div className="search-box w-100">
                   <form className="position-relative">
-                    <input className="form-control search-input search form-control-sm" type="search" placeholder="Search APIs or gateways" aria-label="Search" />
+                    <input className="form-control search-input search form-control-sm" type="search" placeholder="Search routes" aria-label="Search" />
                     <span className="fas fa-search search-box-icon"></span>
                   </form>
                 </div>
@@ -187,8 +187,8 @@ export default function Page() {
                   <option value="Degraded">
                     Degraded
                   </option>
-                  <option value="Watch">
-                    Watch
+                  <option value="Down">
+                    Down
                   </option>
                 </select>
               </div>
@@ -198,19 +198,19 @@ export default function Page() {
                     Sort by
                   </option>
                   <option value="col0">
-                    Service
+                    Route
                   </option>
                   <option value="col1">
-                    Provider
+                    Requests
                   </option>
                   <option value="col2">
-                    Env
+                    5xx
                   </option>
                   <option value="col3">
-                    p99
+                    Error rate
                   </option>
                   <option value="col4">
-                    Errors
+                    Status codes
                   </option>
                   <option value="col5">
                     Status
@@ -225,19 +225,19 @@ export default function Page() {
                 <thead>
                   <tr>
                     <th className="sort align-middle white-space-nowrap text-uppercase ps-3" scope="col" data-sort="col0">
-                      Service
+                      Route
                     </th>
                     <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col1">
-                      Provider
+                      Requests
                     </th>
                     <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col2">
-                      Env
+                      5xx
                     </th>
                     <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col3">
-                      p99
+                      Error rate
                     </th>
                     <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col4">
-                      Errors
+                      Status codes
                     </th>
                     <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col5">
                       Status
@@ -248,28 +248,28 @@ export default function Page() {
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
                       <div className="d-flex align-items-center">
-                        <span className="me-2 fa-solid fa-cloud text-warning"></span>
+                        <span className="me-2 fa-solid fa-route text-success"></span>
                         <div>
                           <h6 className="mb-0">
-                            Checkout API
+                            POST /api/v1/observability/agents/telemetry
                           </h6>
                           <p className="text-body-tertiary fs-10 mb-0">
-                            api-prod-us-east-1
+                            200×18270 422×78 503×72
                           </p>
                         </div>
                       </div>
                     </td>
                     <td className="align-middle col1">
-                      AWS API Gateway
+                      18,420
                     </td>
                     <td className="align-middle col2">
-                      prod
+                      72
                     </td>
                     <td className="align-middle col3">
-                      380ms
+                      0.39%
                     </td>
                     <td className="align-middle col4">
-                      0.4%
+                      200, 422, 503
                     </td>
                     <td className="align-middle col5">
                       <span className="badge badge-phoenix badge-phoenix-success">
@@ -280,28 +280,28 @@ export default function Page() {
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
                       <div className="d-flex align-items-center">
-                        <span className="me-2 fa-solid fa-cloud text-info"></span>
+                        <span className="me-2 fa-solid fa-route text-success"></span>
                         <div>
                           <h6 className="mb-0">
-                            Identity API
+                            GET /api/v1/observability/agents
                           </h6>
                           <p className="text-body-tertiary fs-10 mb-0">
-                            apim-eastus
+                            200×23843 502×47
                           </p>
                         </div>
                       </div>
                     </td>
                     <td className="align-middle col1">
-                      Azure API Management
+                      23,890
                     </td>
                     <td className="align-middle col2">
-                      prod
+                      47
                     </td>
                     <td className="align-middle col3">
-                      210ms
+                      0.20%
                     </td>
                     <td className="align-middle col4">
-                      0.1%
+                      200, 502
                     </td>
                     <td className="align-middle col5">
                       <span className="badge badge-phoenix badge-phoenix-success">
@@ -312,28 +312,60 @@ export default function Page() {
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
                       <div className="d-flex align-items-center">
-                        <span className="me-2 fa-solid fa-cloud text-danger"></span>
+                        <span className="me-2 fa-solid fa-route text-success"></span>
                         <div>
                           <h6 className="mb-0">
-                            Partner API
+                            GET /api/v1/traces/search
                           </h6>
                           <p className="text-body-tertiary fs-10 mb-0">
-                            org-apigee-prod
+                            200×11212 500×18
                           </p>
                         </div>
                       </div>
                     </td>
                     <td className="align-middle col1">
-                      GCP Apigee
+                      11,230
                     </td>
                     <td className="align-middle col2">
-                      prod
+                      18
                     </td>
                     <td className="align-middle col3">
-                      920ms
+                      0.16%
                     </td>
                     <td className="align-middle col4">
-                      2.8%
+                      200, 500
+                    </td>
+                    <td className="align-middle col5">
+                      <span className="badge badge-phoenix badge-phoenix-success">
+                        Healthy
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="align-middle ps-3 py-3 col0">
+                      <div className="d-flex align-items-center">
+                        <span className="me-2 fa-solid fa-route text-warning"></span>
+                        <div>
+                          <h6 className="mb-0">
+                            POST /api/v1/ingest/events
+                          </h6>
+                          <p className="text-body-tertiary fs-10 mb-0">
+                            200×4120 503×96
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="align-middle col1">
+                      4,216
+                    </td>
+                    <td className="align-middle col2">
+                      96
+                    </td>
+                    <td className="align-middle col3">
+                      2.28%
+                    </td>
+                    <td className="align-middle col4">
+                      200, 503
                     </td>
                     <td className="align-middle col5">
                       <span className="badge badge-phoenix badge-phoenix-warning">
@@ -344,96 +376,32 @@ export default function Page() {
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
                       <div className="d-flex align-items-center">
-                        <span className="me-2 fa-solid fa-server text-primary"></span>
+                        <span className="me-2 fa-solid fa-route text-danger"></span>
                         <div>
                           <h6 className="mb-0">
-                            Billing Service
+                            GET /api/v1/finops/recommendations
                           </h6>
                           <p className="text-body-tertiary fs-10 mb-0">
-                            /v1/billing
+                            200×512 500×61
                           </p>
                         </div>
                       </div>
                     </td>
                     <td className="align-middle col1">
-                      Internal
+                      573
                     </td>
                     <td className="align-middle col2">
-                      prod
+                      61
                     </td>
                     <td className="align-middle col3">
-                      145ms
+                      10.65%
                     </td>
                     <td className="align-middle col4">
-                      0.2%
+                      200, 500
                     </td>
                     <td className="align-middle col5">
-                      <span className="badge badge-phoenix badge-phoenix-success">
-                        Healthy
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="align-middle ps-3 py-3 col0">
-                      <div className="d-flex align-items-center">
-                        <span className="me-2 fa-solid fa-server text-primary"></span>
-                        <div>
-                          <h6 className="mb-0">
-                            Inventory Service
-                          </h6>
-                          <p className="text-body-tertiary fs-10 mb-0">
-                            /v1/inventory
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="align-middle col1">
-                      Internal
-                    </td>
-                    <td className="align-middle col2">
-                      stage
-                    </td>
-                    <td className="align-middle col3">
-                      510ms
-                    </td>
-                    <td className="align-middle col4">
-                      1.1%
-                    </td>
-                    <td className="align-middle col5">
-                      <span className="badge badge-phoenix badge-phoenix-info">
-                        Watch
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="align-middle ps-3 py-3 col0">
-                      <div className="d-flex align-items-center">
-                        <span className="me-2 fa-solid fa-cloud text-warning"></span>
-                        <div>
-                          <h6 className="mb-0">
-                            Realtime Gateway
-                          </h6>
-                          <p className="text-body-tertiary fs-10 mb-0">
-                            websocket-gateway
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="align-middle col1">
-                      AWS API Gateway
-                    </td>
-                    <td className="align-middle col2">
-                      prod
-                    </td>
-                    <td className="align-middle col3">
-                      88ms
-                    </td>
-                    <td className="align-middle col4">
-                      0.0%
-                    </td>
-                    <td className="align-middle col5">
-                      <span className="badge badge-phoenix badge-phoenix-success">
-                        Healthy
+                      <span className="badge badge-phoenix badge-phoenix-danger">
+                        Down
                       </span>
                     </td>
                   </tr>

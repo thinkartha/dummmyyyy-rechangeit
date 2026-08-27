@@ -69,7 +69,10 @@ export default function Page() {
               Connection health, replication lag, and slow queries across every engine an org has registered
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
+            <button className="btn btn-phoenix-secondary" type="button" data-lhb-action="testDatabaseDsn">
+              Test connection
+            </button>
             <button className="btn btn-primary" type="button" data-lhb-action="addDatabase">
               Add database
             </button>

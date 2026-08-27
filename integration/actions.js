@@ -251,6 +251,153 @@ function resultLine(label, value, mono) {
 }
 
 /**
+ * One cluster's brief, rendered for a human before it is handed to an agent.
+ *
+ * Both clustering paths return the same shape, so they share this. `options.dispatch`
+ * is what separates them: alert clusters can only be copied, agent incidents can also
+ * be sent. Condensed logs are shown rather than the raw ones — the whole point of the
+ * brief is that N repeats of a line collapse to one with a count.
+ */
+function showBrief(brief, options = {}) {
+  const body = document.createElement('div');
+
+  const facts = document.createElement('dl');
+  facts.className = 'row mb-3 fs-9';
+  const rows = [
+    ['Cluster', brief.title],
+    ['Severity', brief.severity],
+    ['Status', brief.status],
+    ['Alerts collapsed', brief.alert_count],
+    ['Services', (brief.affected_services || []).join(', ') || '—'],
+    ['Window', `${brief.first_seen || '—'} → ${brief.last_seen || '—'}`],
+    ['Compression', brief.compression
+      ? `${brief.compression.alerts_in} alerts → ${brief.compression.lines_out} lines`
+      : '—'],
+  ];
+  for (const [k, v] of rows) {
+    const dt = document.createElement('dt');
+    dt.className = 'col-4 col-sm-3 text-body-tertiary fw-normal';
+    dt.textContent = k;
+    const dd = document.createElement('dd');
+    dd.className = 'col-8 col-sm-9 mb-1';
+    dd.textContent = String(v ?? '—');
+    facts.append(dt, dd);
+  }
+  body.appendChild(facts);
+
+  /* Where the handoff reports back. Created up front so both the dispatch result and
+     any earlier dispatch of the same cluster have somewhere to land. */
+  const status = document.createElement('div');
+  status.className = 'alert alert-subtle-info fs-9 d-none';
+  body.appendChild(status);
+
+  const block = (heading, text) => {
+    const h = document.createElement('h6');
+    h.className = 'fs-9 mb-2';
+    h.textContent = heading;
+    const pre = document.createElement('pre');
+    pre.className = 'bg-body-emphasis border border-translucent rounded-3 p-3 fs-10 mb-3';
+    pre.style.maxHeight = '14rem';
+    pre.style.overflow = 'auto';
+    pre.style.whiteSpace = 'pre-wrap';
+    pre.textContent = text;
+    body.append(h, pre);
+  };
+
+  if ((brief.condensed_logs || []).length) {
+    block('Condensed logs — ×N is the repeat count', brief.condensed_logs.join('\n'));
+  }
+
+  if ((brief.timeline || []).length) {
+    const h = document.createElement('h6');
+    h.className = 'fs-9 mb-2';
+    h.textContent = 'Timeline';
+    const ul = document.createElement('ul');
+    ul.className = 'fs-9 mb-3';
+    for (const line of brief.timeline) {
+      const li = document.createElement('li');
+      li.textContent = line;
+      ul.appendChild(li);
+    }
+    body.append(h, ul);
+  }
+
+  block('Prompt for your coding agent', brief.prompt || '');
+
+  const copy = document.createElement('button');
+  copy.type = 'button';
+  copy.className = 'btn btn-phoenix-secondary btn-sm';
+  copy.textContent = 'Copy prompt';
+  copy.addEventListener('click', async () => {
+    // navigator.clipboard needs a secure context; the textarea trick is the
+    // fallback that still works over plain http and in older Safari.
+    try {
+      await navigator.clipboard.writeText(brief.prompt || '');
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = brief.prompt || '';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    }
+    copy.textContent = 'Copied';
+    setTimeout(() => { copy.textContent = 'Copy prompt'; }, 2000);
+  });
+
+  const done = document.createElement('button');
+  done.type = 'button';
+  done.className = 'btn btn-phoenix-secondary btn-sm';
+  done.textContent = 'Close';
+
+  const footer = document.createElement('div');
+  footer.className = 'd-flex gap-2';
+  footer.append(done, copy);
+
+  const say = (text, tone) => {
+    status.className = `alert alert-subtle-${tone} fs-9`;
+    status.textContent = text;
+  };
+  const describe = (d) => [
+    `Handoff ${d.status || 'submitted'}`,
+    d.external_id ? `job ${d.external_id}` : '',
+    d.submitted_at || '',
+    d.error || '',
+  ].filter(Boolean).join(' · ');
+
+  if (options.dispatch) {
+    const send = document.createElement('button');
+    send.type = 'button';
+    send.className = 'btn btn-primary btn-sm';
+    send.textContent = 'Send to coding agent';
+    send.addEventListener('click', async () => {
+      send.disabled = true;
+      send.textContent = 'Sending…';
+      try {
+        say(describe(await options.dispatch()), 'success');
+      } catch (err) {
+        say(explain(err), 'warning');
+      } finally {
+        send.disabled = false;
+        send.textContent = 'Send to coding agent';
+      }
+    });
+    footer.appendChild(send);
+  }
+
+  const close = open(`${options.title || 'Agent brief'} · ${brief.title}`, body, footer);
+  done.addEventListener('click', close);
+
+  /* Asynchronous on purpose: the brief opens immediately and the earlier-handoff line
+     fills in when it arrives, rather than the dialog waiting on a second request. */
+  if (options.history) {
+    options.history().then((list) => {
+      if (list && list.length) say(`Already handed over — ${describe(list[0])}`, 'info');
+    });
+  }
+}
+
+/**
  * The agent key, and how to install the agent that uses it.
  *
  * `create_agent` returns the key once and never again — every later read of the agent
@@ -452,9 +599,11 @@ async function runForm(api, entry, arg) {
     submit.textContent = 'Working…';
     error.classList.add('d-none');
     try {
-      await entry.run(api, values(form, specs), arg);
+      /* A form's run() may answer with something worth reading — which database it
+         reached, how fast. Prefer that over the generic success line. */
+      const message = await entry.run(api, values(form, specs), arg);
       close();
-      toast(entry.success || 'Saved.');
+      toast(typeof message === 'string' && message ? message : (entry.success || 'Saved.'));
       if (entry.refresh !== false) hydrate(api);
     } catch (err) {
       error.textContent = explain(err);
@@ -525,95 +674,31 @@ export const ACTIONS = {
    * and a ready-to-send prompt. Nothing is dispatched from here — the prompt is
    * copied and pasted into whichever agent you run.
    */
+  /**
+   * The brief the backend assembles for a coding agent: facts, deduplicated logs,
+   * and a ready-to-send prompt. Nothing is dispatched from here — the prompt is
+   * copied and pasted into whichever agent you run.
+   */
   clusterBrief: {
     title: 'Agent brief',
-    custom: async (api, arg) => {
-      const brief = await api.alerts.brief(arg);
+    custom: async (api, arg) => showBrief(await api.alerts.brief(arg)),
+  },
 
-      const body = document.createElement('div');
-
-      const facts = document.createElement('dl');
-      facts.className = 'row mb-3 fs-9';
-      const rows = [
-        ['Cluster', brief.title],
-        ['Severity', brief.severity],
-        ['Status', brief.status],
-        ['Alerts collapsed', brief.alert_count],
-        ['Services', (brief.affected_services || []).join(', ') || '—'],
-        ['Window', `${brief.first_seen || '—'} → ${brief.last_seen || '—'}`],
-        ['Compression', brief.compression
-          ? `${brief.compression.alerts_in} alerts → ${brief.compression.lines_out} lines`
-          : '—'],
-      ];
-      for (const [k, v] of rows) {
-        const dt = document.createElement('dt');
-        dt.className = 'col-4 col-sm-3 text-body-tertiary fw-normal';
-        dt.textContent = k;
-        const dd = document.createElement('dd');
-        dd.className = 'col-8 col-sm-9 mb-1';
-        dd.textContent = String(v ?? '—');
-        facts.append(dt, dd);
-      }
-      body.appendChild(facts);
-
-      if ((brief.timeline || []).length) {
-        const h = document.createElement('h6');
-        h.className = 'fs-9 mb-2';
-        h.textContent = 'Timeline';
-        const ul = document.createElement('ul');
-        ul.className = 'fs-9 mb-3';
-        for (const line of brief.timeline) {
-          const li = document.createElement('li');
-          li.textContent = line;
-          ul.appendChild(li);
-        }
-        body.append(h, ul);
-      }
-
-      const ph = document.createElement('h6');
-      ph.className = 'fs-9 mb-2';
-      ph.textContent = 'Prompt for your coding agent';
-      const pre = document.createElement('pre');
-      pre.className = 'bg-body-emphasis border border-translucent rounded-3 p-3 fs-10 mb-0';
-      pre.style.maxHeight = '18rem';
-      pre.style.overflow = 'auto';
-      pre.style.whiteSpace = 'pre-wrap';
-      pre.textContent = brief.prompt || '';
-      body.append(ph, pre);
-
-      const copy = document.createElement('button');
-      copy.type = 'button';
-      copy.className = 'btn btn-primary btn-sm';
-      copy.textContent = 'Copy prompt';
-      copy.addEventListener('click', async () => {
-        // navigator.clipboard needs a secure context; the textarea trick is the
-        // fallback that still works over plain http and in older Safari.
-        try {
-          await navigator.clipboard.writeText(brief.prompt || '');
-        } catch {
-          const ta = document.createElement('textarea');
-          ta.value = brief.prompt || '';
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand('copy');
-          ta.remove();
-        }
-        copy.textContent = 'Copied';
-        setTimeout(() => { copy.textContent = 'Copy prompt'; }, 2000);
-      });
-
-      const done = document.createElement('button');
-      done.type = 'button';
-      done.className = 'btn btn-phoenix-secondary btn-sm';
-      done.textContent = 'Close';
-
-      const footer = document.createElement('div');
-      footer.className = 'd-flex gap-2';
-      footer.append(done, copy);
-
-      const close = open(`Agent brief · ${brief.title}`, body, footer);
-      done.addEventListener('click', close);
-    },
+  /**
+   * The same brief for an *agent* incident cluster, plus the handoff the alert side
+   * has no endpoint for: /dispatch hands the brief to the configured coding agent and
+   * returns a job to follow, so this dialog can send rather than only copy.
+   */
+  agentIncidentBrief: {
+    title: 'Coding-agent brief',
+    custom: async (api, arg) => showBrief(await api.agents.clusterBrief(arg), {
+      title: 'Coding-agent brief',
+      /* History is fetched with the brief: a cluster already handed over should say so
+         before someone dispatches it a second time. */
+      history: () => api.agents.dispatches().then(
+        (all) => (all || []).filter((d) => d.cluster_id === arg)).catch(() => []),
+      dispatch: () => api.agents.dispatchCluster(arg, {}),
+    }),
   },
 
   /* --- observability writes that have an endpoint today ------------------- */
@@ -970,6 +1055,103 @@ export const ACTIONS = {
       { name: 'admin_email', label: 'Admin email', type: 'email', width: 'half' },
     ],
     run: (api, body) => api.admin.createOrganization(body),
+  },
+
+  /**
+   * Re-read every live table on the page.
+   *
+   * These tables load once on page load. Route traffic and traces are derived from
+   * spans as they arrive, so the useful question after sending a telemetry batch is
+   * "did it land?" — which otherwise needs a full page reload.
+   */
+  refreshData: {
+    direct: true,
+    refresh: false,
+    run: async (api) => {
+      await hydrate(api);
+      return 'Refreshed.';
+    },
+  },
+
+  /* --- orchestration: the AWS Lambda connector behind the job stream ------ */
+
+  /**
+   * "Connect orchestrator" configures the AWS Lambda connector.
+   *
+   * The orchestration page's job stream is Lambda invocations and ETL executions —
+   * there is no separate orchestrator service to point at, so connecting one means
+   * giving this tenant the AWS credentials and prefixes to collect from.
+   */
+  connectOrchestrator: {
+    title: 'Connect orchestrator',
+    submit: 'Save connection',
+    success: 'Orchestrator connected — collection starts on the next sweep.',
+    prefill: (api) => api.awsLambda.config().then((s) => (s && s.fields) || {}).catch(() => ({})),
+    fields: (current = {}) => [
+      { name: 'region', label: 'AWS region', required: true, width: 'half',
+        value: current.region || 'us-east-1' },
+      { name: 'auth_method', label: 'Authentication', type: 'select', width: 'half',
+        options: ['default-chain', 'access-keys', 'iam-role'],
+        value: current.auth_method || 'default-chain',
+        help: 'default-chain uses the role the backend already runs as.' },
+      { name: 'role_arn', label: 'Role ARN', width: 'half', value: current.role_arn,
+        placeholder: 'arn:aws:iam::123456789012:role/loveheartbeat-read' },
+      { name: 'external_id', label: 'External ID', width: 'half',
+        help: 'Only for iam-role. Left blank keeps the stored one.' },
+      { name: 'access_key_id', label: 'Access key ID', width: 'half',
+        help: 'Only for access-keys.' },
+      { name: 'secret_access_key', label: 'Secret access key', type: 'password', width: 'half' },
+      { name: 'function_prefixes', label: 'Function prefixes', type: 'list',
+        value: current.function_prefixes,
+        help: 'Comma separated. Empty collects every function the role can see.' },
+      { name: 'log_groups', label: 'Log groups', type: 'list', value: current.log_groups },
+      { name: 'collection_interval_seconds', label: 'Collect every (seconds)', type: 'number',
+        width: 'half', value: current.collection_interval_seconds || 300 },
+      { name: 'error_rate_threshold', label: 'Error rate alert (%)', type: 'number', step: 'any',
+        width: 'half', value: current.error_rate_threshold ?? 5 },
+      { name: 'duration_ms_threshold', label: 'Duration alert (ms)', type: 'number', step: 'any',
+        width: 'half', value: current.duration_ms_threshold ?? 1000 },
+      { name: 'throttle_threshold', label: 'Throttle alert (count)', type: 'number',
+        width: 'half', value: current.throttle_threshold ?? 1 },
+    ],
+    run: (api, body) => api.awsLambda.saveConfig(body),
+  },
+
+  /* --- database monitoring ------------------------------------------------ */
+
+  /**
+   * Probe a connection string without saving it.
+   *
+   * Registering a database that cannot be reached produces a row that reports
+   * "unknown" forever, and nothing in the UI says why. The backend's /databases/test
+   * route exists for exactly this, and had no caller.
+   */
+  testDatabaseDsn: {
+    title: 'Test connection',
+    submit: 'Test',
+    success: 'Connection tested.',
+    refresh: false,
+    fields: [
+      { name: 'dsn', label: 'Connection string', required: true,
+        placeholder: 'postgresql://user:pass@host:5432/dbname' },
+    ],
+    run: async (api, body) => {
+      const result = await api.databases.test(body);
+      /* The route answers 200 with a `reachable` flag rather than an error status, so a
+         refused connection has to be turned into one here or it reads as success. */
+      if (result && result.reachable === false) {
+        throw new Error(result.error || (result.reasons || []).join(' ') || 'Could not connect with that string.');
+      }
+      const detail = [result.engine_label || result.engine, result.host,
+        result.latency_ms != null ? `${result.latency_ms}ms` : null].filter(Boolean).join(' · ');
+      return `Connected${detail ? ` — ${detail}` : ''}.`;
+    },
+  },
+
+  removeDatabase: {
+    direct: true,
+    confirm: 'Stop monitoring this database?',
+    run: async (api, id) => { await api.databases.remove(id); return 'Database removed.'; },
   },
 
   /* --- AI monitoring: register the agent that reports a tool ------------- */
@@ -1338,12 +1520,9 @@ export const UNSUPPORTED = {
   addAiRoute: 'AI gateway routes come from the APISIX config, not the API — edit infrastructure/apisix/apisix.yaml.',
   registerModel: 'No model registration endpoint yet — ai_models exposes inferences and thresholds only.',
   createAlertRule: 'No alert rule endpoint yet — alert-management covers routing, SLA and maintenance windows.',
-  addApi: 'No API registration endpoint yet.',
   addBudget: 'No cost budget endpoint yet — finops is read-only.',
-  addCloudAccount: 'No cloud account endpoint yet.',
   rebaseline: 'No drift rebaseline endpoint yet.',
   saveSearch: 'No saved search endpoint yet.',
-  connectOrchestrator: 'No orchestrator connector endpoint yet.',
   defineSlo: 'No SLO definition endpoint yet — slo is read-only.',
   exportTraces: 'No trace export endpoint yet.',
   acknowledgeAll: 'No bulk acknowledge endpoint yet.',

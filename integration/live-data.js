@@ -198,6 +198,27 @@ export const SOURCES = {
       })),
   },
 
+  /**
+   * Agent incidents, clustered.
+   *
+   * Same clustering as `clusters`, over failures the AI agents reported rather than
+   * alerts from the collector — and the only side with a dispatch endpoint, so its row
+   * action can hand the brief to a coding agent instead of only showing it.
+   */
+  agentIncidentClusters: {
+    load: (api) => api.agents.incidentClusters(),
+    rows: (data) =>
+      (data?.clusters || []).map((c) => ({
+        icon: 'fa-robot',
+        iconColor: c.severity === 'critical' ? 'danger' : c.severity === 'warning' ? 'warning' : 'info',
+        meta: c.id,
+        cells: [c.title, badge(c.severity), num(c.count),
+                (c.services || []).join(', ') || '—',
+                c.last_seen || '—', badge(c.status)],
+        action: { key: 'agentIncidentBrief', arg: c.id, label: 'Brief & dispatch', tone: 'primary' },
+      })),
+  },
+
   alertManagement: {
     load: (api) => api.alertManagement.routingRules(),
     rows: (data) =>
@@ -217,18 +238,19 @@ export const SOURCES = {
   /* --- API monitoring ---------------------------------------------------- */
 
   apiRoutes: {
-    // Columns: Service · Provider · Env · p99 · Errors · Status. The backend derives
-    // these from stored spans, so "provider" is the operation's own gateway label when
-    // the span carried one and blank when it did not.
+    // Columns: Route · Requests · 5xx · Error rate · Status codes · Status, which is
+    // every field /observability/routes returns. `errors` counts 5xx and spans the
+    // exporter marked ERROR — a 4xx is the caller's mistake, not the route's, and
+    // folding it in here would make a healthy route look broken.
     load: (api) => api.observability.routes(),
     rows: (data) =>
       (data || []).map((r) => ({
         icon: 'fa-route',
         iconColor: r.error_rate > 0.05 ? 'danger' : r.error_rate > 0.01 ? 'warning' : 'success',
         meta: Object.entries(r.by_code || {}).map(([code, n]) => `${code}×${n}`).join(' ') || null,
-        cells: [r.route, r.provider || 'instrumented', r.environment || '—',
-                r.p99_ms != null ? `${num(r.p99_ms)}ms` : '—',
+        cells: [r.route, num(r.requests), num(r.errors),
                 pct((r.error_rate || 0) * 100, 2),
+                Object.keys(r.by_code || {}).sort().join(', ') || '—',
                 badge(r.error_rate > 0.05 ? 'Down' : r.error_rate > 0.01 ? 'Degraded' : 'Healthy')],
       })),
   },

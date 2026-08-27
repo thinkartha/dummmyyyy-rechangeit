@@ -7,6 +7,12 @@ export default function Page() {
           "code": "\n          (function() {\n            document.querySelectorAll('[data-obs-sort]').forEach(function(select) {\n              if (select.dataset.bound === '1') return;\n              select.dataset.bound = '1';\n              select.addEventListener('change', function() {\n                var key = select.value;\n                if (!key) return;\n                var root = select.closest('[data-list]');\n                if (!root) return;\n                var header = root.querySelector('th[data-sort=\"' + key + '\"]');\n                if (header) header.click();\n              });\n            });\n          })();\n        "
         },
         {
+          "code": "\n          (function() {\n            document.querySelectorAll('[data-obs-sort]').forEach(function(select) {\n              if (select.dataset.bound === '1') return;\n              select.dataset.bound = '1';\n              select.addEventListener('change', function() {\n                var key = select.value;\n                if (!key) return;\n                var root = select.closest('[data-list]');\n                if (!root) return;\n                var header = root.querySelector('th[data-sort=\"' + key + '\"]');\n                if (header) header.click();\n              });\n            });\n          })();\n        "
+        },
+        {
+          "code": "\n          (function() {\n            document.querySelectorAll('[data-obs-sort]').forEach(function(select) {\n              if (select.dataset.bound === '1') return;\n              select.dataset.bound = '1';\n              select.addEventListener('change', function() {\n                var key = select.value;\n                if (!key) return;\n                var root = select.closest('[data-list]');\n                if (!root) return;\n                var header = root.querySelector('th[data-sort=\"' + key + '\"]');\n                if (header) header.click();\n              });\n            });\n          })();\n        "
+        },
+        {
           "code": "\n        var navbarTopStyle = window.config.config.phoenixNavbarTopStyle;\n        var navbarTop = document.querySelector('.navbar-top');\n        if (navbarTopStyle === 'darker') {\n          navbarTop.setAttribute('data-navbar-appearance', 'darker');\n        }\n\n        var navbarVerticalStyle = window.config.config.phoenixNavbarVerticalStyle;\n        var navbarVertical = document.querySelector('.navbar-vertical');\n        if (navbarVertical && navbarVerticalStyle === 'darker') {\n          navbarVertical.setAttribute('data-navbar-appearance', 'darker');\n        }\n      "
         },
         {
@@ -409,6 +415,458 @@ export default function Page() {
                     <td className="align-middle col5">
                       <span className="badge badge-phoenix badge-phoenix-warning">
                         Open
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div className="text-center p-3 fallback d-none">
+              <p className="mb-0 text-body-tertiary">
+                No matching results
+              </p>
+            </div>
+          </div>
+          <div className="card-footer border-top border-translucent">
+            <div className="row align-items-center g-2">
+              <div className="pagination d-none"></div>
+              <div className="col d-flex fs-9 flex-wrap">
+                <p className="mb-0 d-none d-sm-block me-3 fw-semibold text-body" data-list-info="data-list-info"></p>
+                <a className="fw-semibold" href="#!" data-list-view="*">
+                  View all
+                  <span className="fas fa-angle-right ms-1" data-fa-transform="down-1"></span>
+                </a>
+                <a className="fw-semibold d-none" href="#!" data-list-view="less">
+                  View less
+                </a>
+              </div>
+              <div className="col-auto d-flex">
+                <button className="btn btn-link px-1 me-1" type="button" title="Previous" data-list-pagination="prev">
+                  <span className="fas fa-chevron-left me-2"></span>
+                  Previous
+                </button>
+                <button className="btn btn-link px-1 ms-1" type="button" title="Next" data-list-pagination="next">
+                  Next
+                  <span className="fas fa-chevron-right ms-2"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="obs-list-root" data-list={"{\"valueNames\":[\"col0\",\"col1\",\"col2\",\"col3\",\"col4\",\"col5\"],\"page\":5,\"filter\":{\"key\":\"col5\"}}"} data-live-table="clusters">
+        <div className="card">
+          <div className="card-header border-bottom border-translucent py-3">
+            <div className="row align-items-center g-2 mb-3">
+              <div className="col">
+                <h4 className="mb-0">
+                  Alert clusters
+                </h4>
+                <p className="text-body-tertiary fs-9 mb-0">
+                  Near-identical alerts collapsed by message template — open a brief to hand one to a coding agent
+                </p>
+              </div>
+            </div>
+            <div className="row align-items-center g-2">
+              <div className="col-12 col-md">
+                <div className="search-box w-100">
+                  <form className="position-relative">
+                    <input className="form-control search-input search form-control-sm" type="search" placeholder="Search clusters" aria-label="Search" />
+                    <span className="fas fa-search search-box-icon"></span>
+                  </form>
+                </div>
+              </div>
+              <div className="col-6 col-md-auto">
+                <select className="form-select form-select-sm" data-list-filter="data-list-filter" aria-label="Filter">
+                  <option value="">
+                    Filter: All
+                  </option>
+                  <option value="Firing">
+                    Firing
+                  </option>
+                  <option value="Resolved">
+                    Resolved
+                  </option>
+                </select>
+              </div>
+              <div className="col-6 col-md-auto">
+                <select className="form-select form-select-sm" aria-label="Sort by" data-obs-sort="data-obs-sort">
+                  <option value="">
+                    Sort by
+                  </option>
+                  <option value="col0">
+                    Cluster
+                  </option>
+                  <option value="col1">
+                    Severity
+                  </option>
+                  <option value="col2">
+                    Alerts
+                  </option>
+                  <option value="col3">
+                    Services
+                  </option>
+                  <option value="col4">
+                    Last seen
+                  </option>
+                  <option value="col5">
+                    Status
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div className="card-body p-0">
+            <div className="table-responsive scrollbar">
+              <table className="table table-sm fs-9 mb-0">
+                <thead>
+                  <tr>
+                    <th className="sort align-middle white-space-nowrap text-uppercase ps-3" scope="col" data-sort="col0">
+                      Cluster
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col1">
+                      Severity
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col2">
+                      Alerts
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col3">
+                      Services
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col4">
+                      Last seen
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col5">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="list">
+                  <tr>
+                    <td className="align-middle ps-3 py-3 col0">
+                      <div className="d-flex align-items-center">
+                        <span className="me-2 fa-solid fa-layer-group text-danger"></span>
+                        <div>
+                          <h6 className="mb-0">
+                            Upstream timeout on &lt;route&gt;
+                          </h6>
+                          <p className="text-body-tertiary fs-10 mb-0">
+                            cluster-checkout-timeout
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="align-middle col1">
+                      <span className="badge badge-phoenix badge-phoenix-danger">
+                        Critical
+                      </span>
+                    </td>
+                    <td className="align-middle col2">
+                      38
+                    </td>
+                    <td className="align-middle col3">
+                      checkout-api, payments
+                    </td>
+                    <td className="align-middle col4">
+                      3m ago
+                    </td>
+                    <td className="align-middle col5">
+                      <span className="badge badge-phoenix badge-phoenix-danger">
+                        Firing
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="align-middle ps-3 py-3 col0">
+                      <div className="d-flex align-items-center">
+                        <span className="me-2 fa-solid fa-layer-group text-warning"></span>
+                        <div>
+                          <h6 className="mb-0">
+                            Rate limit exceeded for &lt;consumer&gt;
+                          </h6>
+                          <p className="text-body-tertiary fs-10 mb-0">
+                            cluster-rate-limit
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="align-middle col1">
+                      <span className="badge badge-phoenix badge-phoenix-warning">
+                        Warning
+                      </span>
+                    </td>
+                    <td className="align-middle col2">
+                      17
+                    </td>
+                    <td className="align-middle col3">
+                      partner-api
+                    </td>
+                    <td className="align-middle col4">
+                      11m ago
+                    </td>
+                    <td className="align-middle col5">
+                      <span className="badge badge-phoenix badge-phoenix-danger">
+                        Firing
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="align-middle ps-3 py-3 col0">
+                      <div className="d-flex align-items-center">
+                        <span className="me-2 fa-solid fa-layer-group text-info"></span>
+                        <div>
+                          <h6 className="mb-0">
+                            Job &lt;name&gt; retried
+                          </h6>
+                          <p className="text-body-tertiary fs-10 mb-0">
+                            cluster-glue-retry
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="align-middle col1">
+                      <span className="badge badge-phoenix badge-phoenix-info">
+                        Info
+                      </span>
+                    </td>
+                    <td className="align-middle col2">
+                      9
+                    </td>
+                    <td className="align-middle col3">
+                      customer_sync
+                    </td>
+                    <td className="align-middle col4">
+                      46m ago
+                    </td>
+                    <td className="align-middle col5">
+                      <span className="badge badge-phoenix badge-phoenix-success">
+                        Resolved
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div className="text-center p-3 fallback d-none">
+              <p className="mb-0 text-body-tertiary">
+                No matching results
+              </p>
+            </div>
+          </div>
+          <div className="card-footer border-top border-translucent">
+            <div className="row align-items-center g-2">
+              <div className="pagination d-none"></div>
+              <div className="col d-flex fs-9 flex-wrap">
+                <p className="mb-0 d-none d-sm-block me-3 fw-semibold text-body" data-list-info="data-list-info"></p>
+                <a className="fw-semibold" href="#!" data-list-view="*">
+                  View all
+                  <span className="fas fa-angle-right ms-1" data-fa-transform="down-1"></span>
+                </a>
+                <a className="fw-semibold d-none" href="#!" data-list-view="less">
+                  View less
+                </a>
+              </div>
+              <div className="col-auto d-flex">
+                <button className="btn btn-link px-1 me-1" type="button" title="Previous" data-list-pagination="prev">
+                  <span className="fas fa-chevron-left me-2"></span>
+                  Previous
+                </button>
+                <button className="btn btn-link px-1 ms-1" type="button" title="Next" data-list-pagination="next">
+                  Next
+                  <span className="fas fa-chevron-right ms-2"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="obs-list-root" data-list={"{\"valueNames\":[\"col0\",\"col1\",\"col2\",\"col3\",\"col4\",\"col5\"],\"page\":5,\"filter\":{\"key\":\"col5\"}}"} data-live-table="agentIncidentClusters">
+        <div className="card">
+          <div className="card-header border-bottom border-translucent py-3">
+            <div className="row align-items-center g-2 mb-3">
+              <div className="col">
+                <h4 className="mb-0">
+                  Agent incident clusters
+                </h4>
+                <p className="text-body-tertiary fs-9 mb-0">
+                  Failures the AI agents reported, clustered the same way — these can be dispatched to a coding agent, not just copied
+                </p>
+              </div>
+            </div>
+            <div className="row align-items-center g-2">
+              <div className="col-12 col-md">
+                <div className="search-box w-100">
+                  <form className="position-relative">
+                    <input className="form-control search-input search form-control-sm" type="search" placeholder="Search agent incidents" aria-label="Search" />
+                    <span className="fas fa-search search-box-icon"></span>
+                  </form>
+                </div>
+              </div>
+              <div className="col-6 col-md-auto">
+                <select className="form-select form-select-sm" data-list-filter="data-list-filter" aria-label="Filter">
+                  <option value="">
+                    Filter: All
+                  </option>
+                  <option value="Firing">
+                    Firing
+                  </option>
+                  <option value="Resolved">
+                    Resolved
+                  </option>
+                </select>
+              </div>
+              <div className="col-6 col-md-auto">
+                <select className="form-select form-select-sm" aria-label="Sort by" data-obs-sort="data-obs-sort">
+                  <option value="">
+                    Sort by
+                  </option>
+                  <option value="col0">
+                    Cluster
+                  </option>
+                  <option value="col1">
+                    Severity
+                  </option>
+                  <option value="col2">
+                    Failures
+                  </option>
+                  <option value="col3">
+                    Agents
+                  </option>
+                  <option value="col4">
+                    Last seen
+                  </option>
+                  <option value="col5">
+                    Status
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div className="card-body p-0">
+            <div className="table-responsive scrollbar">
+              <table className="table table-sm fs-9 mb-0">
+                <thead>
+                  <tr>
+                    <th className="sort align-middle white-space-nowrap text-uppercase ps-3" scope="col" data-sort="col0">
+                      Cluster
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col1">
+                      Severity
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col2">
+                      Failures
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col3">
+                      Agents
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col4">
+                      Last seen
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col5">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="list">
+                  <tr>
+                    <td className="align-middle ps-3 py-3 col0">
+                      <div className="d-flex align-items-center">
+                        <span className="me-2 fa-solid fa-robot text-danger"></span>
+                        <div>
+                          <h6 className="mb-0">
+                            Tool call &lt;tool&gt; timed out
+                          </h6>
+                          <p className="text-body-tertiary fs-10 mb-0">
+                            agent-tool-timeout
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="align-middle col1">
+                      <span className="badge badge-phoenix badge-phoenix-danger">
+                        Critical
+                      </span>
+                    </td>
+                    <td className="align-middle col2">
+                      24
+                    </td>
+                    <td className="align-middle col3">
+                      support-copilot
+                    </td>
+                    <td className="align-middle col4">
+                      5m ago
+                    </td>
+                    <td className="align-middle col5">
+                      <span className="badge badge-phoenix badge-phoenix-danger">
+                        Firing
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="align-middle ps-3 py-3 col0">
+                      <div className="d-flex align-items-center">
+                        <span className="me-2 fa-solid fa-robot text-warning"></span>
+                        <div>
+                          <h6 className="mb-0">
+                            Context window exceeded on &lt;model&gt;
+                          </h6>
+                          <p className="text-body-tertiary fs-10 mb-0">
+                            agent-context-overflow
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="align-middle col1">
+                      <span className="badge badge-phoenix badge-phoenix-warning">
+                        Warning
+                      </span>
+                    </td>
+                    <td className="align-middle col2">
+                      12
+                    </td>
+                    <td className="align-middle col3">
+                      research-agent
+                    </td>
+                    <td className="align-middle col4">
+                      22m ago
+                    </td>
+                    <td className="align-middle col5">
+                      <span className="badge badge-phoenix badge-phoenix-danger">
+                        Firing
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="align-middle ps-3 py-3 col0">
+                      <div className="d-flex align-items-center">
+                        <span className="me-2 fa-solid fa-robot text-info"></span>
+                        <div>
+                          <h6 className="mb-0">
+                            Evaluation &lt;name&gt; below threshold
+                          </h6>
+                          <p className="text-body-tertiary fs-10 mb-0">
+                            agent-eval-regression
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="align-middle col1">
+                      <span className="badge badge-phoenix badge-phoenix-info">
+                        Info
+                      </span>
+                    </td>
+                    <td className="align-middle col2">
+                      6
+                    </td>
+                    <td className="align-middle col3">
+                      summarizer
+                    </td>
+                    <td className="align-middle col4">
+                      1h ago
+                    </td>
+                    <td className="align-middle col5">
+                      <span className="badge badge-phoenix badge-phoenix-success">
+                        Resolved
                       </span>
                     </td>
                   </tr>

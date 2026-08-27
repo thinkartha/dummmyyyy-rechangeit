@@ -45,3 +45,48 @@ block content
       { icon: 'fa-cloud', iconColor: 'warning', meta: 'aws-prod-042', cells: ['EC2 cost anomaly', 'Cloud Cost', { text: 'Warning', badge: 'warning' }, 'Cloud Ops', '2h', { text: 'Open', badge: 'warning' }] }
     ]
   })
+
+  //- Clustering, on the page where alerts are read. `clusters` collapses near-identical
+  //- alerts by message template; the row action opens the brief and, for agent
+  //- incidents, hands it to the coding agent that has to fix them.
+  +ObsToolTable({
+    title: 'Alert clusters',
+    live: 'clusters',
+    subtitle: 'Near-identical alerts collapsed by message template — open a brief to hand one to a coding agent',
+    searchPlaceholder: 'Search clusters',
+    pageSize: 5,
+    columns: [
+      { label: 'Cluster', className: 'ps-3' },
+      { label: 'Severity' },
+      { label: 'Alerts' },
+      { label: 'Services' },
+      { label: 'Last seen' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-layer-group', iconColor: 'danger', meta: 'cluster-checkout-timeout', cells: ['Upstream timeout on <route>', { text: 'Critical', badge: 'danger' }, '38', 'checkout-api, payments', '3m ago', { text: 'Firing', badge: 'danger' }] },
+      { icon: 'fa-layer-group', iconColor: 'warning', meta: 'cluster-rate-limit', cells: ['Rate limit exceeded for <consumer>', { text: 'Warning', badge: 'warning' }, '17', 'partner-api', '11m ago', { text: 'Firing', badge: 'danger' }] },
+      { icon: 'fa-layer-group', iconColor: 'info', meta: 'cluster-glue-retry', cells: ['Job <name> retried', { text: 'Info', badge: 'info' }, '9', 'customer_sync', '46m ago', { text: 'Resolved', badge: 'success' }] }
+    ]
+  })
+
+  +ObsToolTable({
+    title: 'Agent incident clusters',
+    live: 'agentIncidentClusters',
+    subtitle: 'Failures the AI agents reported, clustered the same way — these can be dispatched to a coding agent, not just copied',
+    searchPlaceholder: 'Search agent incidents',
+    pageSize: 5,
+    columns: [
+      { label: 'Cluster', className: 'ps-3' },
+      { label: 'Severity' },
+      { label: 'Failures' },
+      { label: 'Agents' },
+      { label: 'Last seen' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-robot', iconColor: 'danger', meta: 'agent-tool-timeout', cells: ['Tool call <tool> timed out', { text: 'Critical', badge: 'danger' }, '24', 'support-copilot', '5m ago', { text: 'Firing', badge: 'danger' }] },
+      { icon: 'fa-robot', iconColor: 'warning', meta: 'agent-context-overflow', cells: ['Context window exceeded on <model>', { text: 'Warning', badge: 'warning' }, '12', 'research-agent', '22m ago', { text: 'Firing', badge: 'danger' }] },
+      { icon: 'fa-robot', iconColor: 'info', meta: 'agent-eval-regression', cells: ['Evaluation <name> below threshold', { text: 'Info', badge: 'info' }, '6', 'summarizer', '1h ago', { text: 'Resolved', badge: 'success' }] }
+    ]
+  })

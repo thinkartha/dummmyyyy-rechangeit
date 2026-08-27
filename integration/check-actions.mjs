@@ -57,9 +57,16 @@ for (const file of pugFiles(new URL('../src/pug', import.meta.url).pathname)) {
     referenced.add(m[1] ?? m[2] ?? m[3]);
   }
 }
-// Row-level buttons are named in live-data.js, not in a Pug page.
+// Row-level buttons are named in live-data.js, not in a Pug page. They need checking
+// in the same direction too: `removeDatabase` shipped as a row action for months with
+// no entry behind it, and a row button with no entry is silently inert — bind() looks
+// the key up, finds nothing, and returns.
 const rowSource = readFileSync(new URL('./live-data.js', import.meta.url), 'utf8');
-for (const m of rowSource.matchAll(/key: '([^']+)'/g)) referenced.add(m[1]);
+for (const m of rowSource.matchAll(/key: '([^']+)'/g)) {
+  referenced.add(m[1]);
+  used++;
+  if (!known.has(m[1])) missing.push(`integration/live-data.js: ${m[1]}`);
+}
 
 const orphans = [...known].filter((k) => !referenced.has(k) && !source.includes(`action: '${k}'`));
 
