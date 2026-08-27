@@ -579,6 +579,11 @@ export default function Page() {
                       Platform-wide directory. A user belongs to one or more organizations; roles are scoped per organization.
                     </p>
                   </div>
+                  <div className="col-auto">
+                    <button className="btn btn-primary btn-sm" type="button" data-lhb-action="adminCreateUser">
+                      Create user
+                    </button>
+                  </div>
                 </div>
                 <div className="row align-items-center g-2">
                   <div className="col-12 col-md">
@@ -952,7 +957,7 @@ export default function Page() {
           </div>
         </div>
         <div className="tab-pane fade" id="tab-requests" role="tabpanel">
-          <div className="obs-list-root" data-list={"{\"valueNames\":[\"col0\",\"col1\",\"col2\",\"col3\",\"col4\",\"col5\"],\"page\":6,\"filter\":{\"key\":\"col5\"}}"}>
+          <div className="obs-list-root" data-list={"{\"valueNames\":[\"col0\",\"col1\",\"col2\",\"col3\",\"col4\",\"col5\"],\"page\":6,\"filter\":{\"key\":\"col5\"}}"} data-live-table="adminJoinRequests">
             <div className="card">
               <div className="card-header border-bottom border-translucent py-3">
                 <div className="row align-items-center g-2 mb-3">

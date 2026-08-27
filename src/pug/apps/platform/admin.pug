@@ -64,6 +64,8 @@ block content
       +ObsToolTable({
         title: 'Users',
         live: 'adminUsers',
+        action: 'Create user',
+        actionKey: 'adminCreateUser',
         subtitle: 'Platform-wide directory. A user belongs to one or more organizations; roles are scoped per organization.',
         searchPlaceholder: 'Search users or emails',
         pageSize: 8,
@@ -90,6 +92,7 @@ block content
     .tab-pane.fade#tab-requests(role='tabpanel')
       +ObsToolTable({
         title: 'Join requests',
+        live: 'adminJoinRequests',
         subtitle: 'People asking to join an organization. Approving grants access scoped to that organization only.',
         searchPlaceholder: 'Search join requests',
         pageSize: 6,

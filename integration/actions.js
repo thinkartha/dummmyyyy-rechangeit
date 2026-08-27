@@ -176,13 +176,126 @@ function values(form, specs) {
   return out;
 }
 
+/**
+ * Step two of gateway onboarding: what the customer has to run.
+ *
+ * Rendered from the API's own `installation.instructions` rather than a copy kept
+ * here, because the commands differ per deployment type and the backend is the one
+ * that knows which. The token is shown once — it is single-use and expires — so this
+ * dialog is the only place it exists outside the control plane.
+ */
+function showEnrollment(api, created) {
+  const wrap = document.createElement('div');
+
+  const line = (label, value, mono) => {
+    const row = document.createElement('div');
+    row.className = 'mb-3';
+    const head = document.createElement('div');
+    head.className = 'fs-10 text-body-tertiary text-uppercase mb-1';
+    head.textContent = label;
+    const val = document.createElement('div');
+    val.className = mono ? 'font-monospace fs-9 text-break' : 'fs-9 text-break';
+    val.textContent = value || '—';
+    row.append(head, val);
+    return row;
+  };
+
+  wrap.appendChild(line('Gateway id', created.gateway_id, true));
+  wrap.appendChild(line('Gateway address', created.gateway_address, true));
+
+  const token = line('Enrollment token — shown once', created.enrollment_token, true);
+  const expiry = document.createElement('div');
+  expiry.className = 'fs-10 text-body-tertiary mt-1';
+  expiry.textContent = created.expires_at ? `Expires ${created.expires_at}` : '';
+  token.appendChild(expiry);
+  wrap.appendChild(token);
+
+  const steps = (created.installation && created.installation.instructions) || [];
+  if (steps.length) {
+    const head = document.createElement('div');
+    head.className = 'fs-10 text-body-tertiary text-uppercase mb-1';
+    head.textContent = 'Run these where the gateway lives';
+    const list = document.createElement('ol');
+    list.className = 'ps-3 mb-3';
+    for (const step of steps) {
+      const item = document.createElement('li');
+      item.className = 'font-monospace fs-9 text-break mb-2';
+      item.textContent = step;
+      list.appendChild(item);
+    }
+    wrap.append(head, list);
+  }
+
+  /* The cutover check runs against the gateway address with a Host header, so it can be
+     proved working before public DNS moves. That ordering is the whole point of it. */
+  const result = document.createElement('div');
+  result.className = 'alert alert-subtle-info fs-9 mt-2 d-none';
+  wrap.appendChild(result);
+
+  const done = document.createElement('button');
+  done.type = 'button';
+  done.className = 'btn btn-phoenix-secondary btn-sm';
+  done.textContent = 'Close';
+  const check = document.createElement('button');
+  check.type = 'button';
+  check.className = 'btn btn-primary btn-sm';
+  check.textContent = 'Validate cutover';
+  const footer = document.createElement('div');
+  footer.className = 'd-flex gap-2';
+  footer.append(done, check);
+
+  const close = open('Gateway created', wrap, footer);
+  done.addEventListener('click', () => { close(); hydrate(api); });
+
+  check.addEventListener('click', async () => {
+    check.disabled = true;
+    check.textContent = 'Checking…';
+    try {
+      const report = await api.gateways.validateCutover(created.gateway_id, {});
+      result.className = 'alert alert-subtle-success fs-9 mt-2';
+      result.textContent = [
+        `gateway ${report.gateway_reachable ? 'reachable' : 'unreachable'}`,
+        `TLS ${report.tls_valid ? 'valid' : 'invalid'}`,
+        `origin ${report.origin_reachable ? 'reachable' : 'unreachable'}`,
+        `status ${report.returned_status_code}`,
+        `${report.total_latency_ms}ms`
+      ].join(' · ');
+    } catch (err) {
+      result.className = 'alert alert-subtle-danger fs-9 mt-2';
+      result.textContent = err.message || String(err);
+    } finally {
+      check.disabled = false;
+      check.textContent = 'Validate cutover';
+    }
+  });
+}
+
+/** "org_id:email" -> [org_id, email]. Split once: an email has no colon, an org id might. */
+function splitPair(arg) {
+  const at = String(arg).indexOf(':');
+  return at === -1 ? [arg, ''] : [String(arg).slice(0, at), String(arg).slice(at + 1)];
+}
+
+/** Which organization this host is. Org-scoped endpoints need the id; the operator
+    should not have to paste it into a form to edit a member of the org they are in. */
+async function orgId(api) {
+  const tenant = await api.tenant();
+  const id = tenant && (tenant.org_id || tenant.orgId);
+  if (!id) throw new Error('Could not resolve this organization from the current host.');
+  return id;
+}
+
 /* ------------------------------------------------------------------- runners */
 
 async function runForm(api, entry, arg) {
   const form = document.createElement('form');
   form.className = 'row g-3';
   form.noValidate = true;
-  const specs = typeof entry.fields === 'function' ? entry.fields(arg) : entry.fields;
+  /* A form that edits an existing row needs that row's current values, and the row in
+     the table only carries an id. `prefill` fetches the record so the fields open
+     populated — without it, saving one changed field blanks every other one. */
+  const current = entry.prefill ? await entry.prefill(api, arg) : arg;
+  const specs = typeof entry.fields === 'function' ? entry.fields(current) : entry.fields;
   for (const spec of specs) form.appendChild(field(spec));
 
   const error = document.createElement('div');
@@ -594,10 +707,96 @@ export const ACTIONS = {
     },
   },
 
+  /**
+   * Onboard a customer-hosted gateway.
+   *
+   * The other half of `connectGateway`: that one scrapes a gateway the customer already
+   * runs, this one puts *ours* in front of their API. Two steps in one dialog, because
+   * the enrollment token is minted by the first call and is the only thing the second
+   * step needs — sending them to a different screen to find it loses the token, which
+   * is one-time and expires in 24h.
+   */
+  onboardGateway: {
+    title: 'Install our gateway',
+    custom: async (api) => {
+      const form = document.createElement('form');
+      form.className = 'row g-3';
+      form.noValidate = true;
+      const specs = [
+        { name: 'name', label: 'Gateway name', required: true, width: 'half',
+          placeholder: 'Production API' },
+        { name: 'deployment_type', label: 'Where it runs', type: 'select', width: 'half',
+          options: ['kubernetes', 'docker', 'aws', 'azure'] },
+        { name: 'public_hostname', label: 'Public API hostname', required: true,
+          placeholder: 'api.customer.com',
+          help: 'The hostname your callers already use. It does not change — only what sits behind it.' },
+        { name: 'scheme', label: 'Origin scheme', type: 'select', width: 'half',
+          options: ['https', 'http'] },
+        { name: 'port', label: 'Origin port', type: 'number', width: 'half', value: 443 },
+        { name: 'hostname', label: 'Origin hostname', required: true,
+          placeholder: 'internal-alb-123.us-east-1.elb.amazonaws.com',
+          help: 'Where the gateway forwards to. Must differ from the public hostname.' },
+        { name: 'host_header', label: 'Host header sent to the origin', width: 'half',
+          help: 'Defaults to the public hostname.' },
+      ];
+      for (const spec of specs) form.appendChild(field(spec));
+
+      const error = document.createElement('div');
+      error.className = 'alert alert-danger mt-3 mb-0 d-none fs-9';
+      const body = document.createElement('div');
+      body.append(form, error);
+
+      const cancel = document.createElement('button');
+      cancel.type = 'button';
+      cancel.className = 'btn btn-phoenix-secondary btn-sm';
+      cancel.textContent = 'Cancel';
+      const submit = document.createElement('button');
+      submit.type = 'button';
+      submit.className = 'btn btn-primary btn-sm';
+      submit.textContent = 'Create gateway';
+      const footer = document.createElement('div');
+      footer.className = 'd-flex gap-2';
+      footer.append(cancel, submit);
+
+      const close = open('Install our gateway', body, footer);
+      cancel.addEventListener('click', close);
+
+      submit.addEventListener('click', async () => {
+        if (!form.reportValidity()) return;
+        submit.disabled = true;
+        submit.textContent = 'Working…';
+        error.classList.add('d-none');
+        try {
+          const v = values(form, specs);
+          const created = await api.gateways.createCustomer({
+            name: v.name,
+            public_hostname: v.public_hostname,
+            deployment_type: v.deployment_type,
+            origin: {
+              scheme: v.scheme,
+              hostname: v.hostname,
+              port: v.port,
+              host_header: v.host_header
+            }
+          });
+          close();
+          showEnrollment(api, created);
+        } catch (err) {
+          error.textContent = err.message || String(err);
+          error.classList.remove('d-none');
+        } finally {
+          submit.disabled = false;
+          submit.textContent = 'Create gateway';
+        }
+      });
+    },
+  },
+
   addIntegration: {
     title: 'Add integration',
     choices: [
       { label: 'API gateway', action: 'connectGateway', help: 'Kong, Apigee, AWS API Gateway and friends.' },
+      { label: 'Install our gateway', action: 'onboardGateway', help: 'Run APISIX in front of your API and report from it.' },
       { label: 'ETL tool', action: 'connectEtl', help: 'Talend, Boomi or Databricks.' },
       { label: 'Database', action: 'addDatabase', help: 'Register by connection string.' },
     ],
@@ -634,6 +833,128 @@ export const ACTIONS = {
       { name: 'admin_email', label: 'Admin email', type: 'email', width: 'half' },
     ],
     run: (api, body) => api.admin.createOrganization(body),
+  },
+
+  /* --- platform admin: organizations, users, approvals ------------------- */
+
+  /**
+   * Edit an organization.
+   *
+   * `fields` is a function so the form can be prefilled from the row the operator
+   * clicked; without that, saving a plan change would blank the name.
+   */
+  editOrganization: {
+    title: 'Edit organization',
+    submit: 'Save',
+    success: 'Organization updated.',
+    prefill: (api, id) => api.admin.organization(id),
+    fields: (current = {}) => [
+      { name: 'name', label: 'Organization name', required: true, width: 'half',
+        value: current.name },
+      { name: 'plan', label: 'Plan', type: 'select', width: 'half',
+        options: ['trial', 'business', 'enterprise'], value: current.plan },
+      { name: 'status', label: 'Status', type: 'select', width: 'half',
+        options: ['active', 'suspended'], value: current.status },
+    ],
+    run: (api, body, id) => api.admin.updateOrganization(id, body),
+  },
+
+  deleteOrganization: {
+    direct: true,
+    confirm: 'Delete this organization? Its users and connectors go with it.',
+    run: async (api, id) => { await api.admin.deleteOrganization(id); return 'Organization deleted.'; },
+  },
+
+  adminCreateUser: {
+    title: 'Create user',
+    submit: 'Create',
+    success: 'User created.',
+    fields: [
+      { name: 'email', label: 'Email', type: 'email', required: true, width: 'half' },
+      { name: 'name', label: 'Name', width: 'half' },
+      { name: 'role', label: 'Role', type: 'select', width: 'half',
+        options: ['user', 'org_admin', 'platform_admin'] },
+      { name: 'org_id', label: 'Organization id', width: 'half',
+        help: 'Leave empty for a user with no organization.' },
+      { name: 'password', label: 'Temporary password', type: 'password', required: true },
+    ],
+    run: (api, body) => api.admin.createUser(body),
+  },
+
+  editAdminUser: {
+    title: 'Edit user',
+    submit: 'Save',
+    success: 'User updated.',
+    prefill: (api, email) => api.admin.user(email),
+    fields: (current = {}) => [
+      /* `roles[0]`, not `role`: the serializer's `role` is a display label ("member"),
+         which matches no option and would open the select blank — then saving would
+         send an empty role. `roles` carries the value the API expects. */
+      { name: 'role', label: 'Role', type: 'select', width: 'half',
+        options: ['user', 'org_admin', 'platform_admin'],
+        value: (current.roles || [])[0] || current.role },
+      { name: 'status', label: 'Status', type: 'select', width: 'half',
+        options: ['active', 'pending_admin', 'suspended'], value: current.status },
+      { name: 'org_id', label: 'Organization id', value: current.org_id || current.orgId },
+    ],
+    run: (api, body, email) => api.admin.updateUser(email, body),
+  },
+
+  approveUser: {
+    direct: true,
+    run: async (api, email) => { await api.admin.approveUser(email); return `${email} approved.`; },
+  },
+
+  denyUser: {
+    direct: true,
+    confirm: 'Deny this account? They will not be able to sign in.',
+    run: async (api, email) => { await api.admin.denyUser(email); return `${email} denied.`; },
+  },
+
+  /* Join requests are org-scoped, so the row packs "org_id:email" into the one arg a
+     row button carries. Split on the first colon only — an email cannot contain one,
+     but an org id could. */
+  approveJoinRequest: {
+    direct: true,
+    run: async (api, arg) => {
+      const [orgId, email] = splitPair(arg);
+      await api.admin.decideJoinRequest(orgId, email, { action: 'approve' });
+      return `${email} approved for ${orgId}.`;
+    },
+  },
+
+  denyJoinRequest: {
+    direct: true,
+    confirm: 'Deny this request?',
+    run: async (api, arg) => {
+      const [orgId, email] = splitPair(arg);
+      await api.admin.decideJoinRequest(orgId, email, { action: 'deny' });
+      return `${email} denied.`;
+    },
+  },
+
+  /* --- organization members (org-scoped, resolved from /tenant) ----------- */
+
+  editMember: {
+    title: 'Edit member',
+    submit: 'Save',
+    success: 'Member updated.',
+    fields: [
+      { name: 'role', label: 'Role', type: 'select', width: 'half',
+        options: ['user', 'org_admin'] },
+      { name: 'status', label: 'Status', type: 'select', width: 'half',
+        options: ['active', 'suspended'] },
+    ],
+    run: async (api, body, email) => api.admin.updateOrganizationUser(await orgId(api), email, body),
+  },
+
+  removeMember: {
+    direct: true,
+    confirm: 'Remove this member from the organization?',
+    run: async (api, email) => {
+      await api.admin.removeOrganizationUser(await orgId(api), email);
+      return `${email} removed.`;
+    },
   },
 
   /* --- per-row actions on the live tables -------------------------------- */

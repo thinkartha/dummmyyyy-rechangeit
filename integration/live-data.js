@@ -543,6 +543,10 @@ export const SOURCES = {
         meta: o.slug ? `${o.slug}.loveheartbeat.com` : o.id,
         cells: [o.name, o.plan || '—', num(o.seats), num(o.connectors),
                 o.auth || 'password', badge(o.status || 'Active')],
+        actions: [
+          { key: 'editOrganization', arg: o.id || o.org_id, label: 'Edit' },
+          { key: 'deleteOrganization', arg: o.id || o.org_id, label: 'Delete', tone: 'danger' },
+        ],
       })),
   },
 
@@ -556,7 +560,10 @@ export const SOURCES = {
         cells: [u.name || u.email, u.email, u.role || '—',
                 (u.roles || []).join(', ') || '—', u.lastActive || '—',
                 badge(u.status || 'active')],
-        action: { key: 'removeAdminUser', arg: u.email, label: 'Remove' },
+        actions: [
+          { key: 'editAdminUser', arg: u.email, label: 'Edit' },
+          { key: 'removeAdminUser', arg: u.email, label: 'Remove', tone: 'danger' },
+        ],
       })),
   },
 
@@ -577,6 +584,54 @@ export const SOURCES = {
         cells: [u.name || u.email, u.email, u.role || '—',
                 u.auth || 'password', u.lastActive || '—',
                 badge(u.status || 'active')],
+        actions: [
+          { key: 'editMember', arg: u.email, label: 'Edit' },
+          { key: 'removeMember', arg: u.email, label: 'Remove', tone: 'danger' },
+        ],
+      })),
+  },
+
+  /**
+   * Everyone waiting on a platform admin.
+   *
+   * Two different queues that both end in "this person cannot sign in yet", kept apart
+   * because they are resolved by different endpoints: `pending_admin` users need a
+   * global approval, join requests need one scoped to the organization they asked for.
+   */
+  adminApprovals: {
+    load: (api) => api.admin.pendingApprovals(),
+    rows: (data) =>
+      (data || []).map((u) => ({
+        icon: 'fa-user-clock',
+        iconColor: 'warning',
+        meta: u.org_id || u.orgId || 'no organization',
+        cells: [u.name || u.email, u.email, u.role || (u.roles || []).join(', ') || '—',
+                u.intent || '—', u.created_at || '—', badge(u.status || 'pending')],
+        actions: [
+          { key: 'approveUser', arg: u.email, label: 'Approve', tone: 'primary' },
+          { key: 'denyUser', arg: u.email, label: 'Deny', tone: 'danger' },
+        ],
+      })),
+  },
+
+  adminJoinRequests: {
+    load: (api) => api.admin.joinRequests(),
+    /* Approve/deny need both the org and the email, and a row action carries one arg —
+       so the pair rides in the arg as "org_id:email" and the action splits it. */
+    rows: (data) =>
+      (data || []).map((r) => ({
+        icon: 'fa-user-plus',
+        iconColor: 'warning',
+        meta: r.org_id || null,
+        cells: [r.name || r.email, r.org_name || r.org_id || '—',
+                r.requested_role || r.role || 'user',
+                r.domain_match === undefined ? '—' : (r.domain_match ? 'Yes' : 'No'),
+                r.requested_at || r.created_at || '—',
+                badge(r.status || 'pending')],
+        actions: [
+          { key: 'approveJoinRequest', arg: `${r.org_id}:${r.email}`, label: 'Approve', tone: 'primary' },
+          { key: 'denyJoinRequest', arg: `${r.org_id}:${r.email}`, label: 'Deny', tone: 'danger' },
+        ],
       })),
   },
 

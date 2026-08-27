@@ -4,11 +4,19 @@ mixin ObsPageHeader(config)
       .col
         h2.mb-2= config.title
         h5.text-body-tertiary.fw-semibold.mb-0= config.subtitle
-      if config.action
-        .col-auto
+      if config.action || config.secondaryAction
+        //- Only the two-button pages need the flex row; keeping it conditional means
+        //- adding this option did not rewrite the markup of every other page.
+        .col-auto(class=config.secondaryAction ? 'd-flex gap-2' : '')
           //- actionKey names an entry in integration/actions.js. Without one the button
           //- stays inert, which is what every page did before the write layer existed.
-          button.btn.btn-primary(type='button' data-lhb-action=config.actionKey)= config.action
+          //- A page can carry two: the API gateway page offers both "connect the one you
+          //- already run" and "install ours", which are different jobs, not one job with
+          //- a mode switch.
+          if config.secondaryAction
+            button.btn.btn-phoenix-secondary(type='button' data-lhb-action=config.secondaryActionKey)= config.secondaryAction
+          if config.action
+            button.btn.btn-primary(type='button' data-lhb-action=config.actionKey)= config.action
 
 mixin ObsStatCards(stats)
   .row.g-3.mb-6
@@ -59,6 +67,11 @@ mixin ObsToolTable(config)
           .col
             h4.mb-0= config.title
             p.text-body-tertiary.fs-9.mb-0= config.subtitle
+          //- A table that lives in a tab cannot use the page header's button — the page
+          //- header belongs to whichever tab is not open. Its own create button does.
+          if config.action
+            .col-auto
+              button.btn.btn-primary.btn-sm(type='button' data-lhb-action=config.actionKey)= config.action
         .row.align-items-center.g-2
           .col-12.col-md
             +Search({placeholder: config.searchPlaceholder || 'Search', inputClass: 'form-control-sm'}).w-100
