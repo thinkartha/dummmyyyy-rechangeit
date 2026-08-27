@@ -69,7 +69,10 @@ export default function Page() {
               Inference health for the models your organization deploys — latency, failures, and the thresholds that decide what counts as broken
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
+            <button className="btn btn-phoenix-secondary" type="button" data-lhb-action="editThresholds">
+              Edit thresholds
+            </button>
             <button className="btn btn-primary" type="button" data-lhb-action="registerModel">
               Register model
             </button>

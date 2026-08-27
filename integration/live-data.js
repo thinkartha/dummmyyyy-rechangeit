@@ -28,6 +28,11 @@ function badge(text) {
   return { text: label, badge: BADGES[label.toLowerCase()] || 'secondary' };
 }
 
+/* /summary answers with display names ("Dell Boomi"), while every write route is keyed
+   by slug ("boomi"). Lowercasing the name is not enough for that one. */
+const ETL_SLUGS = { 'dell boomi': 'boomi', boomi: 'boomi', talend: 'talend', databricks: 'databricks' };
+const etlPlatform = (name) => ETL_SLUGS[String(name || '').toLowerCase()] || String(name || '').toLowerCase();
+
 const num = (v, digits = 0) =>
   v === null || v === undefined || Number.isNaN(Number(v))
     ? '—'
@@ -152,6 +157,14 @@ export const SOURCES = {
         cells: [p.name, p.category || 'ETL', num(p.jobsPerDay),
                 p.lastRun || '—', pct(p.successRate, 1),
                 badge(p.status === 'not_configured' ? 'Not connected' : p.status || 'unknown')],
+        /* Saving a connector config proves nothing — the credentials are only exercised
+           when something calls the vendor. Test does that on demand; Poll pulls runs in
+           without waiting for the next scheduled sweep. Both are per-connector, so they
+           belong on the row rather than in the page header. */
+        actions: [
+          { key: 'testEtlConfig', arg: etlPlatform(p.name), label: 'Test' },
+          { key: 'pollEtl', arg: etlPlatform(p.name), label: 'Poll now' },
+        ],
       })),
   },
 

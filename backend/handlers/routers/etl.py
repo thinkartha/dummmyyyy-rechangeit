@@ -202,12 +202,29 @@ def get_talend_config_status(tenant_id: str = Depends(get_tenant_id)) -> Integra
     return talend_config_status(tenant_id)
 
 
+def _supplied(model, body):
+    """Build `model` from the fields the caller actually filled in, or None if none.
+
+    Taken as a raw dict rather than the model itself: an empty JSON object is not the
+    same as no body, but FastAPI cannot express that — a model with defaults turns `{}`
+    into a full object, and a model with required fields turns it into a 422 before the
+    route ever runs. Both readings are wrong for "test whatever is saved".
+    """
+    known = set(model.model_fields)
+    fields = {k: v for k, v in (body or {}).items() if k in known and v not in (None, "")}
+    return model(**fields) if fields else None
+
+
 @router.post("/talend/config/test")
 def test_talend_config(
-    body: TalendConfig | None = None,
+    body: dict | None = None,
     tenant_id: str = Depends(get_tenant_id),
 ) -> dict[str, str | bool]:
-    client = TalendClient(body or get_talend_config(tenant_id))
+    # An all-null body is "test what is saved", not "test an empty config". The UI sends
+    # no fields, and through the shared-domain router every write body carries an `env`
+    # selector that the router strips — so the body is never literally absent, and
+    # `body or ...` would test a blank config and always report missing credentials.
+    client = TalendClient(_supplied(TalendConfig, body) or get_talend_config(tenant_id))
     if not client.configured:
         raise HTTPException(
             status_code=422,
@@ -239,8 +256,12 @@ def get_boomi_config_status(tenant_id: str = Depends(get_tenant_id)) -> Integrat
 
 
 @router.post("/boomi/config/test")
-def test_boomi_config(body: BoomiConfig) -> dict[str, str | bool]:
-    client = BoomiClient(body)
+def test_boomi_config(
+    body: dict | None = None,
+    tenant_id: str = Depends(get_tenant_id),
+) -> dict[str, str | bool]:
+    # Same rule as Talend: no fields supplied means test the saved configuration.
+    client = BoomiClient(_supplied(BoomiConfig, body) or get_boomi_config(tenant_id))
     return {
         "id": "boomi",
         "configured": client.configured,

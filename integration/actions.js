@@ -13,6 +13,10 @@
  */
 
 import { hydrate } from './live-data.js';
+/* The API puts its reason in the body — "Talend requires a Bearer token…" — and the raw
+   error reads "API 422: {\"detail\":…}". auth.js already unwraps that for the sign-in
+   forms; the same unwrapping is what makes a failed connector test actionable here. */
+import { explain } from './auth.js';
 
 /* ------------------------------------------------------------------ feedback */
 
@@ -136,6 +140,10 @@ function field(spec) {
   }
   input.id = id;
   input.name = spec.name;
+  /* A number input without `step` is integers-only, so 0.02 fails validation and the
+     dialog's submit silently does nothing — the browser cannot show its bubble on a
+     field inside the modal. Any fractional field must say so. */
+  if (spec.step) input.step = spec.step;
   if (spec.placeholder) input.placeholder = spec.placeholder;
   if (spec.required) input.required = true;
   if (spec.value !== undefined && spec.type !== 'checkbox') input.value = spec.value;
@@ -174,6 +182,123 @@ function values(form, specs) {
     if (out[spec.name] === '' && !spec.required) delete out[spec.name];
   }
   return out;
+}
+
+/**
+ * A form in a dialog whose result opens the next dialog.
+ *
+ * `runForm` closes its own modal and toasts, which is right for save-and-done. It is
+ * wrong when the API answers with something the operator must copy before it is gone —
+ * an enrollment token, an agent key. Those need the form's result handed to a second
+ * dialog instead of a toast.
+ */
+async function formThen(title, specs, submitLabel, submit) {
+  const form = document.createElement('form');
+  form.className = 'row g-3';
+  form.noValidate = true;
+  for (const spec of specs) form.appendChild(field(spec));
+
+  const error = document.createElement('div');
+  error.className = 'alert alert-danger mt-3 mb-0 d-none fs-9';
+  const body = document.createElement('div');
+  body.append(form, error);
+
+  const cancel = document.createElement('button');
+  cancel.type = 'button';
+  cancel.className = 'btn btn-phoenix-secondary btn-sm';
+  cancel.textContent = 'Cancel';
+  const go = document.createElement('button');
+  go.type = 'button';
+  go.className = 'btn btn-primary btn-sm';
+  go.textContent = submitLabel;
+  const footer = document.createElement('div');
+  footer.className = 'd-flex gap-2';
+  footer.append(cancel, go);
+
+  const close = open(title, body, footer);
+  cancel.addEventListener('click', close);
+  go.addEventListener('click', async () => {
+    if (!form.reportValidity()) return;
+    go.disabled = true;
+    go.textContent = 'Working…';
+    error.classList.add('d-none');
+    try {
+      const result = await submit(values(form, specs));
+      close();
+      await result;
+    } catch (err) {
+      error.textContent = explain(err);
+      error.classList.remove('d-none');
+    } finally {
+      go.disabled = false;
+      go.textContent = submitLabel;
+    }
+  });
+}
+
+/** A labelled value in a result dialog. `mono` for anything meant to be copied. */
+function resultLine(label, value, mono) {
+  const row = document.createElement('div');
+  row.className = 'mb-3';
+  const head = document.createElement('div');
+  head.className = 'fs-10 text-body-tertiary text-uppercase mb-1';
+  head.textContent = label;
+  const val = document.createElement('div');
+  val.className = mono ? 'font-monospace fs-9 text-break' : 'fs-9 text-break';
+  val.textContent = value || '—';
+  row.append(head, val);
+  return row;
+}
+
+/**
+ * The agent key, and how to install the agent that uses it.
+ *
+ * `create_agent` returns the key once and never again — every later read of the agent
+ * omits it. Closing this dialog without copying it means rotating the key to get
+ * another one, so the install manifest is fetched and shown here too rather than
+ * behind a second click somewhere else.
+ */
+async function showAgentKey(api, created) {
+  const wrap = document.createElement('div');
+  wrap.appendChild(resultLine('Agent id', created.id, true));
+  wrap.appendChild(resultLine('Agent key — shown once', created.key, true));
+  wrap.appendChild(resultLine('Status', created.status || 'pending'));
+
+  const manifest = await api.automation.agentInstall(created.id).catch(() => null);
+  if (manifest) {
+    const head = document.createElement('div');
+    head.className = 'fs-10 text-body-tertiary text-uppercase mb-1';
+    head.textContent = 'Install';
+    const list = document.createElement('ul');
+    list.className = 'list-unstyled mb-3';
+    for (const platform of manifest.platforms || []) {
+      const item = document.createElement('li');
+      item.className = 'mb-2';
+      const label = document.createElement('div');
+      label.className = 'fs-10 text-body-tertiary';
+      label.textContent = platform.label || platform.id;
+      const cmd = document.createElement('div');
+      cmd.className = 'font-monospace fs-9 text-break';
+      cmd.textContent = platform.install_command;
+      item.append(label, cmd);
+      list.appendChild(item);
+    }
+    wrap.append(head, list);
+    if (manifest.config) {
+      wrap.appendChild(resultLine('Reports to', manifest.config.api_base, true));
+    }
+  }
+
+  const done = document.createElement('button');
+  done.type = 'button';
+  done.className = 'btn btn-primary btn-sm';
+  done.textContent = 'Done';
+  const footer = document.createElement('div');
+  footer.className = 'd-flex gap-2';
+  footer.appendChild(done);
+
+  const close = open('Agent registered', wrap, footer);
+  done.addEventListener('click', () => { close(); hydrate(api); });
 }
 
 /**
@@ -332,7 +457,7 @@ async function runForm(api, entry, arg) {
       toast(entry.success || 'Saved.');
       if (entry.refresh !== false) hydrate(api);
     } catch (err) {
-      error.textContent = err.message || String(err);
+      error.textContent = explain(err);
       error.classList.remove('d-none');
     } finally {
       submit.disabled = false;
@@ -350,7 +475,7 @@ async function runDirect(api, entry, arg, trigger) {
     toast(message || entry.success || 'Done.');
     if (entry.refresh !== false) hydrate(api);
   } catch (err) {
-    toast(err.message || String(err), 'danger');
+    toast(explain(err), 'danger');
   } finally {
     if (trigger) { trigger.disabled = false; trigger.textContent = label; }
   }
@@ -375,7 +500,7 @@ function runChoice(api, entry) {
       close();
       const next = ACTIONS[choice.action];
       if (!next) return toast(UNSUPPORTED[choice.action] || 'Not available yet.', 'warning');
-      if (next.custom) next.custom(api).catch((err) => toast(err.message || String(err), 'danger'));
+      if (next.custom) next.custom(api).catch((err) => toast(explain(err), 'danger'));
       else runForm(api, next);
     });
     body.appendChild(b);
@@ -552,12 +677,18 @@ export const ACTIONS = {
     title: 'Connect Talend',
     submit: 'Save configuration',
     success: 'Talend configured — monitoring started.',
-    fields: [
+    /* Reopening the form shows what is already saved. GET returns the non-secret
+       fields only, so the token box stays empty and an unchanged save does not
+       overwrite a server-held credential with a blank. */
+    prefill: (api) => api.etl.config('talend').then((s) => (s && s.fields) || {}).catch(() => ({})),
+    fields: (current = {}) => [
       { name: 'base_url', label: 'API base URL', width: 'half',
-        value: 'https://api.us.cloud.talend.com' },
-      { name: 'environment_id', label: 'Environment ID', width: 'half' },
-      { name: 'workspace_id', label: 'Workspace ID', width: 'half' },
-      { name: 'last_days', label: 'Look back (days)', value: '1', width: 'half' },
+        value: current.base_url || 'https://api.us.cloud.talend.com' },
+      { name: 'environment_id', label: 'Environment ID', width: 'half',
+        value: current.environment_id },
+      { name: 'workspace_id', label: 'Workspace ID', width: 'half',
+        value: current.workspace_id },
+      { name: 'last_days', label: 'Look back (days)', value: current.last_days || '1', width: 'half' },
       { name: 'bearer_token', label: 'Bearer token', type: 'password',
         help: 'Optional here — the backend can supply it from its secret store instead.' },
     ],
@@ -568,14 +699,20 @@ export const ACTIONS = {
     title: 'Connect Boomi',
     submit: 'Save configuration',
     success: 'Boomi configured — monitoring started.',
-    fields: [
-      { name: 'account_id', label: 'Account ID', required: true, width: 'half' },
-      { name: 'username', label: 'Username', required: true, width: 'half' },
+    prefill: (api) => api.etl.config('boomi').then((s) => (s && s.fields) || {}).catch(() => ({})),
+    fields: (current = {}) => [
+      { name: 'account_id', label: 'Account ID', required: true, width: 'half',
+        value: current.account_id },
+      { name: 'username', label: 'Username', required: true, width: 'half',
+        value: current.username },
       { name: 'token', label: 'API token', type: 'password', required: true },
-      { name: 'base_url', label: 'API base URL', value: 'https://api.boomi.com/api/rest/v1' },
-      { name: 'atom_id', label: 'Atom ID', width: 'half' },
-      { name: 'environment_id', label: 'Environment ID', width: 'half' },
-      { name: 'hours_back', label: 'Look back (hours)', type: 'number', value: 24, width: 'half' },
+      { name: 'base_url', label: 'API base URL',
+        value: current.base_url || 'https://api.boomi.com/api/rest/v1' },
+      { name: 'atom_id', label: 'Atom ID', width: 'half', value: current.atom_id },
+      { name: 'environment_id', label: 'Environment ID', width: 'half',
+        value: current.environment_id },
+      { name: 'hours_back', label: 'Look back (hours)', type: 'number',
+        value: current.hours_back || 24, width: 'half' },
     ],
     run: (api, body) => api.etl.saveConfig('boomi', body),
   },
@@ -698,7 +835,7 @@ export const ACTIONS = {
           toast('Gateway connected.');
           hydrate(api);
         } catch (err) {
-          error.textContent = err.message || String(err);
+          error.textContent = explain(err);
           error.classList.remove('d-none');
         } finally {
           submit.disabled = false;
@@ -782,7 +919,7 @@ export const ACTIONS = {
           close();
           showEnrollment(api, created);
         } catch (err) {
-          error.textContent = err.message || String(err);
+          error.textContent = explain(err);
           error.classList.remove('d-none');
         } finally {
           submit.disabled = false;
@@ -833,6 +970,88 @@ export const ACTIONS = {
       { name: 'admin_email', label: 'Admin email', type: 'email', width: 'half' },
     ],
     run: (api, body) => api.admin.createOrganization(body),
+  },
+
+  /* --- AI monitoring: register the agent that reports a tool ------------- */
+
+  /**
+   * "Connect AI tool" registers a collector agent and mints its key.
+   *
+   * The AI monitoring tables are fed by `POST /observability/agents/telemetry`, which
+   * only accepts calls carrying an agent key — so connecting a tool means registering
+   * the agent that will push for it. The key is returned exactly once by the create
+   * call, which is why this ends in a dialog rather than a toast.
+   */
+  connectAiTool: {
+    title: 'Connect AI tool',
+    custom: (api) => formThen('Connect AI tool', [
+      { name: 'name', label: 'Tool or agent name', required: true, width: 'half',
+        placeholder: 'Support copilot' },
+      { name: 'agent_type', label: 'Type', type: 'select', width: 'half',
+        options: ['AI Agent', 'Monitoring Agent', 'ETL Agent'] },
+      { name: 'environment', label: 'Environment', type: 'select', width: 'half',
+        options: ['Production', 'Staging', 'Development'] },
+      { name: 'description', label: 'Description', width: 'half' },
+      { name: 'endpoints', label: 'Endpoints', type: 'list',
+        help: 'Comma separated. The URLs this tool calls, for per-endpoint breakdowns.' },
+      { name: 'capabilities', label: 'Capabilities', type: 'list',
+        help: 'Comma separated, e.g. chat, embeddings, rerank.' },
+    ], 'Register agent', async (body) => {
+      const created = await api.automation.createAgent(body);
+      return showAgentKey(api, created);
+    }),
+  },
+
+  /* --- ETL: test and poll the connectors already configured -------------- */
+
+  testEtlConfig: {
+    direct: true,
+    run: async (api, platform) => {
+      const result = await api.etl.testConfig(platform);
+      return (result && result.message) || `${platform} connection verified.`;
+    },
+  },
+
+  pollEtl: {
+    direct: true,
+    run: async (api, platform) => {
+      const result = await api.etl.poll(platform);
+      const count = result && (result.executions ?? result.count ?? (result.events || []).length);
+      return count === undefined ? `${platform} polled.` : `${platform} polled — ${count} execution(s) pulled.`;
+    },
+  },
+
+  /* --- AI models: the thresholds every status badge is derived from ------- */
+
+  /**
+   * The keys are fixed by the backend, which rejects anything it does not know rather
+   * than silently storing a typo — so the form names them rather than offering a
+   * free-text key/value editor that could only ever produce a 400.
+   */
+  editThresholds: {
+    title: 'Model thresholds',
+    submit: 'Save thresholds',
+    success: 'Thresholds saved.',
+    prefill: (api) => api.aiModels.thresholds(),
+    fields: (current = {}) => [
+      { name: 'error_rate_warn', label: 'Error rate — warn', type: 'number', step: 'any', width: 'half',
+        value: current.error_rate_warn, help: 'Fraction, e.g. 0.02 for 2%.' },
+      { name: 'error_rate_crit', label: 'Error rate — critical', type: 'number', step: 'any', width: 'half',
+        value: current.error_rate_crit },
+      { name: 'p95_latency_ms_warn', label: 'p95 latency warn (ms)', type: 'number', width: 'half',
+        value: current.p95_latency_ms_warn },
+      { name: 'p95_latency_ms_crit', label: 'p95 latency critical (ms)', type: 'number', width: 'half',
+        value: current.p95_latency_ms_crit },
+      { name: 'drift_warn', label: 'Drift — warn', type: 'number', step: 'any', width: 'half',
+        value: current.drift_warn, help: 'PSI bands by convention: 0.10 warn, 0.25 critical.' },
+      { name: 'drift_crit', label: 'Drift — critical', type: 'number', step: 'any', width: 'half',
+        value: current.drift_crit },
+      { name: 'accuracy_warn', label: 'Accuracy — warn', type: 'number', step: 'any', width: 'half',
+        value: current.accuracy_warn },
+      { name: 'accuracy_crit', label: 'Accuracy — critical', type: 'number', step: 'any', width: 'half',
+        value: current.accuracy_crit },
+    ],
+    run: (api, body) => api.aiModels.saveThresholds({ thresholds: body }),
   },
 
   /* --- platform admin: organizations, users, approvals ------------------- */
@@ -1116,9 +1335,8 @@ export const ACTIONS = {
  * visible in one place instead of being rediscovered page by page. */
 export const UNSUPPORTED = {
   setAiBudget: 'No AI budget endpoint yet — finops is read-only.',
-  addAiRoute: 'No AI route endpoint yet.',
+  addAiRoute: 'AI gateway routes come from the APISIX config, not the API — edit infrastructure/apisix/apisix.yaml.',
   registerModel: 'No model registration endpoint yet — ai_models exposes inferences and thresholds only.',
-  connectAiTool: 'No AI tool connector endpoint yet.',
   createAlertRule: 'No alert rule endpoint yet — alert-management covers routing, SLA and maintenance windows.',
   addApi: 'No API registration endpoint yet.',
   addBudget: 'No cost budget endpoint yet — finops is read-only.',
@@ -1161,7 +1379,7 @@ export function bind(api) {
     event.preventDefault();
     const arg = trigger.dataset.lhbArg;
     if (entry.choices) runChoice(api, entry);
-    else if (entry.custom) entry.custom(api, arg).catch((err) => toast(err.message || String(err), 'danger'));
+    else if (entry.custom) entry.custom(api, arg).catch((err) => toast(explain(err), 'danger'));
     else if (entry.direct) runDirect(api, entry, arg, trigger);
     else runForm(api, entry, arg);
   });

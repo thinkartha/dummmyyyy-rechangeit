@@ -5,6 +5,9 @@
  * matches, and the button quietly does nothing in production. Nothing else in the
  * build looks at that string, so this is the only place it can be caught.
  *
+ * A page can name two actions — `actionKey` and `secondaryActionKey` — and the second
+ * was invisible here until this matched it: the button shipped, the check stayed green.
+ *
  *   node integration/check-actions.mjs
  */
 
@@ -39,8 +42,8 @@ for (const file of pugFiles(new URL('../src/pug', import.meta.url).pathname)) {
   const text = readFileSync(file, 'utf8');
   // Two ways a page names an action: through the Obs mixin's config, or as a
   // data-lhb-action attribute written straight onto a button.
-  for (const m of text.matchAll(/actionKey: '([^']+)'|data-lhb-action='([^']+)'/g)) {
-    const key = m[1] ?? m[2];
+  for (const m of text.matchAll(/[sS]econdaryActionKey: '([^']+)'|actionKey: '([^']+)'|data-lhb-action='([^']+)'/g)) {
+    const key = m[1] ?? m[2] ?? m[3];
     used++;
     if (!known.has(key)) missing.push(`${file}: ${key}`);
   }
@@ -50,8 +53,8 @@ for (const file of pugFiles(new URL('../src/pug', import.meta.url).pathname)) {
 // legitimately land before the page that uses it.
 const referenced = new Set();
 for (const file of pugFiles(new URL('../src/pug', import.meta.url).pathname)) {
-  for (const m of readFileSync(file, 'utf8').matchAll(/actionKey: '([^']+)'|data-lhb-action='([^']+)'/g)) {
-    referenced.add(m[1] ?? m[2]);
+  for (const m of readFileSync(file, 'utf8').matchAll(/[sS]econdaryActionKey: '([^']+)'|actionKey: '([^']+)'|data-lhb-action='([^']+)'/g)) {
+    referenced.add(m[1] ?? m[2] ?? m[3]);
   }
 }
 // Row-level buttons are named in live-data.js, not in a Pug page.
