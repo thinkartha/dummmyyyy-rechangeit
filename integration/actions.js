@@ -1073,6 +1073,83 @@ export const ACTIONS = {
     },
   },
 
+  /* --- spend budgets ------------------------------------------------------ */
+
+  /**
+   * The two budget buttons are one form with the scope pinned.
+   *
+   * A budget is keyed by (scope, target), so setting the same target twice corrects the
+   * number instead of stacking a second ceiling on it — which is what an operator
+   * pressing this a second time means.
+   */
+  addBudget: {
+    title: 'Cloud budget',
+    submit: 'Save budget',
+    success: 'Budget saved.',
+    fields: [
+      { name: 'target', label: 'Account or provider', width: 'half', value: '*',
+        help: 'Leave * to cover every account without a budget of its own.' },
+      { name: 'name', label: 'Label', width: 'half', placeholder: 'Production AWS' },
+      { name: 'monthly_limit', label: 'Monthly limit', type: 'number', step: 'any',
+        required: true, width: 'half' },
+      { name: 'currency', label: 'Currency', width: 'half', value: 'USD' },
+    ],
+    run: (api, body) => api.finops.saveBudget({ ...body, scope: 'cloud' }),
+  },
+
+  setAiBudget: {
+    title: 'AI budget',
+    submit: 'Save budget',
+    success: 'Budget saved.',
+    fields: [
+      { name: 'target', label: 'Tool or model', width: 'half', value: '*',
+        help: 'Match the name in the table, or leave * for every AI tool.' },
+      { name: 'name', label: 'Label', width: 'half', placeholder: 'Support copilot' },
+      { name: 'monthly_limit', label: 'Monthly limit', type: 'number', step: 'any',
+        required: true, width: 'half' },
+      { name: 'currency', label: 'Currency', width: 'half', value: 'USD' },
+    ],
+    run: (api, body) => api.finops.saveBudget({ ...body, scope: 'ai' }),
+  },
+
+  deleteBudget: {
+    direct: true,
+    confirm: 'Remove this budget? Spend keeps being reported, it just stops being compared.',
+    run: async (api, id) => { await api.finops.deleteBudget(id); return 'Budget removed.'; },
+  },
+
+  /* --- custom AI models --------------------------------------------------- */
+
+  /**
+   * Declare a model the platform cannot see on its own.
+   *
+   * Rows on this page are derived from reported inferences, so a model that is deployed
+   * but not yet instrumented looks exactly like one nobody set up. Registering puts the
+   * row there immediately, awaiting data.
+   */
+  registerModel: {
+    title: 'Register model',
+    submit: 'Register',
+    success: 'Model registered — its row appears until inferences arrive.',
+    fields: [
+      { name: 'model', label: 'Model id', required: true, width: 'half',
+        placeholder: 'fraud-classifier-v3',
+        help: 'Must match the `model` field your inferences report.' },
+      { name: 'name', label: 'Display name', width: 'half' },
+      { name: 'provider', label: 'Provider', width: 'half', value: 'self-hosted' },
+      { name: 'task', label: 'Task', width: 'half', placeholder: 'classification' },
+      { name: 'version', label: 'Version', width: 'half', placeholder: 'v3.1.0' },
+      { name: 'notes', label: 'Notes', type: 'textarea' },
+    ],
+    run: (api, body) => api.aiModels.register(body),
+  },
+
+  unregisterModel: {
+    direct: true,
+    confirm: 'Stop declaring this model? Recorded inferences are kept.',
+    run: async (api, model) => { await api.aiModels.unregister(model); return 'Model unregistered.'; },
+  },
+
   /* --- orchestration: the AWS Lambda connector behind the job stream ------ */
 
   /**
@@ -1516,11 +1593,8 @@ export const ACTIONS = {
 /* Buttons whose endpoint does not exist yet. Listed rather than omitted so the gap is
  * visible in one place instead of being rediscovered page by page. */
 export const UNSUPPORTED = {
-  setAiBudget: 'No AI budget endpoint yet — finops is read-only.',
   addAiRoute: 'AI gateway routes come from the APISIX config, not the API — edit infrastructure/apisix/apisix.yaml.',
-  registerModel: 'No model registration endpoint yet — ai_models exposes inferences and thresholds only.',
   createAlertRule: 'No alert rule endpoint yet — alert-management covers routing, SLA and maintenance windows.',
-  addBudget: 'No cost budget endpoint yet — finops is read-only.',
   rebaseline: 'No drift rebaseline endpoint yet.',
   saveSearch: 'No saved search endpoint yet.',
   defineSlo: 'No SLO definition endpoint yet — slo is read-only.',

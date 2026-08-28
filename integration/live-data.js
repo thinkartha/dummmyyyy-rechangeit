@@ -18,6 +18,8 @@ const BADGES = {
   warning: 'warning', degraded: 'warning', watch: 'warning', stale: 'warning',
   retrying: 'warning', 'at risk': 'warning', expiring: 'warning', slow: 'warning',
   pending: 'warning', queued: 'info', info: 'info', trial: 'info',
+  'awaiting data': 'info', 'within budget': 'success', 'over budget': 'danger',
+  tracked: 'info', unmetered: 'secondary',
   critical: 'danger', down: 'danger', failed: 'danger', breached: 'danger',
   error: 'danger', offline: 'danger', denied: 'danger', suspended: 'danger',
 };
@@ -126,9 +128,16 @@ export const SOURCES = {
         icon: 'fa-microchip',
         iconColor: m.status === 'down' ? 'danger' : m.status === 'degraded' ? 'warning' : 'success',
         meta: m.version ? `${m.version} · ${m.provider || 'self-hosted'}` : m.provider || '—',
-        cells: [m.name || m.model_id, m.task || '—', num(m.requests),
+        cells: [m.name || m.model || m.model_id, m.task || (m.tasks || [])[0] || '—',
+                num(m.requests),
                 m.p95_latency_ms != null ? `${num(m.p95_latency_ms)}ms` : '—',
-                pct(m.failure_rate, 2), badge(m.status || 'unknown')],
+                pct((m.error_rate != null ? m.error_rate * 100 : m.failure_rate), 2),
+                // A declared model with nothing reported yet is neither healthy nor
+                // broken, and saying "unknown" hides that someone is expecting data.
+                badge(m.status === 'awaiting_data' ? 'Awaiting data' : m.status || 'unknown')],
+        actions: m.registered
+          ? [{ key: 'unregisterModel', arg: m.model || m.model_id, label: 'Unregister' }]
+          : [],
       })),
   },
 
@@ -303,19 +312,33 @@ export const SOURCES = {
   },
 
   aiCost: {
-    // Columns: Tool · Vendor · Tokens MTD · Spend MTD · Budget · Status. There is no
-    // budget endpoint (see UNSUPPORTED.setAiBudget), so that column stays honest.
-    load: (api) => api.agents.list(),
-    rows: (data) =>
-      (data || []).map((a) => ({
-        icon: 'fa-coins',
-        iconColor: a.cost == null ? 'secondary' : 'warning',
-        meta: `${num(a.tokens_in)} in · ${num(a.tokens_out)} out`,
-        cells: [a.name, (a.providers || []).join(', ') || '—', num(a.tokens_total),
-                a.cost != null ? `$${num(a.cost, 2)}` : 'not reported',
-                'no budget set',
-                badge(a.cost == null ? 'Unmetered' : 'Tracked')],
-      })),
+    // Columns: Tool · Vendor · Tokens MTD · Spend MTD · Budget · Status. Spend comes
+    // from the agents, the ceiling from /finops/budgets; joining them is what lets the
+    // status say over or under rather than just "tracked".
+    load: async (api) => ({
+      tools: await api.agents.list(),
+      // A tenant with no budgets is the normal case, not an error — the column falls
+      // back to "no budget set" exactly as before.
+      budgets: await api.finops.budgets({ scope: 'ai' }).catch(() => []),
+    }),
+    rows: ({ tools, budgets }) =>
+      (tools || []).map((a) => {
+        const budget = (budgets || []).find((b) => b.target === a.name)
+          || (budgets || []).find((b) => b.target === '*');
+        const limit = budget ? Number(budget.monthly_limit) : null;
+        const over = limit != null && a.cost != null && a.cost > limit;
+        return {
+          icon: 'fa-coins',
+          iconColor: over ? 'danger' : a.cost == null ? 'secondary' : 'warning',
+          meta: `${num(a.tokens_in)} in · ${num(a.tokens_out)} out`,
+          cells: [a.name, (a.providers || []).join(', ') || '—', num(a.tokens_total),
+                  a.cost != null ? `$${num(a.cost, 2)}` : 'not reported',
+                  limit != null ? `${budget.currency || 'USD'} ${num(limit, 2)}/mo` : 'no budget set',
+                  badge(limit == null ? (a.cost == null ? 'Unmetered' : 'Tracked')
+                        : over ? 'Over budget' : 'Within budget')],
+          actions: budget ? [{ key: 'deleteBudget', arg: budget.id, label: 'Clear budget' }] : [],
+        };
+      }),
   },
 
   aiGateway: {

@@ -114,6 +114,50 @@ def get_failures(
     return ai_models.failures(tenant_id, model, limit)
 
 
+# --- registry ---------------------------------------------------------------
+
+
+class ModelRegistration(BaseModel):
+    """A model the team runs, declared before it reports anything."""
+
+    model: str = Field(min_length=1, max_length=128)
+    name: str | None = Field(default=None, max_length=200)
+    provider: str | None = Field(default=None, max_length=64)
+    task: str | None = Field(default=None, max_length=64)
+    version: str | None = Field(default=None, max_length=64)
+    notes: str | None = Field(default=None, max_length=2000)
+
+
+@router.post("", status_code=status.HTTP_201_CREATED)
+def register_model(
+    body: ModelRegistration,
+    tenant_id: str = Depends(get_tenant_id),
+    _: Principal = Depends(_require_admin),
+) -> dict:
+    """Declare a model so it has a row before its first inference arrives.
+
+    Rows here are derived from reported inferences, which means a model that is deployed
+    but not yet instrumented looks identical to one that was never set up. Registering
+    separates those two: the row appears immediately, awaiting data.
+    """
+    try:
+        return ai_models.register_model(tenant_id, body.model_dump())
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+
+@router.delete("/{model}", status_code=status.HTTP_204_NO_CONTENT)
+def unregister_model(
+    model: str,
+    tenant_id: str = Depends(get_tenant_id),
+    _: Principal = Depends(_require_admin),
+) -> None:
+    """Stop declaring a model. Its recorded inferences are left alone, so one that is
+    still reporting keeps its row — it just stops being listed as declared."""
+    if not ai_models.unregister_model(tenant_id, model):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Model is not registered")
+
+
 # --- thresholds -------------------------------------------------------------
 
 @router.get("/thresholds")

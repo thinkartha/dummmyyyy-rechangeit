@@ -425,6 +425,10 @@ export const api = {
     timeseries: (params) => get('/ai-models/timeseries', params),
     thresholds: () => get('/ai-models/thresholds'),
     saveThresholds: (body) => put('/ai-models/thresholds', body),
+    /* Declaring a model gives it a row before its first inference lands — otherwise a
+       deployed-but-silent model is indistinguishable from one nobody set up. */
+    register: (body) => post('/ai-models', body),
+    unregister: (model) => del(`/ai-models/${encodeURIComponent(model)}`),
     recordInference: (body) => post('/ai-models/inferences', body),
     recordInferences: (body) => post('/ai-models/inferences/batch', body)
   },
@@ -462,7 +466,14 @@ export const api = {
   },
 
   /* Cloud cost + reliability */
-  finops: { recommendations: () => get('/finops/recommendations') },
+  finops: {
+    recommendations: () => get('/finops/recommendations'),
+    /* Monthly ceilings. `scope` is 'cloud' or 'ai'; the Budget column on both cost
+       pages is this joined against the spend they already report. */
+    budgets: (params) => get('/finops/budgets', params),
+    saveBudget: (body) => post('/finops/budgets', body),
+    deleteBudget: (id) => del(`/finops/budgets/${id}`)
+  },
   slo: { list: () => get('/slo') },
   drift: { list: () => get('/drift') },
   correlation: {

@@ -108,6 +108,69 @@ def set_thresholds(tenant_id: str, values: dict[str, float], model: str | None =
     return get_thresholds(tenant_id, model)
 
 
+# --- registry ---------------------------------------------------------------
+
+def registered_models(tenant_id: str) -> dict[str, dict[str, Any]]:
+    """Models declared through the UI, keyed by model id."""
+    raw = config_store.get_config(tenant_id, INTEGRATION_KEY)
+    try:
+        saved = json.loads(raw) if raw else {}
+    except json.JSONDecodeError:
+        return {}
+    return saved.get("registry") or {}
+
+
+def register_model(tenant_id: str, fields: dict[str, Any]) -> dict[str, Any]:
+    """Declare a model before it has reported anything.
+
+    Rollups are derived from inferences, so until one arrives a model the team has
+    deployed is invisible here — indistinguishable from one that was never set up.
+    Registering puts the row on the page immediately, awaiting data, and gives the
+    thresholds somewhere to hang.
+    """
+    model = str(fields.get("model") or "").strip()
+    if not model:
+        raise ValueError("A model id is required")
+
+    raw = config_store.get_config(tenant_id, INTEGRATION_KEY)
+    try:
+        saved = json.loads(raw) if raw else {}
+    except json.JSONDecodeError:
+        saved = {}
+    registry = saved.setdefault("registry", {})
+    entry = {
+        "model": model,
+        "name": str(fields.get("name") or model).strip(),
+        "provider": str(fields.get("provider") or "self-hosted").strip(),
+        "task": str(fields.get("task") or "").strip(),
+        "version": str(fields.get("version") or "").strip(),
+        "notes": str(fields.get("notes") or "").strip(),
+        # Keep the original registration time across an edit — this is the "since when
+        # have we been watching it" date, not the date of the last change.
+        "registered_at": (registry.get(model) or {}).get("registered_at") or _now().isoformat(),
+    }
+    registry[model] = entry
+    config_store.save_config(tenant_id, INTEGRATION_KEY, json.dumps(saved))
+    return entry
+
+
+def unregister_model(tenant_id: str, model: str) -> bool:
+    """Forget a declared model. Recorded inferences are untouched — a model that is
+    still reporting keeps its row, it just stops being declared."""
+    raw = config_store.get_config(tenant_id, INTEGRATION_KEY)
+    try:
+        saved = json.loads(raw) if raw else {}
+    except json.JSONDecodeError:
+        return False
+    registry = saved.get("registry") or {}
+    if model not in registry:
+        return False
+    del registry[model]
+    saved["registry"] = registry
+    config_store.save_config(tenant_id, INTEGRATION_KEY, json.dumps(saved))
+    return True
+
+
 # --- ingest -----------------------------------------------------------------
 
 def _normalize(inference: dict[str, Any]) -> dict[str, Any]:
@@ -265,6 +328,45 @@ def model_stats(tenant_id: str, hours: int | None = 24) -> list[dict[str, Any]]:
         }
         row["status"], row["reasons"] = _status(row, get_thresholds(tenant_id, model))
         rows.append(row)
+
+    for model, entry in registered_models(tenant_id).items():
+        if model in grouped:
+            # Reported *and* declared: keep the measured row, add what it was declared as.
+            for row in rows:
+                if row["model"] == model:
+                    row["registered"] = True
+                    row["name"] = entry.get("name") or model
+                    row["task"] = entry.get("task") or (row["tasks"][0] if row["tasks"] else "")
+                    break
+            continue
+        # Declared but silent. Zeros here would read as "measured zero"; the fields stay
+        # None and the status says it plainly instead.
+        rows.append({
+            "model": model,
+            "name": entry.get("name") or model,
+            "registered": True,
+            "versions": [entry["version"]] if entry.get("version") else [],
+            "providers": [entry.get("provider") or "self-hosted"],
+            "tasks": [entry["task"]] if entry.get("task") else [],
+            "task": entry.get("task") or "",
+            "requests": 0,
+            "errors": 0,
+            "error_rate": 0.0,
+            "avg_latency_ms": None,
+            "p50_latency_ms": None,
+            "p95_latency_ms": None,
+            "p99_latency_ms": None,
+            "tokens_in": 0,
+            "tokens_out": 0,
+            "cost": None,
+            "avg_confidence": None,
+            "drift_score": None,
+            "accuracy": None,
+            "labeled_samples": 0,
+            "last_seen": None,
+            "status": "awaiting_data",
+            "reasons": ["Registered, but no inference has been reported yet"],
+        })
 
     rows.sort(key=lambda r: r["requests"], reverse=True)
     return rows
