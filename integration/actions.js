@@ -614,9 +614,11 @@ async function runForm(api, entry, arg) {
 
   const error = document.createElement('div');
   error.className = 'alert alert-danger mt-3 mb-0 d-none fs-9';
+  const note = document.createElement('div');
+  note.className = 'alert alert-success mt-3 mb-0 d-none fs-9';
 
   const body = document.createElement('div');
-  body.append(form, error);
+  body.append(form, error, note);
 
   const cancel = document.createElement('button');
   cancel.type = 'button';
@@ -630,7 +632,37 @@ async function runForm(api, entry, arg) {
 
   const footer = document.createElement('div');
   footer.className = 'd-flex gap-2';
-  footer.append(cancel, submit);
+  footer.append(cancel);
+
+  /* A check the operator runs *before* saving — "does this connection string work" —
+     belongs beside the fields it reads, not on a second dialog they have to fill in
+     twice. `aux` runs against the values already typed and reports in place; only
+     `submit` closes the dialog. */
+  if (entry.aux) {
+    const aux = document.createElement('button');
+    aux.type = 'button';
+    aux.className = 'btn btn-phoenix-secondary btn-sm';
+    aux.textContent = entry.aux.label;
+    footer.appendChild(aux);
+    aux.addEventListener('click', async () => {
+      if (!form.reportValidity()) return;
+      aux.disabled = true;
+      aux.textContent = 'Working…';
+      error.classList.add('d-none');
+      note.classList.add('d-none');
+      try {
+        note.textContent = await entry.aux.run(api, values(form, specs));
+        note.classList.remove('d-none');
+      } catch (err) {
+        error.textContent = explain(err);
+        error.classList.remove('d-none');
+      } finally {
+        aux.disabled = false;
+        aux.textContent = entry.aux.label;
+      }
+    });
+  }
+  footer.append(submit);
 
   const close = open(entry.title, body, footer);
   cancel.addEventListener('click', close);
@@ -707,6 +739,22 @@ function runChoice(api, entry) {
 }
 
 /* ------------------------------------------------------------------ registry */
+
+/**
+ * Dial the connection string and describe what answered.
+ *
+ * The route replies 200 with a `reachable` flag rather than an error status, so a
+ * refused connection has to be turned into a throw here or it reads as success.
+ */
+async function testDsn(api, dsn) {
+  const result = await api.databases.test({ dsn });
+  if (result && result.reachable === false) {
+    throw new Error(result.error || (result.reasons || []).join(' ') || 'Could not connect with that string.');
+  }
+  const detail = [result.engine_label || result.engine, result.host,
+    result.latency_ms != null ? `${result.latency_ms}ms` : null].filter(Boolean).join(' · ');
+  return `Connected${detail ? ` — ${detail}` : ''}.`;
+}
 
 export const ACTIONS = {
   /* --- alert clustering + coding-agent handoff ---------------------------- */
@@ -797,6 +845,7 @@ export const ACTIONS = {
         placeholder: 'postgresql://user:pass@host:5432/dbname',
         help: 'Stored server-side; never returned by the API once saved.' },
     ],
+    aux: { label: 'Test connection', run: (api, body) => testDsn(api, body.dsn) },
     run: (api, body) => api.databases.add(body),
   },
 
@@ -844,13 +893,29 @@ export const ACTIONS = {
     run: (api, body) => api.etl.saveConfig('boomi', body),
   },
 
+  /**
+   * "Run scan" scans the tables the page is already watching.
+   *
+   * /data-observability/scan validates `tables` as 1–50 names rather than defaulting to
+   * everything the tenant owns, so a bodyless POST is a 422 before it reaches Databricks.
+   * The names are resolved the same way live-data.js resolves them for the table below —
+   * first catalog, its tables — so the button scans what the operator can see.
+   */
   runScan: {
     title: 'Run data quality scan',
     direct: true,
-    success: 'Scan started.',
+    success: 'Scan complete.',
     run: async (api) => {
-      const result = await api.dataObservability.scan();
-      return result && result.message ? result.message : 'Scan started.';
+      const catalogs = await api.databricks.catalogs();
+      const catalog = (catalogs || [])[0];
+      const tables = catalog ? await api.dataObservability.tables({ catalog }) : [];
+      const names = (tables || []).map((t) => t.full_name || t.name).filter(Boolean).slice(0, 50);
+      if (!names.length) {
+        throw new Error('No tables to scan — connect Databricks and load a catalog first.');
+      }
+      const results = await api.dataObservability.scan({ tables: names });
+      const findings = (results || []).reduce((n, r) => n + (r.findings || []).length, 0);
+      return `Scanned ${(results || []).length} table(s) — ${findings} finding(s).`;
     },
   },
 
@@ -1245,28 +1310,6 @@ export const ACTIONS = {
    * "unknown" forever, and nothing in the UI says why. The backend's /databases/test
    * route exists for exactly this, and had no caller.
    */
-  testDatabaseDsn: {
-    title: 'Test connection',
-    submit: 'Test',
-    success: 'Connection tested.',
-    refresh: false,
-    fields: [
-      { name: 'dsn', label: 'Connection string', required: true,
-        placeholder: 'postgresql://user:pass@host:5432/dbname' },
-    ],
-    run: async (api, body) => {
-      const result = await api.databases.test(body);
-      /* The route answers 200 with a `reachable` flag rather than an error status, so a
-         refused connection has to be turned into one here or it reads as success. */
-      if (result && result.reachable === false) {
-        throw new Error(result.error || (result.reasons || []).join(' ') || 'Could not connect with that string.');
-      }
-      const detail = [result.engine_label || result.engine, result.host,
-        result.latency_ms != null ? `${result.latency_ms}ms` : null].filter(Boolean).join(' · ');
-      return `Connected${detail ? ` — ${detail}` : ''}.`;
-    },
-  },
-
   removeDatabase: {
     direct: true,
     confirm: 'Stop monitoring this database?',
