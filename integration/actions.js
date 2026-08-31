@@ -741,6 +741,256 @@ function runChoice(api, entry) {
 /* ------------------------------------------------------------------ registry */
 
 /**
+ * One incident's root-cause analysis, and the prompt that hands it to a coding agent.
+ *
+ * /incidents/{id}/rca answers with the EP:rca contract — triad, causal path, probable
+ * causes, remediation, verification. The prompt is assembled here rather than server
+ * side: every field it needs is already in this payload, and a second endpoint that
+ * only reformats it would be one more thing to keep in step.
+ */
+function showRca(rca) {
+  const body = document.createElement('div');
+  const triplet = (t) => (t ? `${t.label} — ${t.detail}` : '—');
+  body.appendChild(resultLine('Incident', `${rca.title} · ${rca.sev} · ${rca.service}`));
+  body.appendChild(resultLine('Summary', rca.aiSummary));
+  body.appendChild(resultLine('Root cause', triplet(rca.triad && rca.triad.rootCause)));
+  body.appendChild(resultLine('Critical failure', triplet(rca.triad && rca.triad.criticalFailure)));
+  body.appendChild(resultLine('Impact', triplet(rca.triad && rca.triad.impact)));
+  body.appendChild(resultLine('Causal path',
+    (rca.causalPath || []).map((n) => `${n.name}${n.root ? ' (root)' : ''}`).join(' → ')));
+  body.appendChild(resultLine('Probable causes',
+    (rca.probableCauses || []).map((c) => `${c.label} ${c.confidence}%`).join(' · ')));
+  body.appendChild(resultLine('Blast radius', rca.blastRadius
+    ? `${rca.blastRadius.services} service(s) — ${rca.blastRadius.detail}` : '—'));
+  body.appendChild(resultLine('Remediation', rca.remediation
+    ? `${rca.remediation.action}${(rca.remediation.gates || []).length
+        ? ` (gates: ${rca.remediation.gates.join(', ')})` : ''}` : '—'));
+
+  const prompt = rcaPrompt(rca);
+  const h = document.createElement('h6');
+  h.className = 'fs-9 mb-2';
+  h.textContent = 'Prompt for your coding agent';
+  const pre = document.createElement('pre');
+  pre.className = 'bg-body-emphasis border border-translucent rounded-3 p-3 fs-10 mb-3';
+  pre.style.maxHeight = '14rem';
+  pre.style.overflow = 'auto';
+  pre.style.whiteSpace = 'pre-wrap';
+  pre.textContent = prompt;
+  body.append(h, pre);
+
+  const copy = document.createElement('button');
+  copy.type = 'button';
+  copy.className = 'btn btn-phoenix-secondary btn-sm';
+  copy.textContent = 'Copy prompt';
+  copy.addEventListener('click', async () => {
+    // navigator.clipboard needs a secure context; the textarea trick still works over
+    // plain http, which is what a self-hosted deployment often is.
+    try {
+      await navigator.clipboard.writeText(prompt);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = prompt;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    }
+    copy.textContent = 'Copied';
+    setTimeout(() => { copy.textContent = 'Copy prompt'; }, 2000);
+  });
+
+  const done = document.createElement('button');
+  done.type = 'button';
+  done.className = 'btn btn-phoenix-secondary btn-sm';
+  done.textContent = 'Close';
+  const footer = document.createElement('div');
+  footer.className = 'd-flex gap-2';
+  footer.append(done, copy);
+
+  const close = open('Root cause analysis', body, footer);
+  done.addEventListener('click', close);
+}
+
+/** The RCA rendered as instructions an agent can act on. */
+function rcaPrompt(rca) {
+  const triplet = (t) => (t ? `${t.label} — ${t.detail}` : 'unknown');
+  const lines = [
+    `Fix incident ${rca.id}: ${rca.title} (severity ${rca.sev}) on ${rca.service}.`,
+    '',
+    `Summary: ${rca.aiSummary}`,
+    `Root cause: ${triplet(rca.triad && rca.triad.rootCause)}`,
+    `Critical failure: ${triplet(rca.triad && rca.triad.criticalFailure)}`,
+    `Impact: ${triplet(rca.triad && rca.triad.impact)}`,
+    `Causal path: ${(rca.causalPath || []).map((n) => n.name).join(' → ') || 'unknown'}`,
+    `Probable causes: ${(rca.probableCauses || [])
+      .map((c) => `${c.label} (${c.confidence}%${c.primary ? ', primary' : ''})`).join('; ') || 'unknown'}`,
+    `Blast radius: ${rca.blastRadius ? `${rca.blastRadius.services} services — ${rca.blastRadius.detail}` : 'unknown'}`,
+    '',
+    `Proposed remediation: ${rca.remediation ? rca.remediation.action : 'none proposed'}`,
+  ];
+  if (rca.remediation && (rca.remediation.gates || []).length) {
+    lines.push(`Do not merge until these gates pass: ${rca.remediation.gates.join(', ')}.`);
+  }
+  if (rca.verify) {
+    lines.push('', `Verify: ${(rca.verify.checks || []).map((c) => c.label).join('; ') || 'no checks listed'}`);
+    if (rca.verify.resolution) lines.push(`Resolution expected: ${rca.verify.resolution}`);
+  }
+  if ((rca.similar || []).length) {
+    lines.push('', `Similar past incidents: ${rca.similar
+      .map((s) => `${s.id} ${s.title} (${s.similarity}% match${s.documentedFix ? ', documented fix' : ''})`)
+      .join('; ')}`);
+  }
+  if ((rca.citations || []).length) lines.push('', `Evidence: ${rca.citations.join('; ')}`);
+  lines.push('', 'Return a patch with the smallest change that removes the root cause, and say which verification check proves it.');
+  return lines.join('\n');
+}
+
+/* --------------------------------------------------------- saved log searches */
+
+const SEARCH_KEY = 'lhb.savedSearches';
+
+const readSearches = () => {
+  try { return JSON.parse(localStorage.getItem(SEARCH_KEY)) || []; } catch { return []; }
+};
+const writeSearches = (list) => localStorage.setItem(SEARCH_KEY, JSON.stringify(list));
+
+/** The logs filter bar, read from and written back to the page. */
+const searchFilters = () => ({
+  q: (document.getElementById('log-query') || {}).value || '',
+  service: (document.getElementById('log-service') || {}).value || '',
+  level: (document.getElementById('log-level') || {}).value || '',
+});
+
+function applyFilters(saved) {
+  for (const [id, value] of [['log-query', saved.q], ['log-service', saved.service],
+                             ['log-level', saved.level]]) {
+    const el = document.getElementById(id);
+    if (el) el.value = value || '';
+  }
+}
+
+/**
+ * Save the current logs filter bar, and load one back.
+ *
+ * Both halves live in one dialog because a save you cannot reopen is a write-only
+ * feature. Loading applies the filters to the page and re-hydrates, which is exactly
+ * what the Search button does.
+ */
+function showSavedSearches(api) {
+  const body = document.createElement('div');
+  const current = searchFilters();
+
+  const describe = (f) => [f.q && `q=${f.q}`, f.service && `service=${f.service}`,
+                           f.level && `level=${f.level}`].filter(Boolean).join(' · ') || 'no filters';
+
+  const list = document.createElement('div');
+  list.className = 'mb-3';
+  const draw = () => {
+    const saved = readSearches();
+    list.innerHTML = '';
+    if (!saved.length) {
+      const empty = document.createElement('p');
+      empty.className = 'text-body-tertiary fs-9 mb-0';
+      empty.textContent = 'Nothing saved yet.';
+      list.appendChild(empty);
+      return;
+    }
+    for (const entry of saved) {
+      const row = document.createElement('div');
+      row.className = 'd-flex align-items-center justify-content-between border-bottom border-translucent py-2 gap-2';
+      const text = document.createElement('div');
+      text.className = 'fs-9';
+      const heading = document.createElement('div');
+      heading.className = 'fw-semibold';
+      heading.textContent = entry.name;
+      const detail = document.createElement('div');
+      detail.className = 'text-body-tertiary fs-10 font-monospace';
+      detail.textContent = describe(entry);
+      text.append(heading, detail);
+      const load = document.createElement('button');
+      load.type = 'button';
+      load.className = 'btn btn-phoenix-secondary btn-sm';
+      load.textContent = 'Load';
+      load.addEventListener('click', () => {
+        applyFilters(entry);
+        close();
+        hydrate(api);
+        toast(`Loaded “${entry.name}”.`);
+      });
+      const drop = document.createElement('button');
+      drop.type = 'button';
+      drop.className = 'btn btn-phoenix-danger btn-sm';
+      drop.textContent = 'Delete';
+      drop.addEventListener('click', () => {
+        writeSearches(readSearches().filter((e) => e.name !== entry.name));
+        draw();
+      });
+      const buttons = document.createElement('div');
+      buttons.className = 'd-flex gap-2';
+      buttons.append(load, drop);
+      row.append(text, buttons);
+      list.appendChild(row);
+    }
+  };
+  draw();
+
+  const heading = document.createElement('h6');
+  heading.className = 'fs-9 mb-2';
+  heading.textContent = 'Saved searches';
+  const nameWrap = document.createElement('div');
+  nameWrap.className = 'mb-2';
+  const nameLabel = document.createElement('label');
+  nameLabel.className = 'form-label fs-9';
+  nameLabel.textContent = 'Save the current filters as';
+  const name = document.createElement('input');
+  name.className = 'form-control form-control-sm';
+  name.placeholder = 'Checkout errors, last hour';
+  nameWrap.append(nameLabel, name);
+  const currently = document.createElement('div');
+  currently.className = 'form-text fs-10 font-monospace';
+  currently.textContent = describe(current);
+  nameWrap.appendChild(currently);
+
+  body.append(heading, list, nameWrap);
+
+  const cancel = document.createElement('button');
+  cancel.type = 'button';
+  cancel.className = 'btn btn-phoenix-secondary btn-sm';
+  cancel.textContent = 'Close';
+  const save = document.createElement('button');
+  save.type = 'button';
+  save.className = 'btn btn-primary btn-sm';
+  save.textContent = 'Save';
+  const footer = document.createElement('div');
+  footer.className = 'd-flex gap-2';
+  footer.append(cancel, save);
+
+  const close = open('Saved searches', body, footer);
+  cancel.addEventListener('click', close);
+  save.addEventListener('click', () => {
+    const label = name.value.trim();
+    if (!label) { name.focus(); return; }
+    // Same name replaces rather than duplicates — re-saving a tweaked search is the
+    // common case, and two rows called "checkout errors" help nobody.
+    writeSearches([...readSearches().filter((e) => e.name !== label), { name: label, ...current }]);
+    close();
+    toast(`Saved “${label}”.`);
+  });
+}
+
+/** Hand the browser a file it never had to ask the server for. */
+function download(filename, text, type = 'application/json') {
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  /* Revoking immediately can beat the download off the mark in Safari; one tick is
+     enough and the object is a few MB at most. */
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/**
  * Dial the connection string and describe what answered.
  *
  * The route replies 200 with a `reachable` flag rather than an error status, so a
@@ -755,6 +1005,37 @@ async function testDsn(api, dsn) {
     result.latency_ms != null ? `${result.latency_ms}ms` : null].filter(Boolean).join(' · ');
   return `Connected${detail ? ` — ${detail}` : ''}.`;
 }
+
+/* One AWS connection per tenant, configured from two pages — the orchestrator's job
+ * stream and the cloud account list are both fed by these credentials, so both forms
+ * are built from this one list. */
+const AWS_FIELDS = (current = {}) => [
+      { name: 'region', label: 'AWS region', required: true, width: 'half',
+        value: current.region || 'us-east-1' },
+      { name: 'auth_method', label: 'Authentication', type: 'select', width: 'half',
+        options: ['default-chain', 'access-keys', 'iam-role'],
+        value: current.auth_method || 'default-chain',
+        help: 'default-chain uses the role the backend already runs as.' },
+      { name: 'role_arn', label: 'Role ARN', width: 'half', value: current.role_arn,
+        placeholder: 'arn:aws:iam::123456789012:role/loveheartbeat-read' },
+      { name: 'external_id', label: 'External ID', width: 'half',
+        help: 'Only for iam-role. Left blank keeps the stored one.' },
+      { name: 'access_key_id', label: 'Access key ID', width: 'half',
+        help: 'Only for access-keys.' },
+      { name: 'secret_access_key', label: 'Secret access key', type: 'password', width: 'half' },
+      { name: 'function_prefixes', label: 'Function prefixes', type: 'list',
+        value: current.function_prefixes,
+        help: 'Comma separated. Empty collects every function the role can see.' },
+      { name: 'log_groups', label: 'Log groups', type: 'list', value: current.log_groups },
+      { name: 'collection_interval_seconds', label: 'Collect every (seconds)', type: 'number',
+        width: 'half', value: current.collection_interval_seconds || 300 },
+      { name: 'error_rate_threshold', label: 'Error rate alert (%)', type: 'number', step: 'any',
+        width: 'half', value: current.error_rate_threshold ?? 5 },
+      { name: 'duration_ms_threshold', label: 'Duration alert (ms)', type: 'number', step: 'any',
+        width: 'half', value: current.duration_ms_threshold ?? 1000 },
+      { name: 'throttle_threshold', label: 'Throttle alert (count)', type: 'number',
+        width: 'half', value: current.throttle_threshold ?? 1 },
+    ];
 
 export const ACTIONS = {
   /* --- alert clustering + coding-agent handoff ---------------------------- */
@@ -772,6 +1053,17 @@ export const ACTIONS = {
   clusterBrief: {
     title: 'Agent brief',
     custom: async (api, arg) => showBrief(await api.alerts.brief(arg)),
+  },
+
+  /**
+   * "Root cause" on a correlated incident: the EP:rca output plus the agent prompt.
+   *
+   * The correlation table had no way through to /incidents/{id}/rca — the analysis was
+   * computed on every read and never shown. This is the row action that opens it.
+   */
+  incidentRca: {
+    title: 'Root cause analysis',
+    custom: async (api, id) => showRca(await api.rca.forIncident(id)),
   },
 
   /**
@@ -891,6 +1183,42 @@ export const ACTIONS = {
         value: current.hours_back || 24, width: 'half' },
     ],
     run: (api, body) => api.etl.saveConfig('boomi', body),
+  },
+
+  /**
+   * "Export traces" saves every stored trace, spans included.
+   *
+   * There is no server-side export endpoint, and none is needed: /observability/traces
+   * lists the traces and /observability/traces/{id} returns each one's spans, so the
+   * file is assembled from the two reads the page already makes and handed to the
+   * browser. JSON rather than CSV — a span tree does not flatten into rows without
+   * losing the parentage that makes it a trace.
+   */
+  exportTraces: {
+    title: 'Export traces',
+    direct: true,
+    refresh: false,
+    run: async (api) => {
+      const traces = await api.observability.traces({ limit: 200 });
+      if (!(traces || []).length) {
+        throw new Error('No traces stored yet — send an agent telemetry batch first.');
+      }
+      /* ponytail: spans are fetched 8 at a time. /traces/{id} has no bulk form, and 200
+         parallel GETs is how you get rate-limited by your own gateway. Raise the width,
+         or add a bulk endpoint, if exports start feeling slow. */
+      const detailed = [];
+      for (let i = 0; i < traces.length; i += 8) {
+        detailed.push(...await Promise.all(traces.slice(i, i + 8).map(async (t) => ({
+          ...t,
+          spans: await api.observability.trace(t.trace_id).catch(() => []),
+        }))));
+      }
+      const spans = detailed.reduce((n, t) => n + t.spans.length, 0);
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '').replace('T', '-');
+      download(`traces-${stamp}.json`,
+        JSON.stringify({ exported_at: new Date().toISOString(), traces: detailed }, null, 2));
+      return `Exported ${detailed.length} trace(s) — ${spans} span(s).`;
+    },
   },
 
   /**
@@ -1128,6 +1456,8 @@ export const ACTIONS = {
       { label: 'Install our gateway', action: 'onboardGateway', help: 'Run APISIX in front of your API and report from it.' },
       { label: 'ETL tool', action: 'connectEtl', help: 'Talend, Boomi or Databricks.' },
       { label: 'Database', action: 'addDatabase', help: 'Register by connection string.' },
+      { label: 'AWS account', action: 'connectAwsAccount', help: 'Lambda and CloudWatch collection.' },
+      { label: 'AI tool agent', action: 'connectAiTool', help: 'Registers the agent that pushes AI telemetry, and mints its key.' },
     ],
   },
 
@@ -1271,35 +1601,40 @@ export const ACTIONS = {
     submit: 'Save connection',
     success: 'Orchestrator connected — collection starts on the next sweep.',
     prefill: (api) => api.awsLambda.config().then((s) => (s && s.fields) || {}).catch(() => ({})),
-    fields: (current = {}) => [
-      { name: 'region', label: 'AWS region', required: true, width: 'half',
-        value: current.region || 'us-east-1' },
-      { name: 'auth_method', label: 'Authentication', type: 'select', width: 'half',
-        options: ['default-chain', 'access-keys', 'iam-role'],
-        value: current.auth_method || 'default-chain',
-        help: 'default-chain uses the role the backend already runs as.' },
-      { name: 'role_arn', label: 'Role ARN', width: 'half', value: current.role_arn,
-        placeholder: 'arn:aws:iam::123456789012:role/loveheartbeat-read' },
-      { name: 'external_id', label: 'External ID', width: 'half',
-        help: 'Only for iam-role. Left blank keeps the stored one.' },
-      { name: 'access_key_id', label: 'Access key ID', width: 'half',
-        help: 'Only for access-keys.' },
-      { name: 'secret_access_key', label: 'Secret access key', type: 'password', width: 'half' },
-      { name: 'function_prefixes', label: 'Function prefixes', type: 'list',
-        value: current.function_prefixes,
-        help: 'Comma separated. Empty collects every function the role can see.' },
-      { name: 'log_groups', label: 'Log groups', type: 'list', value: current.log_groups },
-      { name: 'collection_interval_seconds', label: 'Collect every (seconds)', type: 'number',
-        width: 'half', value: current.collection_interval_seconds || 300 },
-      { name: 'error_rate_threshold', label: 'Error rate alert (%)', type: 'number', step: 'any',
-        width: 'half', value: current.error_rate_threshold ?? 5 },
-      { name: 'duration_ms_threshold', label: 'Duration alert (ms)', type: 'number', step: 'any',
-        width: 'half', value: current.duration_ms_threshold ?? 1000 },
-      { name: 'throttle_threshold', label: 'Throttle alert (count)', type: 'number',
-        width: 'half', value: current.throttle_threshold ?? 1 },
-    ],
+    fields: (current = {}) => AWS_FIELDS(current),
     run: (api, body) => api.awsLambda.saveConfig(body),
   },
+
+  /* --- cloud monitoring: the same AWS credentials, reached from the cloud page --- */
+
+  /**
+   * "Connect AWS account" on Cloud Monitoring.
+   *
+   * There is one AWS connection per tenant — /integrations/aws/lambda/config — and both
+   * pages configure it, so this shares the orchestrator's fields rather than opening a
+   * second, competing form that would overwrite whatever the other one saved.
+   */
+  connectAwsAccount: {
+    title: 'Connect AWS account',
+    submit: 'Save connection',
+    success: 'AWS connected — inventory and anomalies appear on the next sweep.',
+    prefill: (api) => api.awsLambda.config().then((s) => (s && s.fields) || {}).catch(() => ({})),
+    fields: (current = {}) => AWS_FIELDS(current),
+    run: (api, body) => api.awsLambda.saveConfig(body),
+  },
+
+  /**
+   * "Save search" keeps the logs filter bar's current state under a name.
+   *
+   * ponytail: localStorage, not an endpoint — a saved search is three strings and no
+   * backend route exists for them. Move it to a record_store stream when someone needs
+   * the same searches on a second machine.
+   */
+  saveSearch: {
+    title: 'Saved searches',
+    custom: async (api) => showSavedSearches(api),
+  },
+
 
   /* --- database monitoring ------------------------------------------------ */
 
@@ -1310,12 +1645,6 @@ export const ACTIONS = {
    * "unknown" forever, and nothing in the UI says why. The backend's /databases/test
    * route exists for exactly this, and had no caller.
    */
-  removeDatabase: {
-    direct: true,
-    confirm: 'Stop monitoring this database?',
-    run: async (api, id) => { await api.databases.remove(id); return 'Database removed.'; },
-  },
-
   /* --- AI monitoring: register the agent that reports a tool ------------- */
 
   /**
@@ -1678,11 +2007,11 @@ export const ACTIONS = {
 /* Buttons whose endpoint does not exist yet. Listed rather than omitted so the gap is
  * visible in one place instead of being rediscovered page by page. */
 export const UNSUPPORTED = {
+  connectGcp: 'No GCP collector yet — the backend collects AWS (Lambda, CloudWatch) and reads Apigee if you connect it as your API gateway.',
+  connectAzure: 'No Azure collector yet — Azure API Management is readable as an API gateway, but there is no subscription-wide collector.',
   addAiRoute: 'AI gateway routes come from the APISIX config, not the API — edit infrastructure/apisix/apisix.yaml.',
   rebaseline: 'No drift rebaseline endpoint yet.',
-  saveSearch: 'No saved search endpoint yet.',
   defineSlo: 'No SLO definition endpoint yet — slo is read-only.',
-  exportTraces: 'No trace export endpoint yet.',
   acknowledgeAll: 'No bulk acknowledge endpoint yet.',
   saveAuthSettings: 'No organization authentication-settings endpoint yet — Cognito policy is set in the stack.',
   escalationPath: 'No escalation-path endpoint yet — routing rules in Alert Management carry the first timeout.',

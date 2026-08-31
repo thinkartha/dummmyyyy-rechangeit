@@ -33,6 +33,7 @@ block content
   +ObsToolTable({
     title: 'Connected integrations',
     live: 'integrations',
+    rowAction: true,
     subtitle: 'Credentials are stored as secret references under org_id and never returned to the browser',
     searchPlaceholder: 'Search integrations',
     pageSize: 10,
@@ -62,3 +63,23 @@ block content
       { icon: 'fa-layer-group', iconColor: 'warning', meta: 'alert correlation', cells: ['BigPanda', 'Alerting', 'Correlation', '—', 'API key', { text: 'Not connected', badge: 'secondary' }] }
     ]
   })
+
+  //- Every setting that used to live only on the page it belonged to. The buttons are
+  //- the same actions those pages fire — one registry entry, two places to reach it —
+  //- so this catalogue cannot drift away from what the pages actually do.
+  .card.mt-4
+    .card-header.border-bottom.border-translucent.py-3
+      h4.mb-0 Settings & configuration
+      p.text-body-tertiary.fs-9.mb-0 Everything configurable across the product, reachable without hunting for the page that owns it
+    .card-body
+      each group in [{ name: 'Gateways', items: [{ label: 'Connect an API gateway', help: 'Kong, APISIX, Tyk, Traefik, KrakenD, AWS API Gateway, Azure APIM, Apigee.', action: 'connectGateway', page: 'API Gateway' }, { label: 'Install our gateway', help: 'Run APISIX in front of your API and report from it.', action: 'onboardGateway', page: 'API Gateway' }] }, { name: 'Cloud', items: [{ label: 'Connect AWS account', help: 'Region, credentials, function prefixes and alert thresholds. Feeds Cloud Monitoring and Orchestration.', action: 'connectAwsAccount', page: 'Cloud Monitoring' }] }, { name: 'Data & ETL', items: [{ label: 'Connect an ETL tool', help: 'Talend, Boomi or Databricks.', action: 'connectEtl', page: 'ETL Monitoring' }, { label: 'Connect Databricks', help: 'Workspace host, SQL warehouse and token — also backs Data Observability.', action: 'connectDatabricks', page: 'Data Observability' }, { label: 'Register a database', help: 'Connection string, tested before it is saved.', action: 'addDatabase', page: 'Database Monitoring' }] }, { name: 'AI', items: [{ label: 'Connect an AI tool', help: 'Registers the collector agent that pushes AI telemetry and mints its key.', action: 'connectAiTool', page: 'AI Monitoring' }, { label: 'Register a model', help: 'Track a custom or hosted model alongside the providers.', action: 'registerModel', page: 'AI Models' }, { label: 'Model thresholds', help: 'Error-rate and latency limits every model status badge is derived from.', action: 'editThresholds', page: 'AI Models' }, { label: 'AI budget', help: 'Monthly spend ceiling and who to warn as it is approached.', action: 'setAiBudget', page: 'AI Cost & Usage' }] }, { name: 'Cost', items: [{ label: 'Cloud budget', help: 'Per-account budget and alert threshold.', action: 'addBudget', page: 'Cloud Cost' }] }, { name: 'Alerting', items: [{ label: 'Routing rule', help: 'Which team a matching alert pages, on which channels, and when it escalates.', action: 'routingRule', page: 'Alert Management' }, { label: 'Automation rule', help: 'Trigger and action for a remediation the platform runs itself.', action: 'automationRule', page: 'Automation' }] }]
+        h6.mt-3.mb-2.text-uppercase.fs-10.text-body-tertiary= group.name
+        .row.g-3
+          each item in group.items
+            .col-12.col-md-6.col-xl-4
+              .border.border-translucent.rounded-3.p-3.h-100.d-flex.flex-column
+                h6.mb-1= item.label
+                p.text-body-tertiary.fs-9.mb-2= item.help
+                .mt-auto.d-flex.align-items-center.justify-content-between
+                  span.badge.badge-phoenix.badge-phoenix-secondary.fs-10= item.page
+                  button.btn.btn-phoenix-primary.btn-sm(type='button' data-lhb-action=item.action) Configure

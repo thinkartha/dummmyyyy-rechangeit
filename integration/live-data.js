@@ -33,12 +33,31 @@ function badge(text) {
 /* /summary answers with display names ("Dell Boomi"), while every write route is keyed
    by slug ("boomi"). Lowercasing the name is not enough for that one. */
 const ETL_SLUGS = { 'dell boomi': 'boomi', boomi: 'boomi', talend: 'talend', databricks: 'databricks' };
+/* Which form configures each ETL platform. Anything unmapped falls back to the chooser. */
+const ETL_CONFIG = { talend: 'connectTalend', boomi: 'connectBoomi', databricks: 'connectDatabricks' };
+
 const etlPlatform = (name) => ETL_SLUGS[String(name || '').toLowerCase()] || String(name || '').toLowerCase();
 
 const num = (v, digits = 0) =>
   v === null || v === undefined || Number.isNaN(Number(v))
     ? '—'
     : Number(v).toLocaleString(undefined, { maximumFractionDigits: digits });
+
+/** What the logs page's filter bar is asking for, in /logs/search's own parameters. */
+function logFilters() {
+  const val = (id) => {
+    const el = document.getElementById(id);
+    return el && el.value ? el.value.trim() : '';
+  };
+  const params = { limit: 50 };
+  const q = val('log-query');
+  const service = val('log-service');
+  const level = val('log-level');
+  if (q) params.q = q;
+  if (service) params.service = service;
+  if (level) params.level = level;
+  return params;
+}
 
 const pct = (v, digits = 1) =>
   v === null || v === undefined ? '—' : `${Number(v).toFixed(digits)}%`;
@@ -186,6 +205,8 @@ export const SOURCES = {
         meta: i.incident_id || i.id,
         cells: [i.title || 'Incident', i.root_cause || '—', num(i.alert_count),
                 num(i.service_count), i.duration || '—', badge(i.status || 'Open')],
+        /* /incidents/{id}/rca is computed per incident; this is the only way into it. */
+        action: { key: 'incidentRca', arg: i.incident_id || i.id, label: 'Root cause' },
       })),
   },
 
@@ -281,7 +302,11 @@ export const SOURCES = {
   logs: {
     // The log page's table is hand-rolled and 4 columns wide: time, level, service, line.
     plain: true,
-    load: (api) => api.elk.searchLogs({ size: 50 }),
+    /* The filter bar above the table used to be decoration: this read `size`, which
+       /logs/search does not declare, and never looked at the query, service or level
+       the operator had typed. Search re-hydrates, so reading them here is the whole
+       wiring. */
+    load: (api) => api.elk.searchLogs(logFilters()),
     rows: (data) =>
       (data?.hits || []).map((hit) => {
         const doc = hit._source || hit;
@@ -405,22 +430,50 @@ export const SOURCES = {
     },
   },
 
+  /**
+   * Columns: Account · Cloud · Type · Resources · Alerts · Status.
+   *
+   * Two things tie a tenant to a cloud, and the page only ever showed one of them: the
+   * Lambda connector, and the API gateway they connected under API Gateway. A managed
+   * gateway *is* a cloud account in use — AWS API Gateway, Azure API Management, Apigee
+   * on GCP — so it gets its own row here instead of that fact living on one tab only.
+   */
   cloudLambda: {
-    // Columns: Account · Cloud · Type · Resources · Alerts · Status. Lambda is the one
-    // cloud integration the backend actually collects, so it is the one row shown live.
-    load: (api) => api.awsLambda.overview(),
-    rows: (data) => {
-      if (!data) return [];
-      return [{
-        icon: 'fa-aws',
-        iconSet: 'fa-brands',
-        iconColor: data.errorRate > 0.05 ? 'danger' : 'warning',
-        meta: `${data.source} · ${num(data.invocationsPerMinute)} inv/min`,
-        cells: [`AWS Lambda · ${data.region}`, 'AWS', 'Serverless',
-                num(data.functions), num(data.activeAlarms),
-                badge(!data.configured ? 'Not connected'
-                  : data.errorRate > 0.05 ? 'Degraded' : 'Healthy')],
-      }];
+    load: async (api) => ({
+      lambda: await api.awsLambda.overview().catch(() => null),
+      gateway: await api.gateways.status().catch(() => null),
+    }),
+    rows: ({ lambda, gateway }) => {
+      const rows = [];
+      if (lambda) {
+        rows.push({
+          icon: 'fa-aws',
+          iconSet: 'fa-brands',
+          iconColor: lambda.errorRate > 0.05 ? 'danger' : 'warning',
+          meta: `${lambda.source} · ${num(lambda.invocationsPerMinute)} inv/min`,
+          cells: [`AWS Lambda · ${lambda.region}`, 'AWS', 'Serverless',
+                  num(lambda.functions), num(lambda.activeAlarms),
+                  badge(!lambda.configured ? 'Not connected'
+                    : lambda.errorRate > 0.05 ? 'Degraded' : 'Healthy')],
+        });
+      }
+      /* Only the managed gateways say anything about a cloud account. A self-hosted
+         Kong or APISIX runs wherever the tenant put it, so it is not a cloud row. */
+      const CLOUD_OF = { aws: ['AWS', 'fa-aws'], azure: ['Azure', 'fa-microsoft'],
+                         apigee: ['GCP', 'fa-google'] };
+      const cloud = gateway && gateway.configured && CLOUD_OF[gateway.provider];
+      if (cloud) {
+        rows.push({
+          icon: cloud[1],
+          iconSet: 'fa-brands',
+          iconColor: gateway.reachable ? 'success' : 'danger',
+          meta: gateway.error || 'API gateway connected under API Gateway',
+          cells: [gateway.label || gateway.provider, cloud[0], 'API gateway',
+                  num(gateway.routes), '—',
+                  badge(gateway.reachable ? 'Connected' : 'Unreachable')],
+        });
+      }
+      return rows;
     },
   },
 
@@ -720,6 +773,13 @@ export const SOURCES = {
       return { probed, etl: etl || [] };
     },
     rows: (data) => {
+      /* Each row opens the same form its own page opens — the settings catalogue below
+         the table lists them all, this is the shortcut from the row that is broken. */
+      const CONFIGURE = {
+        'AWS Lambda': 'connectAwsAccount',
+        'API gateway': 'connectGateway',
+        Databricks: 'connectDatabricks',
+      };
       const rows = (data.probed || []).map((p) => ({
         icon: 'fa-plug',
         iconColor: p.configured ? 'success' : 'secondary',
@@ -727,6 +787,9 @@ export const SOURCES = {
         cells: [p.name, p.category, p.feeds || p.category, p.last_sync || '—',
                 p.credential || (p.configured ? 'stored' : 'none'),
                 badge(p.configured ? (p.reachable === false ? 'Auth failed' : 'Connected') : 'Not connected')],
+        action: CONFIGURE[p.name]
+          ? { key: CONFIGURE[p.name], arg: '', label: p.configured ? 'Configure' : 'Connect' }
+          : undefined,
       }));
       for (const e of data.etl || []) {
         rows.push({
@@ -736,6 +799,8 @@ export const SOURCES = {
           cells: [e.name || e.platform, 'ETL', 'ETL Monitoring', e.last_checked || '—',
                   e.configured ? 'stored' : 'none',
                   badge(e.status || (e.configured ? 'Connected' : 'Not connected'))],
+          action: { key: ETL_CONFIG[etlPlatform(e.name || e.platform)] || 'connectEtl',
+                    arg: '', label: e.configured ? 'Configure' : 'Connect' },
         });
       }
       return rows;

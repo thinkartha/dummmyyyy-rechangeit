@@ -31,9 +31,9 @@ block content
           h4.mb-0 Configure cloud accounts
           p.text-body-tertiary.fs-9.mb-0 Connect multiple AWS / GCP / Azure accounts; LoveHeartBeat monitors all of them in one place.
         .col-auto
-          button.btn.btn-sm.btn-primary(type='button') Connect AWS account
-          button.btn.btn-sm.btn-phoenix-secondary.ms-2(type='button') Connect GCP
-          button.btn.btn-sm.btn-phoenix-secondary.ms-2(type='button') Connect Azure
+          button.btn.btn-sm.btn-primary(type='button' data-lhb-action='connectAwsAccount') Connect AWS account
+          button.btn.btn-sm.btn-phoenix-secondary.ms-2(type='button' data-lhb-action='connectGcp') Connect GCP
+          button.btn.btn-sm.btn-phoenix-secondary.ms-2(type='button' data-lhb-action='connectAzure') Connect Azure
     .card-body
       .row.g-3
         .col-md-4

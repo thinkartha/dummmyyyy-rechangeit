@@ -166,13 +166,13 @@ export default function Page() {
               </p>
             </div>
             <div className="col-auto">
-              <button className="btn btn-sm btn-primary" type="button">
+              <button className="btn btn-sm btn-primary" type="button" data-lhb-action="connectAwsAccount">
                 Connect AWS account
               </button>
-              <button className="btn btn-sm btn-phoenix-secondary ms-2" type="button">
+              <button className="btn btn-sm btn-phoenix-secondary ms-2" type="button" data-lhb-action="connectGcp">
                 Connect GCP
               </button>
-              <button className="btn btn-sm btn-phoenix-secondary ms-2" type="button">
+              <button className="btn btn-sm btn-phoenix-secondary ms-2" type="button" data-lhb-action="connectAzure">
                 Connect Azure
               </button>
             </div>

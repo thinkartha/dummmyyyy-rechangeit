@@ -622,6 +622,7 @@ export default function Page() {
                     <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col5">
                       Status
                     </th>
+                    <th className="align-middle text-end pe-3" scope="col"></th>
                   </tr>
                 </thead>
                 <tbody className="list">
@@ -656,6 +657,7 @@ export default function Page() {
                         Resolved
                       </span>
                     </td>
+                    <td className="align-middle pe-3"></td>
                   </tr>
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
@@ -688,6 +690,7 @@ export default function Page() {
                         Open
                       </span>
                     </td>
+                    <td className="align-middle pe-3"></td>
                   </tr>
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
@@ -720,6 +723,7 @@ export default function Page() {
                         Open
                       </span>
                     </td>
+                    <td className="align-middle pe-3"></td>
                   </tr>
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
@@ -752,6 +756,7 @@ export default function Page() {
                         Resolved
                       </span>
                     </td>
+                    <td className="align-middle pe-3"></td>
                   </tr>
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
@@ -784,6 +789,7 @@ export default function Page() {
                         Resolved
                       </span>
                     </td>
+                    <td className="align-middle pe-3"></td>
                   </tr>
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
@@ -816,6 +822,7 @@ export default function Page() {
                         Resolved
                       </span>
                     </td>
+                    <td className="align-middle pe-3"></td>
                   </tr>
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
@@ -848,6 +855,7 @@ export default function Page() {
                         Open
                       </span>
                     </td>
+                    <td className="align-middle pe-3"></td>
                   </tr>
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
@@ -880,6 +888,7 @@ export default function Page() {
                         Suppressed
                       </span>
                     </td>
+                    <td className="align-middle pe-3"></td>
                   </tr>
                 </tbody>
               </table>

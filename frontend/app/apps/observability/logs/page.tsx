@@ -224,7 +224,7 @@ export default function Page() {
               </select>
             </div>
             <div className="col-6 col-lg-1">
-              <button className="btn btn-primary btn-sm w-100" type="button">
+              <button className="btn btn-primary btn-sm w-100" type="button" data-lhb-action="refreshData">
                 Search
               </button>
             </div>
