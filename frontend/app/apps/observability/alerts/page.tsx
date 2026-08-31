@@ -72,12 +72,12 @@ export default function Page() {
               Alerts Monitoring
             </h2>
             <h5 className="text-body-tertiary fw-semibold mb-0">
-              Unified alerts from APIs, AI tools, ETL jobs, and multi-cloud accounts
+              Unified alerts from APIs, AI tools, ETL jobs, and multi-cloud accounts — a routing rule decides which team each one pages
             </h5>
           </div>
           <div className="col-auto">
-            <button className="btn btn-primary" type="button" data-lhb-action="createAlertRule">
-              Create alert rule
+            <button className="btn btn-primary" type="button" data-lhb-action="routingRule">
+              New routing rule
             </button>
           </div>
         </div>

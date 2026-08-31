@@ -1594,7 +1594,6 @@ export const ACTIONS = {
  * visible in one place instead of being rediscovered page by page. */
 export const UNSUPPORTED = {
   addAiRoute: 'AI gateway routes come from the APISIX config, not the API — edit infrastructure/apisix/apisix.yaml.',
-  createAlertRule: 'No alert rule endpoint yet — alert-management covers routing, SLA and maintenance windows.',
   rebaseline: 'No drift rebaseline endpoint yet.',
   saveSearch: 'No saved search endpoint yet.',
   defineSlo: 'No SLO definition endpoint yet — slo is read-only.',
