@@ -100,6 +100,18 @@ function open(title, bodyNode, footerNode) {
   return hide;
 }
 
+/* Names match the channels alert_management seeds, so a rule created here routes the
+ * same way as the ones that shipped with the tenant. FontAwesome has brand marks for
+ * only some of them; the rest get the solid icon closest to how they deliver. */
+const CHANNELS = [
+  { value: 'Slack', icon: 'fa-brands fa-slack' },
+  { value: 'Teams', icon: 'fa-brands fa-microsoft' },
+  { value: 'PagerDuty', icon: 'fa-solid fa-bell' },
+  { value: 'Email', icon: 'fa-solid fa-envelope' },
+  { value: 'SMS', icon: 'fa-solid fa-comment-sms' },
+  { value: 'Webhook', icon: 'fa-solid fa-link' },
+];
+
 /* ---------------------------------------------------------------------- form */
 
 const uid = (() => { let n = 0; return () => `lhb-f${++n}`; })();
@@ -113,6 +125,32 @@ function field(spec) {
   label.className = 'form-label fs-9';
   label.htmlFor = id;
   label.textContent = spec.label + (spec.required ? ' *' : '');
+
+  /* Channels are a fixed set the backend already seeds by name, so a free-text box
+     only ever produced typos ("slak", "Page rDuty") that no router matched. Toggle
+     buttons carrying each platform's logo pick from that set instead. */
+  if (spec.type === 'icons') {
+    const group = document.createElement('div');
+    group.className = 'd-flex flex-wrap gap-2';
+    for (const opt of spec.options) {
+      const box = document.createElement('input');
+      box.type = 'checkbox';
+      box.className = 'btn-check';
+      box.id = uid();
+      box.name = spec.name;
+      box.value = opt.value;
+      box.checked = (spec.value || []).includes(opt.value);
+      const btn = document.createElement('label');
+      btn.className = 'btn btn-phoenix-secondary btn-sm';
+      btn.htmlFor = box.id;
+      const icon = document.createElement('span');
+      icon.className = `${opt.icon} me-2`;
+      btn.append(icon, document.createTextNode(opt.value));
+      group.append(box, btn);
+    }
+    wrap.append(label, group);
+    return wrap;
+  }
 
   let input;
   if (spec.type === 'select') {
@@ -172,6 +210,10 @@ function values(form, specs) {
   for (const spec of specs) {
     const el = form.elements[spec.name];
     if (!el) continue;
+    if (spec.type === 'icons') {
+      out[spec.name] = Array.from(form.querySelectorAll(`input[name="${spec.name}"]:checked`), (b) => b.value);
+      continue;
+    }
     if (spec.type === 'checkbox') out[spec.name] = el.checked;
     else if (spec.type === 'number') out[spec.name] = el.value === '' ? undefined : Number(el.value);
     // A comma-separated text box is the lazy way to fill a list field, and the only
@@ -722,8 +764,8 @@ export const ACTIONS = {
         value: 15, width: 'half' },
       { name: 'priority', label: 'Priority', type: 'number', value: 1, width: 'half',
         help: 'Lower numbers are evaluated first.' },
-      { name: 'notification_channels', label: 'Notification channels', type: 'list',
-        placeholder: 'slack-sre, pagerduty' },
+      { name: 'notification_channels', label: 'Notification channels', type: 'icons',
+        options: CHANNELS },
       { name: 'enabled', label: 'Enabled', type: 'checkbox' },
     ],
     run: (api, body) => api.alertManagement.createRoutingRule(body),
