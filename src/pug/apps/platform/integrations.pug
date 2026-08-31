@@ -64,15 +64,58 @@ block content
     ]
   })
 
-  //- Every setting that used to live only on the page it belonged to. The buttons are
-  //- the same actions those pages fire — one registry entry, two places to reach it —
-  //- so this catalogue cannot drift away from what the pages actually do.
+
+  //- Every setting that used to live only on the page it belonged to. The buttons fire
+  //- the same actions those pages fire — one registry entry, two ways to reach it — so
+  //- this catalogue cannot drift away from what the pages actually do.
+  -
+    var settingsGroups = [
+      { name: 'Gateways', items: [
+        { label: 'Connect an API gateway', page: 'API Gateway', action: 'connectGateway',
+          help: 'Kong, APISIX, Tyk, Traefik, KrakenD, AWS API Gateway, Azure APIM, Apigee.' },
+        { label: 'Install our gateway', page: 'API Gateway', action: 'onboardGateway',
+          help: 'Run APISIX in front of your API and report from it.' }
+      ] },
+      { name: 'Cloud', items: [
+        { label: 'Connect AWS account', page: 'Cloud Monitoring', action: 'connectAwsAccount',
+          help: 'Region, credentials, function prefixes and alert thresholds. Feeds Cloud Monitoring and Orchestration.' }
+      ] },
+      { name: 'Data and ETL', items: [
+        { label: 'Connect an ETL tool', page: 'ETL Monitoring', action: 'connectEtl',
+          help: 'Talend, Boomi or Databricks.' },
+        { label: 'Connect Databricks', page: 'Data Observability', action: 'connectDatabricks',
+          help: 'Workspace host, SQL warehouse and token — also backs Data Observability.' },
+        { label: 'Register a database', page: 'Database Monitoring', action: 'addDatabase',
+          help: 'Connection string, testable from the same dialog before it is saved.' }
+      ] },
+      { name: 'AI', items: [
+        { label: 'Connect an AI tool', page: 'AI Monitoring', action: 'connectAiTool',
+          help: 'Registers the collector agent that pushes AI telemetry, and mints its key.' },
+        { label: 'Register a model', page: 'AI Models', action: 'registerModel',
+          help: 'Track a custom or hosted model alongside the providers.' },
+        { label: 'Model thresholds', page: 'AI Models', action: 'editThresholds',
+          help: 'Error-rate and latency limits every model status badge is derived from.' },
+        { label: 'AI budget', page: 'AI Cost and Usage', action: 'setAiBudget',
+          help: 'Monthly spend ceiling and who to warn as it is approached.' }
+      ] },
+      { name: 'Cost', items: [
+        { label: 'Cloud budget', page: 'Cloud Cost', action: 'addBudget',
+          help: 'Per-account budget and the threshold that raises an alert.' }
+      ] },
+      { name: 'Alerting', items: [
+        { label: 'Routing rule', page: 'Alert Management', action: 'routingRule',
+          help: 'Which team a matching alert pages, on which channels, and when it escalates.' },
+        { label: 'Automation rule', page: 'Automation', action: 'automationRule',
+          help: 'Trigger and action for a remediation the platform runs itself.' }
+      ] }
+    ];
+
   .card.mt-4
     .card-header.border-bottom.border-translucent.py-3
-      h4.mb-0 Settings & configuration
+      h4.mb-0 Settings and configuration
       p.text-body-tertiary.fs-9.mb-0 Everything configurable across the product, reachable without hunting for the page that owns it
     .card-body
-      each group in [{ name: 'Gateways', items: [{ label: 'Connect an API gateway', help: 'Kong, APISIX, Tyk, Traefik, KrakenD, AWS API Gateway, Azure APIM, Apigee.', action: 'connectGateway', page: 'API Gateway' }, { label: 'Install our gateway', help: 'Run APISIX in front of your API and report from it.', action: 'onboardGateway', page: 'API Gateway' }] }, { name: 'Cloud', items: [{ label: 'Connect AWS account', help: 'Region, credentials, function prefixes and alert thresholds. Feeds Cloud Monitoring and Orchestration.', action: 'connectAwsAccount', page: 'Cloud Monitoring' }] }, { name: 'Data & ETL', items: [{ label: 'Connect an ETL tool', help: 'Talend, Boomi or Databricks.', action: 'connectEtl', page: 'ETL Monitoring' }, { label: 'Connect Databricks', help: 'Workspace host, SQL warehouse and token — also backs Data Observability.', action: 'connectDatabricks', page: 'Data Observability' }, { label: 'Register a database', help: 'Connection string, tested before it is saved.', action: 'addDatabase', page: 'Database Monitoring' }] }, { name: 'AI', items: [{ label: 'Connect an AI tool', help: 'Registers the collector agent that pushes AI telemetry and mints its key.', action: 'connectAiTool', page: 'AI Monitoring' }, { label: 'Register a model', help: 'Track a custom or hosted model alongside the providers.', action: 'registerModel', page: 'AI Models' }, { label: 'Model thresholds', help: 'Error-rate and latency limits every model status badge is derived from.', action: 'editThresholds', page: 'AI Models' }, { label: 'AI budget', help: 'Monthly spend ceiling and who to warn as it is approached.', action: 'setAiBudget', page: 'AI Cost & Usage' }] }, { name: 'Cost', items: [{ label: 'Cloud budget', help: 'Per-account budget and alert threshold.', action: 'addBudget', page: 'Cloud Cost' }] }, { name: 'Alerting', items: [{ label: 'Routing rule', help: 'Which team a matching alert pages, on which channels, and when it escalates.', action: 'routingRule', page: 'Alert Management' }, { label: 'Automation rule', help: 'Trigger and action for a remediation the platform runs itself.', action: 'automationRule', page: 'Automation' }] }]
+      each group in settingsGroups
         h6.mt-3.mb-2.text-uppercase.fs-10.text-body-tertiary= group.name
         .row.g-3
           each item in group.items

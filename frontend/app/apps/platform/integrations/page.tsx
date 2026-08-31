@@ -256,6 +256,7 @@ export default function Page() {
                     <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col5">
                       Status
                     </th>
+                    <th className="align-middle text-end pe-3" scope="col"></th>
                   </tr>
                 </thead>
                 <tbody className="list">
@@ -290,6 +291,7 @@ export default function Page() {
                         Connected
                       </span>
                     </td>
+                    <td className="align-middle pe-3"></td>
                   </tr>
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
@@ -322,6 +324,7 @@ export default function Page() {
                         Connected
                       </span>
                     </td>
+                    <td className="align-middle pe-3"></td>
                   </tr>
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
@@ -354,6 +357,7 @@ export default function Page() {
                         Connected
                       </span>
                     </td>
+                    <td className="align-middle pe-3"></td>
                   </tr>
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
@@ -386,6 +390,7 @@ export default function Page() {
                         Connected
                       </span>
                     </td>
+                    <td className="align-middle pe-3"></td>
                   </tr>
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
@@ -418,6 +423,7 @@ export default function Page() {
                         Connected
                       </span>
                     </td>
+                    <td className="align-middle pe-3"></td>
                   </tr>
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
@@ -450,6 +456,7 @@ export default function Page() {
                         Connected
                       </span>
                     </td>
+                    <td className="align-middle pe-3"></td>
                   </tr>
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
@@ -482,6 +489,7 @@ export default function Page() {
                         Connected
                       </span>
                     </td>
+                    <td className="align-middle pe-3"></td>
                   </tr>
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
@@ -514,6 +522,7 @@ export default function Page() {
                         Expiring
                       </span>
                     </td>
+                    <td className="align-middle pe-3"></td>
                   </tr>
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
@@ -546,6 +555,7 @@ export default function Page() {
                         Connected
                       </span>
                     </td>
+                    <td className="align-middle pe-3"></td>
                   </tr>
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
@@ -578,6 +588,7 @@ export default function Page() {
                         Expiring
                       </span>
                     </td>
+                    <td className="align-middle pe-3"></td>
                   </tr>
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
@@ -610,6 +621,7 @@ export default function Page() {
                         Connected
                       </span>
                     </td>
+                    <td className="align-middle pe-3"></td>
                   </tr>
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
@@ -642,6 +654,7 @@ export default function Page() {
                         Connected
                       </span>
                     </td>
+                    <td className="align-middle pe-3"></td>
                   </tr>
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
@@ -674,6 +687,7 @@ export default function Page() {
                         Connected
                       </span>
                     </td>
+                    <td className="align-middle pe-3"></td>
                   </tr>
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
@@ -706,6 +720,7 @@ export default function Page() {
                         Auth failed
                       </span>
                     </td>
+                    <td className="align-middle pe-3"></td>
                   </tr>
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
@@ -738,6 +753,7 @@ export default function Page() {
                         Not connected
                       </span>
                     </td>
+                    <td className="align-middle pe-3"></td>
                   </tr>
                 </tbody>
               </table>
@@ -770,6 +786,282 @@ export default function Page() {
                   Next
                   <span className="fas fa-chevron-right ms-2"></span>
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="card mt-4">
+        <div className="card-header border-bottom border-translucent py-3">
+          <h4 className="mb-0">
+            Settings and configuration
+          </h4>
+          <p className="text-body-tertiary fs-9 mb-0">
+            Everything configurable across the product, reachable without hunting for the page that owns it
+          </p>
+        </div>
+        <div className="card-body">
+          <h6 className="mt-3 mb-2 text-uppercase fs-10 text-body-tertiary">
+            Gateways
+          </h6>
+          <div className="row g-3">
+            <div className="col-12 col-md-6 col-xl-4">
+              <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
+                <h6 className="mb-1">
+                  Connect an API gateway
+                </h6>
+                <p className="text-body-tertiary fs-9 mb-2">
+                  Kong, APISIX, Tyk, Traefik, KrakenD, AWS API Gateway, Azure APIM, Apigee.
+                </p>
+                <div className="mt-auto d-flex align-items-center justify-content-between">
+                  <span className="badge badge-phoenix badge-phoenix-secondary fs-10">
+                    API Gateway
+                  </span>
+                  <button className="btn btn-phoenix-primary btn-sm" type="button" data-lhb-action="connectGateway">
+                    Configure
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="col-12 col-md-6 col-xl-4">
+              <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
+                <h6 className="mb-1">
+                  Install our gateway
+                </h6>
+                <p className="text-body-tertiary fs-9 mb-2">
+                  Run APISIX in front of your API and report from it.
+                </p>
+                <div className="mt-auto d-flex align-items-center justify-content-between">
+                  <span className="badge badge-phoenix badge-phoenix-secondary fs-10">
+                    API Gateway
+                  </span>
+                  <button className="btn btn-phoenix-primary btn-sm" type="button" data-lhb-action="onboardGateway">
+                    Configure
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <h6 className="mt-3 mb-2 text-uppercase fs-10 text-body-tertiary">
+            Cloud
+          </h6>
+          <div className="row g-3">
+            <div className="col-12 col-md-6 col-xl-4">
+              <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
+                <h6 className="mb-1">
+                  Connect AWS account
+                </h6>
+                <p className="text-body-tertiary fs-9 mb-2">
+                  Region, credentials, function prefixes and alert thresholds. Feeds Cloud Monitoring and Orchestration.
+                </p>
+                <div className="mt-auto d-flex align-items-center justify-content-between">
+                  <span className="badge badge-phoenix badge-phoenix-secondary fs-10">
+                    Cloud Monitoring
+                  </span>
+                  <button className="btn btn-phoenix-primary btn-sm" type="button" data-lhb-action="connectAwsAccount">
+                    Configure
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <h6 className="mt-3 mb-2 text-uppercase fs-10 text-body-tertiary">
+            Data and ETL
+          </h6>
+          <div className="row g-3">
+            <div className="col-12 col-md-6 col-xl-4">
+              <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
+                <h6 className="mb-1">
+                  Connect an ETL tool
+                </h6>
+                <p className="text-body-tertiary fs-9 mb-2">
+                  Talend, Boomi or Databricks.
+                </p>
+                <div className="mt-auto d-flex align-items-center justify-content-between">
+                  <span className="badge badge-phoenix badge-phoenix-secondary fs-10">
+                    ETL Monitoring
+                  </span>
+                  <button className="btn btn-phoenix-primary btn-sm" type="button" data-lhb-action="connectEtl">
+                    Configure
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="col-12 col-md-6 col-xl-4">
+              <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
+                <h6 className="mb-1">
+                  Connect Databricks
+                </h6>
+                <p className="text-body-tertiary fs-9 mb-2">
+                  Workspace host, SQL warehouse and token — also backs Data Observability.
+                </p>
+                <div className="mt-auto d-flex align-items-center justify-content-between">
+                  <span className="badge badge-phoenix badge-phoenix-secondary fs-10">
+                    Data Observability
+                  </span>
+                  <button className="btn btn-phoenix-primary btn-sm" type="button" data-lhb-action="connectDatabricks">
+                    Configure
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="col-12 col-md-6 col-xl-4">
+              <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
+                <h6 className="mb-1">
+                  Register a database
+                </h6>
+                <p className="text-body-tertiary fs-9 mb-2">
+                  Connection string, testable from the same dialog before it is saved.
+                </p>
+                <div className="mt-auto d-flex align-items-center justify-content-between">
+                  <span className="badge badge-phoenix badge-phoenix-secondary fs-10">
+                    Database Monitoring
+                  </span>
+                  <button className="btn btn-phoenix-primary btn-sm" type="button" data-lhb-action="addDatabase">
+                    Configure
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <h6 className="mt-3 mb-2 text-uppercase fs-10 text-body-tertiary">
+            AI
+          </h6>
+          <div className="row g-3">
+            <div className="col-12 col-md-6 col-xl-4">
+              <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
+                <h6 className="mb-1">
+                  Connect an AI tool
+                </h6>
+                <p className="text-body-tertiary fs-9 mb-2">
+                  Registers the collector agent that pushes AI telemetry, and mints its key.
+                </p>
+                <div className="mt-auto d-flex align-items-center justify-content-between">
+                  <span className="badge badge-phoenix badge-phoenix-secondary fs-10">
+                    AI Monitoring
+                  </span>
+                  <button className="btn btn-phoenix-primary btn-sm" type="button" data-lhb-action="connectAiTool">
+                    Configure
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="col-12 col-md-6 col-xl-4">
+              <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
+                <h6 className="mb-1">
+                  Register a model
+                </h6>
+                <p className="text-body-tertiary fs-9 mb-2">
+                  Track a custom or hosted model alongside the providers.
+                </p>
+                <div className="mt-auto d-flex align-items-center justify-content-between">
+                  <span className="badge badge-phoenix badge-phoenix-secondary fs-10">
+                    AI Models
+                  </span>
+                  <button className="btn btn-phoenix-primary btn-sm" type="button" data-lhb-action="registerModel">
+                    Configure
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="col-12 col-md-6 col-xl-4">
+              <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
+                <h6 className="mb-1">
+                  Model thresholds
+                </h6>
+                <p className="text-body-tertiary fs-9 mb-2">
+                  Error-rate and latency limits every model status badge is derived from.
+                </p>
+                <div className="mt-auto d-flex align-items-center justify-content-between">
+                  <span className="badge badge-phoenix badge-phoenix-secondary fs-10">
+                    AI Models
+                  </span>
+                  <button className="btn btn-phoenix-primary btn-sm" type="button" data-lhb-action="editThresholds">
+                    Configure
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="col-12 col-md-6 col-xl-4">
+              <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
+                <h6 className="mb-1">
+                  AI budget
+                </h6>
+                <p className="text-body-tertiary fs-9 mb-2">
+                  Monthly spend ceiling and who to warn as it is approached.
+                </p>
+                <div className="mt-auto d-flex align-items-center justify-content-between">
+                  <span className="badge badge-phoenix badge-phoenix-secondary fs-10">
+                    AI Cost and Usage
+                  </span>
+                  <button className="btn btn-phoenix-primary btn-sm" type="button" data-lhb-action="setAiBudget">
+                    Configure
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <h6 className="mt-3 mb-2 text-uppercase fs-10 text-body-tertiary">
+            Cost
+          </h6>
+          <div className="row g-3">
+            <div className="col-12 col-md-6 col-xl-4">
+              <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
+                <h6 className="mb-1">
+                  Cloud budget
+                </h6>
+                <p className="text-body-tertiary fs-9 mb-2">
+                  Per-account budget and the threshold that raises an alert.
+                </p>
+                <div className="mt-auto d-flex align-items-center justify-content-between">
+                  <span className="badge badge-phoenix badge-phoenix-secondary fs-10">
+                    Cloud Cost
+                  </span>
+                  <button className="btn btn-phoenix-primary btn-sm" type="button" data-lhb-action="addBudget">
+                    Configure
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <h6 className="mt-3 mb-2 text-uppercase fs-10 text-body-tertiary">
+            Alerting
+          </h6>
+          <div className="row g-3">
+            <div className="col-12 col-md-6 col-xl-4">
+              <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
+                <h6 className="mb-1">
+                  Routing rule
+                </h6>
+                <p className="text-body-tertiary fs-9 mb-2">
+                  Which team a matching alert pages, on which channels, and when it escalates.
+                </p>
+                <div className="mt-auto d-flex align-items-center justify-content-between">
+                  <span className="badge badge-phoenix badge-phoenix-secondary fs-10">
+                    Alert Management
+                  </span>
+                  <button className="btn btn-phoenix-primary btn-sm" type="button" data-lhb-action="routingRule">
+                    Configure
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="col-12 col-md-6 col-xl-4">
+              <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
+                <h6 className="mb-1">
+                  Automation rule
+                </h6>
+                <p className="text-body-tertiary fs-9 mb-2">
+                  Trigger and action for a remediation the platform runs itself.
+                </p>
+                <div className="mt-auto d-flex align-items-center justify-content-between">
+                  <span className="badge badge-phoenix badge-phoenix-secondary fs-10">
+                    Automation
+                  </span>
+                  <button className="btn btn-phoenix-primary btn-sm" type="button" data-lhb-action="automationRule">
+                    Configure
+                  </button>
+                </div>
               </div>
             </div>
           </div>

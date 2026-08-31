@@ -44,7 +44,7 @@ for (const file of pugFiles(new URL('../src/pug', import.meta.url).pathname)) {
   // data-lhb-action attribute written straight onto a button, or as an entry in the
   // Integrations page's settings catalogue, whose buttons bind the key from a loop
   // variable and so carry no literal attribute to match.
-  for (const m of text.matchAll(/[sS]econdaryActionKey: '([^']+)'|actionKey: '([^']+)'|data-lhb-action='([^']+)'|action: '([^']+)', page:/g)) {
+  for (const m of text.matchAll(/[sS]econdaryActionKey: '([^']+)'|actionKey: '([^']+)'|data-lhb-action='([^']+)'|page: '[^']+', action: '([^']+)'/g)) {
     const key = m[1] ?? m[2] ?? m[3] ?? m[4];
     used++;
     if (!known.has(key)) missing.push(`${file}: ${key}`);
@@ -55,7 +55,7 @@ for (const file of pugFiles(new URL('../src/pug', import.meta.url).pathname)) {
 // legitimately land before the page that uses it.
 const referenced = new Set();
 for (const file of pugFiles(new URL('../src/pug', import.meta.url).pathname)) {
-  for (const m of readFileSync(file, 'utf8').matchAll(/[sS]econdaryActionKey: '([^']+)'|actionKey: '([^']+)'|data-lhb-action='([^']+)'|action: '([^']+)', page:/g)) {
+  for (const m of readFileSync(file, 'utf8').matchAll(/[sS]econdaryActionKey: '([^']+)'|actionKey: '([^']+)'|data-lhb-action='([^']+)'|page: '[^']+', action: '([^']+)'/g)) {
     referenced.add(m[1] ?? m[2] ?? m[3] ?? m[4]);
   }
 }
