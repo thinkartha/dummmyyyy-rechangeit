@@ -72,12 +72,12 @@ export default function Page() {
               AI Monitoring
             </h2>
             <h5 className="text-body-tertiary fw-semibold mb-0">
-              Usage, latency, failures, and spend across AI developer tools and models
+              Usage, latency, failures, and spend for the AI traffic the gateway already sees — no tool registration needed
             </h5>
           </div>
           <div className="col-auto">
-            <button className="btn btn-primary" type="button" data-lhb-action="connectAiTool">
-              Connect AI tool
+            <button className="btn btn-primary" type="button" data-lhb-action="refreshData">
+              Refresh
             </button>
           </div>
         </div>
