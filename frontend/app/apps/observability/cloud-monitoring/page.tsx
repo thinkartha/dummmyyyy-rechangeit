@@ -162,19 +162,13 @@ export default function Page() {
                 Configure cloud accounts
               </h4>
               <p className="text-body-tertiary fs-9 mb-0">
-                Connect multiple AWS / GCP / Azure accounts; LoveHeartBeat monitors all of them in one place.
+                Accounts are connected under Integrations → Cloud accounts; every one of them is monitored here.
               </p>
             </div>
             <div className="col-auto">
-              <button className="btn btn-sm btn-primary" type="button" data-lhb-action="connectAwsAccount">
-                Connect AWS account
-              </button>
-              <button className="btn btn-sm btn-phoenix-secondary ms-2" type="button" data-lhb-action="connectGcp">
-                Connect GCP
-              </button>
-              <button className="btn btn-sm btn-phoenix-secondary ms-2" type="button" data-lhb-action="connectAzure">
-                Connect Azure
-              </button>
+              <a className="btn btn-sm btn-primary" href="/apps/platform/integrations/cloud/">
+                Connect an account
+              </a>
             </div>
           </div>
         </div>

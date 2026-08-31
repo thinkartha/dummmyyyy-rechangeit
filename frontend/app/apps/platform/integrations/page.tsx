@@ -791,161 +791,157 @@ export default function Page() {
           </div>
         </div>
       </div>
-      <div className="card mt-4">
+      <div className="card mt-4 mb-4">
         <div className="card-header border-bottom border-translucent py-3">
           <h4 className="mb-0">
-            Settings and configuration
+            Connect something
           </h4>
           <p className="text-body-tertiary fs-9 mb-0">
-            Everything configurable across the product, reachable without hunting for the page that owns it
+            Every integration that needs credentials or an install, each on its own page
           </p>
         </div>
         <div className="card-body">
-          <h6 className="mt-3 mb-2 text-uppercase fs-10 text-body-tertiary">
-            Gateways
-          </h6>
           <div className="row g-3">
             <div className="col-12 col-md-6 col-xl-4">
-              <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
-                <h6 className="mb-1">
-                  Connect an API gateway
-                </h6>
-                <p className="text-body-tertiary fs-9 mb-2">
-                  Kong, APISIX, Tyk, Traefik, KrakenD, AWS API Gateway, Azure APIM, Apigee.
-                </p>
-                <div className="mt-auto d-flex align-items-center justify-content-between">
-                  <span className="badge badge-phoenix badge-phoenix-secondary fs-10">
-                    API Gateway
-                  </span>
-                  <button className="btn btn-phoenix-primary btn-sm" type="button" data-lhb-action="connectGateway">
-                    Configure
-                  </button>
+              <a className="text-decoration-none text-body-emphasis" href="/apps/platform/integrations/api-gateway/">
+                <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
+                  <div className="d-flex align-items-center mb-2">
+                    <span className="fa-solid me-2 fa-plug text-primary"></span>
+                    <h6 className="mb-0">
+                      API gateway
+                    </h6>
+                  </div>
+                  <p className="text-body-tertiary fs-9 mb-2">
+                    Connect Kong, APISIX, Tyk, Traefik, KrakenD, AWS API Gateway, Azure APIM or Apigee — or install ours in front of your API.
+                  </p>
+                  <div className="mt-auto d-flex align-items-center justify-content-between">
+                    <span className="text-body-tertiary fs-10">
+                      API Gateway · API Monitoring · Traces
+                    </span>
+                    <span className="fa-solid fa-arrow-right text-body-quaternary"></span>
+                  </div>
                 </div>
-              </div>
+              </a>
             </div>
             <div className="col-12 col-md-6 col-xl-4">
-              <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
-                <h6 className="mb-1">
-                  Install our gateway
-                </h6>
-                <p className="text-body-tertiary fs-9 mb-2">
-                  Run APISIX in front of your API and report from it.
-                </p>
-                <div className="mt-auto d-flex align-items-center justify-content-between">
-                  <span className="badge badge-phoenix badge-phoenix-secondary fs-10">
-                    API Gateway
-                  </span>
-                  <button className="btn btn-phoenix-primary btn-sm" type="button" data-lhb-action="onboardGateway">
-                    Configure
-                  </button>
+              <a className="text-decoration-none text-body-emphasis" href="/apps/platform/integrations/cloud/">
+                <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
+                  <div className="d-flex align-items-center mb-2">
+                    <span className="fa-solid me-2 fa-cloud text-warning"></span>
+                    <h6 className="mb-0">
+                      Cloud accounts
+                    </h6>
+                  </div>
+                  <p className="text-body-tertiary fs-9 mb-2">
+                    AWS credentials, function prefixes and anomaly thresholds. GCP and Azure have no collector yet.
+                  </p>
+                  <div className="mt-auto d-flex align-items-center justify-content-between">
+                    <span className="text-body-tertiary fs-10">
+                      Cloud Monitoring · Orchestration · Cloud Cost
+                    </span>
+                    <span className="fa-solid fa-arrow-right text-body-quaternary"></span>
+                  </div>
                 </div>
-              </div>
+              </a>
+            </div>
+            <div className="col-12 col-md-6 col-xl-4">
+              <a className="text-decoration-none text-body-emphasis" href="/apps/platform/integrations/etl/">
+                <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
+                  <div className="d-flex align-items-center mb-2">
+                    <span className="fa-solid me-2 fa-diagram-project text-info"></span>
+                    <h6 className="mb-0">
+                      ETL tools
+                    </h6>
+                  </div>
+                  <p className="text-body-tertiary fs-9 mb-2">
+                    Talend, Boomi and Databricks credentials, each testable from its own card.
+                  </p>
+                  <div className="mt-auto d-flex align-items-center justify-content-between">
+                    <span className="text-body-tertiary fs-10">
+                      ETL Monitoring · Orchestration
+                    </span>
+                    <span className="fa-solid fa-arrow-right text-body-quaternary"></span>
+                  </div>
+                </div>
+              </a>
+            </div>
+            <div className="col-12 col-md-6 col-xl-4">
+              <a className="text-decoration-none text-body-emphasis" href="/apps/platform/integrations/databases/">
+                <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
+                  <div className="d-flex align-items-center mb-2">
+                    <span className="fa-solid me-2 fa-database text-danger"></span>
+                    <h6 className="mb-0">
+                      Databases
+                    </h6>
+                  </div>
+                  <p className="text-body-tertiary fs-9 mb-2">
+                    Register a database by connection string, tested before it is saved.
+                  </p>
+                  <div className="mt-auto d-flex align-items-center justify-content-between">
+                    <span className="text-body-tertiary fs-10">
+                      Database Monitoring
+                    </span>
+                    <span className="fa-solid fa-arrow-right text-body-quaternary"></span>
+                  </div>
+                </div>
+              </a>
+            </div>
+            <div className="col-12 col-md-6 col-xl-4">
+              <a className="text-decoration-none text-body-emphasis" href="/apps/platform/integrations/ai-tools/">
+                <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
+                  <div className="d-flex align-items-center mb-2">
+                    <span className="fa-solid me-2 fa-robot text-success"></span>
+                    <h6 className="mb-0">
+                      AI tools
+                    </h6>
+                  </div>
+                  <p className="text-body-tertiary fs-9 mb-2">
+                    Register the collector agent that pushes AI telemetry, and mint its key.
+                  </p>
+                  <div className="mt-auto d-flex align-items-center justify-content-between">
+                    <span className="text-body-tertiary fs-10">
+                      AI Monitoring · AI Cost and Usage
+                    </span>
+                    <span className="fa-solid fa-arrow-right text-body-quaternary"></span>
+                  </div>
+                </div>
+              </a>
+            </div>
+            <div className="col-12 col-md-6 col-xl-4">
+              <a className="text-decoration-none text-body-emphasis" href="/apps/platform/databricks/">
+                <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
+                  <div className="d-flex align-items-center mb-2">
+                    <span className="fa-solid me-2 fa-table text-secondary"></span>
+                    <h6 className="mb-0">
+                      Databricks
+                    </h6>
+                  </div>
+                  <p className="text-body-tertiary fs-9 mb-2">
+                    Workspace host, SQL warehouse and token — the same connection backs table health and job runs.
+                  </p>
+                  <div className="mt-auto d-flex align-items-center justify-content-between">
+                    <span className="text-body-tertiary fs-10">
+                      Data Observability · ETL Monitoring
+                    </span>
+                    <span className="fa-solid fa-arrow-right text-body-quaternary"></span>
+                  </div>
+                </div>
+              </a>
             </div>
           </div>
-          <h6 className="mt-3 mb-2 text-uppercase fs-10 text-body-tertiary">
-            Cloud
-          </h6>
+        </div>
+      </div>
+      <div className="card">
+        <div className="card-header border-bottom border-translucent py-3">
+          <h4 className="mb-0">
+            Other settings
+          </h4>
+          <p className="text-body-tertiary fs-9 mb-0">
+            Thresholds, budgets and rules — configuration for sources that are already connected
+          </p>
+        </div>
+        <div className="card-body">
           <div className="row g-3">
-            <div className="col-12 col-md-6 col-xl-4">
-              <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
-                <h6 className="mb-1">
-                  Connect AWS account
-                </h6>
-                <p className="text-body-tertiary fs-9 mb-2">
-                  Region, credentials, function prefixes and alert thresholds. Feeds Cloud Monitoring and Orchestration.
-                </p>
-                <div className="mt-auto d-flex align-items-center justify-content-between">
-                  <span className="badge badge-phoenix badge-phoenix-secondary fs-10">
-                    Cloud Monitoring
-                  </span>
-                  <button className="btn btn-phoenix-primary btn-sm" type="button" data-lhb-action="connectAwsAccount">
-                    Configure
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-          <h6 className="mt-3 mb-2 text-uppercase fs-10 text-body-tertiary">
-            Data and ETL
-          </h6>
-          <div className="row g-3">
-            <div className="col-12 col-md-6 col-xl-4">
-              <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
-                <h6 className="mb-1">
-                  Connect an ETL tool
-                </h6>
-                <p className="text-body-tertiary fs-9 mb-2">
-                  Talend, Boomi or Databricks.
-                </p>
-                <div className="mt-auto d-flex align-items-center justify-content-between">
-                  <span className="badge badge-phoenix badge-phoenix-secondary fs-10">
-                    ETL Monitoring
-                  </span>
-                  <button className="btn btn-phoenix-primary btn-sm" type="button" data-lhb-action="connectEtl">
-                    Configure
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div className="col-12 col-md-6 col-xl-4">
-              <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
-                <h6 className="mb-1">
-                  Connect Databricks
-                </h6>
-                <p className="text-body-tertiary fs-9 mb-2">
-                  Workspace host, SQL warehouse and token — also backs Data Observability.
-                </p>
-                <div className="mt-auto d-flex align-items-center justify-content-between">
-                  <span className="badge badge-phoenix badge-phoenix-secondary fs-10">
-                    Data Observability
-                  </span>
-                  <button className="btn btn-phoenix-primary btn-sm" type="button" data-lhb-action="connectDatabricks">
-                    Configure
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div className="col-12 col-md-6 col-xl-4">
-              <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
-                <h6 className="mb-1">
-                  Register a database
-                </h6>
-                <p className="text-body-tertiary fs-9 mb-2">
-                  Connection string, testable from the same dialog before it is saved.
-                </p>
-                <div className="mt-auto d-flex align-items-center justify-content-between">
-                  <span className="badge badge-phoenix badge-phoenix-secondary fs-10">
-                    Database Monitoring
-                  </span>
-                  <button className="btn btn-phoenix-primary btn-sm" type="button" data-lhb-action="addDatabase">
-                    Configure
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-          <h6 className="mt-3 mb-2 text-uppercase fs-10 text-body-tertiary">
-            AI
-          </h6>
-          <div className="row g-3">
-            <div className="col-12 col-md-6 col-xl-4">
-              <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
-                <h6 className="mb-1">
-                  Connect an AI tool
-                </h6>
-                <p className="text-body-tertiary fs-9 mb-2">
-                  Registers the collector agent that pushes AI telemetry, and mints its key.
-                </p>
-                <div className="mt-auto d-flex align-items-center justify-content-between">
-                  <span className="badge badge-phoenix badge-phoenix-secondary fs-10">
-                    AI Monitoring
-                  </span>
-                  <button className="btn btn-phoenix-primary btn-sm" type="button" data-lhb-action="connectAiTool">
-                    Configure
-                  </button>
-                </div>
-              </div>
-            </div>
             <div className="col-12 col-md-6 col-xl-4">
               <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
                 <h6 className="mb-1">
@@ -1000,11 +996,6 @@ export default function Page() {
                 </div>
               </div>
             </div>
-          </div>
-          <h6 className="mt-3 mb-2 text-uppercase fs-10 text-body-tertiary">
-            Cost
-          </h6>
-          <div className="row g-3">
             <div className="col-12 col-md-6 col-xl-4">
               <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
                 <h6 className="mb-1">
@@ -1023,11 +1014,6 @@ export default function Page() {
                 </div>
               </div>
             </div>
-          </div>
-          <h6 className="mt-3 mb-2 text-uppercase fs-10 text-body-tertiary">
-            Alerting
-          </h6>
-          <div className="row g-3">
             <div className="col-12 col-md-6 col-xl-4">
               <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
                 <h6 className="mb-1">

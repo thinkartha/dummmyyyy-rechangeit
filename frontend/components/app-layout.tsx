@@ -37,7 +37,21 @@ const NAV_GROUPS: Record<string, string[]> = {
     "/apps/platform/command-center/",
     "/apps/platform/admin/",
     "/apps/platform/integrations/",
-    "/apps/platform/health-connectivity/",
+    "/apps/platform/integrations/api-gateway/",
+    "/apps/platform/integrations/cloud/",
+    "/apps/platform/integrations/etl/",
+    "/apps/platform/integrations/databases/",
+    "/apps/platform/integrations/ai-tools/",
+    "/apps/platform/databricks/",
+    "/apps/platform/health-connectivity/"
+  ],
+  "nv-integrations": [
+    "/apps/platform/integrations/",
+    "/apps/platform/integrations/api-gateway/",
+    "/apps/platform/integrations/cloud/",
+    "/apps/platform/integrations/etl/",
+    "/apps/platform/integrations/databases/",
+    "/apps/platform/integrations/ai-tools/",
     "/apps/platform/databricks/"
   ],
   "nv-organization": [
@@ -410,30 +424,97 @@ export default function AppLayout({
                             {/* more inner pages */}
                           </li>
                           <li className="nav-item">
-                            <a className={'nav-link' + (path === '/apps/platform/integrations/' ? ' active' : '')} href="/apps/platform/integrations/">
+                            <a className={'nav-link dropdown-indicator'} href="#nv-integrations" data-bs-toggle="collapse" aria-expanded={open('nv-integrations')} aria-controls="nv-integrations">
                               <div className="d-flex align-items-center">
+                                <div className="dropdown-indicator-icon-wrapper">
+                                  <span className="fas fa-caret-right dropdown-indicator-icon"></span>
+                                </div>
                                 <span className="nav-link-text">
                                   Integrations
                                 </span>
                               </div>
                             </a>
                             {/* more inner pages */}
+                            <div className="parent-wrapper">
+                              <ul className={'nav collapse parent' + (open('nv-integrations') ? ' show' : '')} data-bs-parent="#platform" id="nv-integrations">
+                                <li className="nav-item">
+                                  <a className={'nav-link' + (path === '/apps/platform/integrations/' ? ' active' : '')} href="/apps/platform/integrations/">
+                                    <div className="d-flex align-items-center">
+                                      <span className="nav-link-text">
+                                        Overview
+                                      </span>
+                                    </div>
+                                  </a>
+                                  {/* more inner pages */}
+                                </li>
+                                <li className="nav-item">
+                                  <a className={'nav-link' + (path === '/apps/platform/integrations/api-gateway/' ? ' active' : '')} href="/apps/platform/integrations/api-gateway/">
+                                    <div className="d-flex align-items-center">
+                                      <span className="nav-link-text">
+                                        API gateway
+                                      </span>
+                                    </div>
+                                  </a>
+                                  {/* more inner pages */}
+                                </li>
+                                <li className="nav-item">
+                                  <a className={'nav-link' + (path === '/apps/platform/integrations/cloud/' ? ' active' : '')} href="/apps/platform/integrations/cloud/">
+                                    <div className="d-flex align-items-center">
+                                      <span className="nav-link-text">
+                                        Cloud accounts
+                                      </span>
+                                    </div>
+                                  </a>
+                                  {/* more inner pages */}
+                                </li>
+                                <li className="nav-item">
+                                  <a className={'nav-link' + (path === '/apps/platform/integrations/etl/' ? ' active' : '')} href="/apps/platform/integrations/etl/">
+                                    <div className="d-flex align-items-center">
+                                      <span className="nav-link-text">
+                                        ETL tools
+                                      </span>
+                                    </div>
+                                  </a>
+                                  {/* more inner pages */}
+                                </li>
+                                <li className="nav-item">
+                                  <a className={'nav-link' + (path === '/apps/platform/integrations/databases/' ? ' active' : '')} href="/apps/platform/integrations/databases/">
+                                    <div className="d-flex align-items-center">
+                                      <span className="nav-link-text">
+                                        Databases
+                                      </span>
+                                    </div>
+                                  </a>
+                                  {/* more inner pages */}
+                                </li>
+                                <li className="nav-item">
+                                  <a className={'nav-link' + (path === '/apps/platform/integrations/ai-tools/' ? ' active' : '')} href="/apps/platform/integrations/ai-tools/">
+                                    <div className="d-flex align-items-center">
+                                      <span className="nav-link-text">
+                                        AI tools
+                                      </span>
+                                    </div>
+                                  </a>
+                                  {/* more inner pages */}
+                                </li>
+                                <li className="nav-item">
+                                  <a className={'nav-link' + (path === '/apps/platform/databricks/' ? ' active' : '')} href="/apps/platform/databricks/">
+                                    <div className="d-flex align-items-center">
+                                      <span className="nav-link-text">
+                                        Databricks
+                                      </span>
+                                    </div>
+                                  </a>
+                                  {/* more inner pages */}
+                                </li>
+                              </ul>
+                            </div>
                           </li>
                           <li className="nav-item">
                             <a className={'nav-link' + (path === '/apps/platform/health-connectivity/' ? ' active' : '')} href="/apps/platform/health-connectivity/">
                               <div className="d-flex align-items-center">
                                 <span className="nav-link-text">
                                   Health connectivity
-                                </span>
-                              </div>
-                            </a>
-                            {/* more inner pages */}
-                          </li>
-                          <li className="nav-item">
-                            <a className={'nav-link' + (path === '/apps/platform/databricks/' ? ' active' : '')} href="/apps/platform/databricks/">
-                              <div className="d-flex align-items-center">
-                                <span className="nav-link-text">
-                                  Databricks
                                 </span>
                               </div>
                             </a>

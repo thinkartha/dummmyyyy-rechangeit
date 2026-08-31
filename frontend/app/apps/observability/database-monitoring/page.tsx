@@ -70,9 +70,9 @@ export default function Page() {
             </h5>
           </div>
           <div className="col-auto">
-            <button className="btn btn-primary" type="button" data-lhb-action="addDatabase">
-              Add database
-            </button>
+            <a className="btn btn-phoenix-primary" href="/apps/platform/integrations/databases/">
+              Configure in Integrations
+            </a>
           </div>
         </div>
       </div>

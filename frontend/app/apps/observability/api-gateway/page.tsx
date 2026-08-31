@@ -69,13 +69,10 @@ export default function Page() {
               Monitor AWS API Gateway, Azure API Management, and GCP Apigee across accounts
             </h5>
           </div>
-          <div className="col-auto d-flex gap-2">
-            <button className="btn btn-phoenix-secondary" type="button" data-lhb-action="onboardGateway">
-              Install our gateway
-            </button>
-            <button className="btn btn-primary" type="button" data-lhb-action="connectGateway">
-              Connect gateway
-            </button>
+          <div className="col-auto">
+            <a className="btn btn-phoenix-primary" href="/apps/platform/integrations/api-gateway/">
+              Configure in Integrations
+            </a>
           </div>
         </div>
       </div>
