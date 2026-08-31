@@ -16,6 +16,7 @@ from typing import Any
 
 from shared.collector.cloudevents import CloudEvent
 from . import config_store
+from . import mock_data
 
 INTEGRATION_KEY = "alert-management"
 PRIORITIES = {"P1", "P2", "P3", "P4"}
@@ -77,6 +78,18 @@ def _seed() -> dict[str, Any]:
     }
 
 
+def _starting_state() -> dict[str, Any]:
+    """What a tenant that has configured nothing starts with.
+
+    The seeded routing rules, SLA policy and maintenance window are demo content: with
+    PINGHOLD_MOCK_DATA=0 a fresh tenant has none of them, and the alert pages show an
+    empty state rather than rules nobody wrote.
+    """
+    if mock_data.enabled():
+        return _seed()
+    return {key: ([] if isinstance(value, list) else value) for key, value in _seed().items()}
+
+
 def _load(tenant_id: str) -> dict[str, Any]:
     raw = config_store.get_config(tenant_id, INTEGRATION_KEY)
     if raw:
@@ -85,11 +98,11 @@ def _load(tenant_id: str) -> dict[str, Any]:
         except json.JSONDecodeError:
             state = None
         if isinstance(state, dict):
-            seeded = _seed()
+            seeded = _starting_state()
             for key, value in seeded.items():
                 state.setdefault(key, value)
             return state
-    return deepcopy(_seed())
+    return deepcopy(_starting_state())
 
 
 def _store(tenant_id: str, state: dict[str, Any]) -> None:

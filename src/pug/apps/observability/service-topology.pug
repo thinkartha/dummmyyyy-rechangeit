@@ -26,7 +26,7 @@ block content
 
   .row.g-4.mb-4
     .col-12.col-lg-7
-      .card.h-100
+      .card.h-100(data-mock-block)
         .card-header.border-bottom.border-translucent.py-3
           h4.mb-0 Critical paths
           p.text-body-tertiary.fs-9.mb-0 The chains a single failure takes the most services down with
@@ -44,7 +44,7 @@ block content
               p.text-body-tertiary.fs-10.mb-0= path.note
 
     .col-12.col-lg-5
-      .card.h-100
+      .card.h-100(data-mock-block)
         .card-header.border-bottom.border-translucent.py-3
           h4.mb-0 Most depended on
           p.text-body-tertiary.fs-9.mb-0 Fan-in: how many services break if this one does

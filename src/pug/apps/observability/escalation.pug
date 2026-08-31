@@ -53,7 +53,7 @@ block content
 
   .row.g-4.my-0
     .col-12.col-xl-7
-      .card.h-100
+      .card.h-100(data-mock-block)
         .card-header.border-bottom.border-translucent.py-3
           h4.mb-0 Escalation paths
           p.text-body-tertiary.fs-9.mb-0 Each level is given its timeout to acknowledge before the next one is paged
@@ -111,7 +111,7 @@ block content
             |  is where that number is set.
 
     .col-12.col-xl-5
-      .card.h-100
+      .card.h-100(data-mock-block)
         .card-header.border-bottom.border-translucent.py-3
           h4.mb-0 Approval workflows
           p.text-body-tertiary.fs-9.mb-0 What automation may not do on its own
@@ -154,7 +154,7 @@ block content
                   td 120m
                   td 0
 
-  .card
+  .card(data-mock-block)
     .card-header.border-bottom.border-translucent.py-3
       h4.mb-0 Escalation analytics
       p.text-body-tertiary.fs-9.mb-0 How far up the chain incidents actually travelled, last 5 days

@@ -33,13 +33,15 @@ Parameters:
       Comma-separated Elasticsearch/OpenSearch URLs backing the log, metric and trace
       search endpoints. Optional: when empty, deployed search endpoints return empty
       results instead of trying localhost inside the Lambda container.
-  DemoAgents:
+  MockData:
     Type: String
     Default: "0"
     AllowedValues: ["0", "1"]
     Description: >
-      Set to 1 to serve seeded agent telemetry instead of DynamoDB records, for demos.
-      The dashboard labels it "Demo data". Use 0 in production.
+      Set to 1 to serve mock data for demos: seeded agent telemetry, the starting
+      automation rules and models, the starting alert routing/SLA/maintenance state, and
+      the demo RCA scenario. 0 — the default, and what production runs — serves none of
+      it; pages that have no real data show an empty state instead.
   DatabricksHost:
     Type: String
     Default: ""
@@ -555,7 +557,7 @@ Resources:
           # which keeps the plaintext out of the function configuration and lets the
           # secret be rotated without redeploying this stack.
           PINGHOLD_SECRETS_ARN: !Ref AppSecrets
-          PINGHOLD_DEMO_AGENTS: !Ref DemoAgents
+          PINGHOLD_MOCK_DATA: !Ref MockData
           PINGHOLD_DATABRICKS_HOST: !Ref DatabricksHost
           PINGHOLD_DATABRICKS_WAREHOUSE_ID: !Ref DatabricksWarehouseId
           # Resolved at deploy time from Secrets Manager, so the token never appears

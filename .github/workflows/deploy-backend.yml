@@ -15,8 +15,8 @@ on:
         description: "Frontend origin for API Gateway CORS"
         required: false
         default: "https://loveheartbeat.com"
-      demo_agents:
-        description: "Set to 1 for seeded agent observations/evals; 0 uses DynamoDB telemetry"
+      mock_data:
+        description: "Set to 1 to serve mock data (agent seed, starting rules, demo RCA); 0 serves only real data"
         required: false
         default: "0"
   workflow_call:
@@ -28,7 +28,7 @@ on:
         type: string
         required: false
         default: ""
-      demo_agents:
+      mock_data:
         type: string
         required: false
         default: "0"
@@ -120,13 +120,13 @@ jobs:
         env:
           DEPLOY_ELASTICSEARCH_HOSTS: ${{ secrets.ELASTICSEARCH_HOSTS }}
           # The fallback also covers callers that explicitly pass "".
-          DEPLOY_DEMO_AGENTS: ${{ inputs.demo_agents || '0' }}
+          DEPLOY_MOCK_DATA: ${{ inputs.mock_data || '0' }}
         run: |
           STAGE="${{ inputs.stage || 'prod' }}"
           FRONTEND_URL="${{ inputs.frontend_url || steps.frontend-config.outputs.url || '*' }}"
 
-          if [[ "$DEPLOY_DEMO_AGENTS" != "0" && "$DEPLOY_DEMO_AGENTS" != "1" ]]; then
-            echo "demo_agents must be 0 or 1" >&2
+          if [[ "$DEPLOY_MOCK_DATA" != "0" && "$DEPLOY_MOCK_DATA" != "1" ]]; then
+            echo "mock_data must be 0 or 1" >&2
             exit 1
           fi
 
@@ -137,7 +137,7 @@ jobs:
           [[ -n "$DEPLOY_ELASTICSEARCH_HOSTS" ]] && OVERRIDES+=("ElasticsearchHosts=${DEPLOY_ELASTICSEARCH_HOSTS}")
           # Always pass this one so changing 1 back to 0 disables seeded data on
           # an existing stack instead of CloudFormation retaining its prior value.
-          OVERRIDES+=("DemoAgents=${DEPLOY_DEMO_AGENTS}")
+          OVERRIDES+=("MockData=${DEPLOY_MOCK_DATA}")
 
           sam deploy \
             --template-file ${{ env.SAM_BUILD_TEMPLATE_DIR }}/template.yaml \

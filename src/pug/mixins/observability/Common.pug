@@ -24,6 +24,9 @@ mixin ObsPageHeader(config)
           if config.action
             button.btn.btn-primary(type='button' data-lhb-action=config.actionKey)= config.action
 
+//- The numbers in these cards are illustrative, not measured: nothing hydrates them.
+//- `data-obs-stat` lets live-data.js blank them when mock data is off, so a page never
+//- shows a fabricated total beside a table that correctly says it has no data.
 mixin ObsStatCards(stats)
   .row.g-3.mb-6
     each stat in stats
@@ -33,8 +36,8 @@ mixin ObsStatCards(stats)
             .d-flex.justify-content-between.align-items-start
               div
                 h6.text-body-tertiary.mb-2= stat.label
-                h3.mb-0= stat.value
-              span.badge.badge-phoenix(class=`badge-phoenix-${stat.badge || 'primary'}`)= stat.delta
+                h3.mb-0(data-obs-stat)= stat.value
+              span.badge.badge-phoenix(class=`badge-phoenix-${stat.badge || 'primary'}` data-obs-stat-delta)= stat.delta
 
 mixin ObsToolTable(config)
   -

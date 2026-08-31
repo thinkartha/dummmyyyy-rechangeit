@@ -1,6 +1,6 @@
 """Seed telemetry for demoing the AI agent dashboard without live agents.
 
-Enabled by PINGHOLD_DEMO_AGENTS=1. Off by default, so a deployment that forgets to set
+Enabled by PINGHOLD_MOCK_DATA=1. Off by default, so a deployment that forgets to set
 it shows real data or an honest empty state — never this.
 
 The seed produces *raw Phoenix-shaped spans* and *raw APISIX Prometheus text*, not
@@ -15,10 +15,11 @@ relative to now, so the 24h charts are always populated.
 
 from __future__ import annotations
 
-import os
 import random
 from datetime import datetime, timedelta, timezone
 from typing import Any
+
+from . import mock_data
 
 # Fixed seed: a demo that reshuffles between takes is a bad demo.
 _SEED = 20260803
@@ -26,7 +27,8 @@ _WINDOW_HOURS = 24
 
 
 def enabled() -> bool:
-    return os.getenv("PINGHOLD_DEMO_AGENTS", "").strip().lower() in {"1", "true", "yes", "on"}
+    """Kept as the name the agent paths call; the switch itself is shared now."""
+    return mock_data.enabled()
 
 
 # name, model, provider, share of traffic, error rate, latency band (ms), cost per 1k tokens

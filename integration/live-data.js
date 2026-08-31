@@ -11,6 +11,13 @@
  * entry to SOURCES, not writing another fetch-and-render loop.
  */
 
+/* Mock data is off unless the deployment says otherwise — same switch as the backend's
+   PINGHOLD_MOCK_DATA, written into runtime-config.js by the frontend deploy. With it
+   off the sample rows every page ships as markup are cleared before the first paint, so
+   nothing fabricated is ever on screen: a tenant with no data sees an empty state. */
+const MOCK_DATA =
+  typeof window !== 'undefined' && String(window.__MOCK_DATA__ || '0') === '1';
+
 const BADGES = {
   healthy: 'success', ok: 'success', passing: 'success', online: 'success',
   active: 'success', succeeded: 'success', enabled: 'success', up: 'success',
@@ -911,6 +918,26 @@ function render(root, rows, plain) {
     .join('');
 }
 
+/**
+ * Wipe the sample rows a page ships as markup and say the table is empty.
+ *
+ * The samples were the fallback for an unreachable API. With mock data off they are the
+ * wrong fallback: eight realistic rows read as real no matter what the badge says.
+ */
+function clearSamples(root) {
+  const tbody = root.querySelector('tbody.list') || root.querySelector('tbody');
+  if (!tbody || tbody.dataset.lhbCleared === '1') return;
+  tbody.dataset.lhbCleared = '1';
+  const columns = root.querySelectorAll('thead th').length || 1;
+  const cell = document.createElement('td');
+  cell.className = 'text-center text-body-tertiary fs-9 py-4';
+  cell.colSpan = columns;
+  cell.textContent = 'Nothing here yet.';
+  const row = document.createElement('tr');
+  row.appendChild(cell);
+  tbody.replaceChildren(row);
+}
+
 /** A small badge on the card header saying where the numbers came from. */
 function mark(root, text, tone) {
   const header = root.querySelector('.card-header');
@@ -936,18 +963,28 @@ function mark(root, text, tone) {
  * live ones — which is the whole reason this badge exists.
  */
 export async function hydrate(api) {
+  /* Stat cards are markup, not measurements — nothing loads them. With mock data off
+     they would be the last fabricated numbers left on the page, so blank them. */
+  if (!MOCK_DATA) {
+    for (const el of document.querySelectorAll('[data-obs-stat]')) el.textContent = '—';
+    for (const el of document.querySelectorAll('[data-obs-stat-delta]')) el.textContent = 'no data';
+    /* Cards written by hand from invented rows — a trace waterfall, a critical-path
+       list, "recent failures". Nothing loads them, so with mock data off they are
+       removed rather than emptied: an always-blank card is its own kind of lie. */
+    for (const el of document.querySelectorAll('[data-mock-block]')) el.remove();
+  }
   const roots = document.querySelectorAll('[data-live-table]');
   await Promise.all(Array.from(roots).map(async (root) => {
     const source = SOURCES[root.dataset.liveTable];
     if (!source) return;
+    if (!MOCK_DATA) clearSamples(root);
     mark(root, 'Loading…', 'info');
     try {
       const rows = source.rows(await source.load(api));
       if (!rows.length) {
-        // The call succeeded and the tenant genuinely has nothing registered yet. The
-        // sample rows stay so the page still shows its shape, but the badge has to say
-        // so plainly — "No data" beside eight realistic-looking rows reads as live.
-        mark(root, 'Sample data — none registered yet', 'warning');
+        // The call succeeded and the tenant genuinely has nothing registered yet.
+        mark(root, MOCK_DATA ? 'Sample data — none registered yet' : 'No data yet',
+             MOCK_DATA ? 'warning' : 'secondary');
         return;
       }
       render(root, rows, source.plain);
@@ -956,7 +993,7 @@ export async function hydrate(api) {
       const status = /API (\d{3})/.exec(err.message)?.[1];
       if (status === '401' || status === '403') mark(root, 'Sign in for live data', 'warning');
       else if (status === '501' || status === '503') mark(root, 'Not connected', 'secondary');
-      else mark(root, 'Sample data — API unreachable', 'warning');
+      else mark(root, MOCK_DATA ? 'Sample data — API unreachable' : 'API unreachable', 'warning');
     }
   }));
 }

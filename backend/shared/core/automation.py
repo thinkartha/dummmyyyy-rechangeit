@@ -20,6 +20,7 @@ from copy import deepcopy
 from typing import Any
 
 from . import config_store
+from . import mock_data
 from .automation_seed import seed_state
 
 log = logging.getLogger("pinghold.automation")
@@ -60,7 +61,15 @@ def _load(tenant_id: str) -> dict[str, Any]:
         else:
             if isinstance(state, dict) and "rules" in state:
                 return state
-    return deepcopy(seed_state())
+    return deepcopy(_starting_state())
+
+
+def _starting_state() -> dict[str, Any]:
+    """Seeded rules and models are demo content; with mock data off a tenant starts empty."""
+    state = deepcopy(seed_state())
+    if mock_data.enabled():
+        return state
+    return {key: ([] if isinstance(value, list) else value) for key, value in state.items()}
 
 
 def _store(tenant_id: str, state: dict[str, Any]) -> None:

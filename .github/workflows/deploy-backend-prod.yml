@@ -7,8 +7,8 @@ name: deploy-backend-prod
 on:
   workflow_dispatch:
     inputs:
-      demo_agents:
-        description: "Set to 1 for seeded agent observations/evals; 0 uses DynamoDB telemetry"
+      mock_data:
+        description: "Set to 1 to serve mock data (agent seed, starting rules, demo RCA); 0 serves only real data"
         required: false
         default: "0"
 
@@ -22,5 +22,5 @@ jobs:
     with:
       stage: prod
       frontend_url: https://loveheartbeat.com
-      demo_agents: ${{ inputs.demo_agents || '0' }}
+      mock_data: ${{ inputs.mock_data || '0' }}
     secrets: inherit
