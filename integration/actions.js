@@ -1587,24 +1587,6 @@ export const ACTIONS = {
     run: async (api, model) => { await api.aiModels.unregister(model); return 'Model unregistered.'; },
   },
 
-  /* --- orchestration: the AWS Lambda connector behind the job stream ------ */
-
-  /**
-   * "Connect orchestrator" configures the AWS Lambda connector.
-   *
-   * The orchestration page's job stream is Lambda invocations and ETL executions —
-   * there is no separate orchestrator service to point at, so connecting one means
-   * giving this tenant the AWS credentials and prefixes to collect from.
-   */
-  connectOrchestrator: {
-    title: 'Connect orchestrator',
-    submit: 'Save connection',
-    success: 'Orchestrator connected — collection starts on the next sweep.',
-    prefill: (api) => api.awsLambda.config().then((s) => (s && s.fields) || {}).catch(() => ({})),
-    fields: (current = {}) => AWS_FIELDS(current),
-    run: (api, body) => api.awsLambda.saveConfig(body),
-  },
-
   /* --- cloud monitoring: the same AWS credentials, reached from the cloud page --- */
 
   /**

@@ -4,7 +4,13 @@ mixin ObsPageHeader(config)
       .col
         h2.mb-2= config.title
         h5.text-body-tertiary.fw-semibold.mb-0= config.subtitle
-      if config.action || config.secondaryAction
+      if config.linkHref
+        //- Connecting a source happens under Integrations, on that source's own page.
+        //- A monitoring page links there rather than carrying a second copy of the form:
+        //- two entry points to one credential is how they drift apart.
+        .col-auto
+          a.btn.btn-phoenix-primary(href=config.linkHref)= config.linkText
+      else if config.action || config.secondaryAction
         //- Only the two-button pages need the flex row; keeping it conditional means
         //- adding this option did not rewrite the markup of every other page.
         .col-auto(class=config.secondaryAction ? 'd-flex gap-2' : '')

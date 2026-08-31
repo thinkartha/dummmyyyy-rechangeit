@@ -227,18 +227,48 @@ append variables
               },
               {
                 name: 'integrations',
-                path: 'apps/platform/integrations',
-                pathName: 'platform-integrations',
+                pages: [
+                  {
+                    name: 'overview',
+                    path: 'apps/platform/integrations',
+                    pathName: 'platform-integrations',
+                  },
+                  {
+                    name: 'API-gateway',
+                    path: 'apps/platform/integrations/api-gateway',
+                    pathName: 'int-api-gateway',
+                  },
+                  {
+                    name: 'cloud-accounts',
+                    path: 'apps/platform/integrations/cloud',
+                    pathName: 'int-cloud',
+                  },
+                  {
+                    name: 'ETL-tools',
+                    path: 'apps/platform/integrations/etl',
+                    pathName: 'int-etl',
+                  },
+                  {
+                    name: 'databases',
+                    path: 'apps/platform/integrations/databases',
+                    pathName: 'int-databases',
+                  },
+                  {
+                    name: 'AI-tools',
+                    path: 'apps/platform/integrations/ai-tools',
+                    pathName: 'int-ai-tools',
+                  },
+                  {
+                    name: 'databricks',
+                    path: 'apps/platform/databricks',
+                    pathName: 'platform-databricks',
+                  },
+                ]
               },
               {
                 name: 'health-connectivity',
                 path: 'apps/platform/health-connectivity',
                 pathName: 'platform-health',
-              },
-              {
-                name: 'databricks',
-                path: 'apps/platform/databricks',
-                pathName: 'platform-databricks',
               },
             ]
           },

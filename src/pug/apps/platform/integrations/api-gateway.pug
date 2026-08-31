@@ -1,0 +1,58 @@
+extends ../../../layouts/LayoutTheme
+include ../../../mixins/dashboard/common
+include ../../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Platform', href: '#!' },
+      { label: 'Integrations', href: `${CWD}${paths['platform-integrations']}` },
+      { label: 'API Gateway', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'API gateway',
+    subtitle: 'Connect the gateway you already run, or install ours in front of your API — this is where the credentials live; API Gateway and API Monitoring only read what it collects',
+    action: 'Connect gateway',
+    actionKey: 'connectGateway',
+    secondaryAction: 'Install our gateway',
+    secondaryActionKey: 'onboardGateway'
+  })
+
+  .row.g-4.mb-4
+    .col-12.col-lg-6
+      .card.h-100
+        .card-body
+          h4.mb-2 Connect a gateway you run
+          p.text-body-tertiary.fs-9 The backend reads per-route counters straight from the gateway, so nothing has to be installed beside it. Supported today:
+          ul.fs-9.mb-3
+            li Apache APISIX, Kong, Tyk, Traefik, KrakenD — Prometheus metrics endpoint
+            li AWS API Gateway — CloudWatch, via the account's IAM role
+            li Azure API Management — Azure Monitor metrics
+            li Apigee — Google Cloud service account
+          p.text-body-tertiary.fs-10.mb-0 The form is built from the backend's own catalogue, so the fields always match what it validates.
+    .col-12.col-lg-6
+      .card.h-100
+        .card-body
+          h4.mb-2 Install ours
+          p.text-body-tertiary.fs-9 No gateway yet? "Install our gateway" enrolls an APISIX instance in front of your API and returns the commands to run it. It reports the same route counters, so every page downstream works the same way.
+          p.text-body-tertiary.fs-10.mb-0 Routes themselves come from the APISIX config file, not the API.
+
+  +ObsToolTable({
+    title: 'Connected gateway',
+    live: 'gateways',
+    subtitle: 'One row per organization — the gateway this tenant connected, and whether it answers',
+    searchPlaceholder: 'Search gateways',
+    columns: [
+      { label: 'Gateway', className: 'ps-3' },
+      { label: 'Provider' },
+      { label: 'Account' },
+      { label: 'Region' },
+      { label: 'Routes' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-plug', iconColor: 'secondary', meta: 'nothing connected yet', cells: ['—', '—', '—', '—', '0', { text: 'Not connected', badge: 'secondary' }] }
+    ]
+  })

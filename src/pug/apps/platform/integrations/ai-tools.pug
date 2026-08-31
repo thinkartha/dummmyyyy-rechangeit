@@ -1,0 +1,45 @@
+extends ../../../layouts/LayoutTheme
+include ../../../mixins/dashboard/common
+include ../../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Platform', href: '#!' },
+      { label: 'Integrations', href: `${CWD}${paths['platform-integrations']}` },
+      { label: 'AI tools', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'AI tools',
+    subtitle: 'Register the collector agent that pushes AI telemetry. AI Monitoring displays whatever the gateway and these agents report — it registers nothing itself',
+    action: 'Connect AI tool',
+    actionKey: 'connectAiTool'
+  })
+
+  .card.mb-4
+    .card-body
+      h4.mb-2 How AI telemetry arrives
+      p.text-body-tertiary.fs-9 Two paths, and neither needs a button on the monitoring page:
+      ul.fs-9.mb-0
+        li The AI gateway reports calls that pass through it — nothing to register.
+        li A tool that does not sit behind the gateway pushes to the telemetry endpoint, which only accepts calls carrying an agent key. Registering here mints that key — it is shown once.
+
+  +ObsToolTable({
+    title: 'Registered agents',
+    live: 'aiAgents',
+    subtitle: 'Agents this organization registered, and what they have reported',
+    searchPlaceholder: 'Search agents',
+    columns: [
+      { label: 'Tool', className: 'ps-3' },
+      { label: 'Vendor' },
+      { label: 'Users' },
+      { label: 'Tokens / 7d' },
+      { label: 'Spend' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-robot', iconColor: 'secondary', meta: 'nothing registered yet', cells: ['—', '—', '0', '0', '—', { text: 'Not connected', badge: 'secondary' }] }
+    ]
+  })

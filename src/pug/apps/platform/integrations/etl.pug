@@ -1,0 +1,64 @@
+extends ../../../layouts/LayoutTheme
+include ../../../mixins/dashboard/common
+include ../../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Platform', href: '#!' },
+      { label: 'Integrations', href: `${CWD}${paths['platform-integrations']}` },
+      { label: 'ETL tools', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'ETL tools',
+    subtitle: 'Credentials for the pipeline platforms whose job executions feed ETL and Orchestration Monitoring',
+    action: 'Connect ETL tool',
+    actionKey: 'connectEtl'
+  })
+
+  .row.g-4.mb-4
+    .col-md-4
+      .card.h-100
+        .card-body.d-flex.flex-column
+          h6.mb-2 Talend
+          p.text-body-tertiary.fs-9 Talend Cloud — API base URL, environment or workspace, and how far back to look on each sweep.
+          .mt-auto.d-flex.gap-2
+            button.btn.btn-sm.btn-primary(type='button' data-lhb-action='connectTalend') Configure
+            button.btn.btn-sm.btn-phoenix-secondary(type='button' data-lhb-action='testEtlConfig' data-lhb-arg='talend') Test
+    .col-md-4
+      .card.h-100
+        .card-body.d-flex.flex-column
+          h6.mb-2 Dell Boomi
+          p.text-body-tertiary.fs-9 AtomSphere account ID, username and API token. Executions are pulled per atom.
+          .mt-auto.d-flex.gap-2
+            button.btn.btn-sm.btn-primary(type='button' data-lhb-action='connectBoomi') Configure
+            button.btn.btn-sm.btn-phoenix-secondary(type='button' data-lhb-action='testEtlConfig' data-lhb-arg='boomi') Test
+    .col-md-4
+      .card.h-100
+        .card-body.d-flex.flex-column
+          h6.mb-2 Databricks
+          p.text-body-tertiary.fs-9 Shared with Data Observability — the same workspace credentials serve job runs and table health.
+          .mt-auto.d-flex.gap-2
+            button.btn.btn-sm.btn-primary(type='button' data-lhb-action='connectDatabricks') Configure
+            button.btn.btn-sm.btn-phoenix-secondary(type='button' data-lhb-action='testEtlConfig' data-lhb-arg='databricks') Test
+
+  +ObsToolTable({
+    title: 'Connected platforms',
+    live: 'etl',
+    subtitle: 'Live from each platform’s own health check — a platform that was never configured says so rather than going missing',
+    searchPlaceholder: 'Search platforms',
+    rowAction: true,
+    columns: [
+      { label: 'Platform', className: 'ps-3' },
+      { label: 'Jobs' },
+      { label: 'Failed' },
+      { label: 'Records' },
+      { label: 'Last run' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-diagram-project', iconColor: 'secondary', meta: 'nothing connected yet', cells: ['—', '0', '0', '—', '—', { text: 'Not connected', badge: 'secondary' }] }
+    ]
+  })

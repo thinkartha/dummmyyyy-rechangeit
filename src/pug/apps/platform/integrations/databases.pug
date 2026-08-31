@@ -1,0 +1,43 @@
+extends ../../../layouts/LayoutTheme
+include ../../../mixins/dashboard/common
+include ../../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Platform', href: '#!' },
+      { label: 'Integrations', href: `${CWD}${paths['platform-integrations']}` },
+      { label: 'Databases', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'Databases',
+    subtitle: 'Register a database by connection string — test it from the same dialog before it is saved. Database Monitoring reads what these report',
+    action: 'Add database',
+    actionKey: 'addDatabase'
+  })
+
+  .card.mb-4
+    .card-body
+      h4.mb-2 What is stored
+      p.text-body-tertiary.fs-9.mb-0 The connection string is held server-side under this organization and never returned to the browser once saved. "Test connection" in the add dialog dials it first, so a typo fails before it becomes a registration.
+
+  +ObsToolTable({
+    title: 'Registered databases',
+    live: 'databases',
+    subtitle: 'Every engine this organization watches',
+    searchPlaceholder: 'Search databases',
+    rowAction: true,
+    columns: [
+      { label: 'Database', className: 'ps-3' },
+      { label: 'Engine' },
+      { label: 'Host' },
+      { label: 'Latency' },
+      { label: 'Checked' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-database', iconColor: 'secondary', meta: 'nothing registered yet', cells: ['—', '—', '—', '—', '—', { text: 'Not connected', badge: 'secondary' }] }
+    ]
+  })

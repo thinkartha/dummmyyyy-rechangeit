@@ -33,6 +33,10 @@ const PAGES = [
   ].map(p => `apps/observability/${p}.html`),
   ...['admin', 'command-center', 'databricks', 'health-connectivity', 'integrations']
     .map(p => `apps/platform/${p}.html`),
+  // Each integration that needs credentials or an install has its own page under
+  // Integrations; the monitoring pages link here rather than carrying the form.
+  ...['api-gateway', 'cloud', 'etl', 'databases', 'ai-tools']
+    .map(p => `apps/platform/integrations/${p}.html`),
   ...['authentication', 'members', 'multi-tenant', 'onboarding', 'organizations']
     .map(p => `apps/organization/${p}.html`),
   'apps/chat.html',

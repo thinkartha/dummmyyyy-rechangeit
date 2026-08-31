@@ -65,64 +65,78 @@ block content
   })
 
 
-  //- Every setting that used to live only on the page it belonged to. The buttons fire
-  //- the same actions those pages fire — one registry entry, two ways to reach it — so
-  //- this catalogue cannot drift away from what the pages actually do.
+  //- Each connector has its own page under Integrations. The feature pages that used to
+  //- carry these buttons now link here instead: one place to connect something, and the
+  //- monitoring pages go back to only displaying what was connected.
   -
-    var settingsGroups = [
-      { name: 'Gateways', items: [
-        { label: 'Connect an API gateway', page: 'API Gateway', action: 'connectGateway',
-          help: 'Kong, APISIX, Tyk, Traefik, KrakenD, AWS API Gateway, Azure APIM, Apigee.' },
-        { label: 'Install our gateway', page: 'API Gateway', action: 'onboardGateway',
-          help: 'Run APISIX in front of your API and report from it.' }
-      ] },
-      { name: 'Cloud', items: [
-        { label: 'Connect AWS account', page: 'Cloud Monitoring', action: 'connectAwsAccount',
-          help: 'Region, credentials, function prefixes and alert thresholds. Feeds Cloud Monitoring and Orchestration.' }
-      ] },
-      { name: 'Data and ETL', items: [
-        { label: 'Connect an ETL tool', page: 'ETL Monitoring', action: 'connectEtl',
-          help: 'Talend, Boomi or Databricks.' },
-        { label: 'Connect Databricks', page: 'Data Observability', action: 'connectDatabricks',
-          help: 'Workspace host, SQL warehouse and token — also backs Data Observability.' },
-        { label: 'Register a database', page: 'Database Monitoring', action: 'addDatabase',
-          help: 'Connection string, testable from the same dialog before it is saved.' }
-      ] },
-      { name: 'AI', items: [
-        { label: 'Connect an AI tool', page: 'AI Monitoring', action: 'connectAiTool',
-          help: 'Registers the collector agent that pushes AI telemetry, and mints its key.' },
-        { label: 'Register a model', page: 'AI Models', action: 'registerModel',
-          help: 'Track a custom or hosted model alongside the providers.' },
-        { label: 'Model thresholds', page: 'AI Models', action: 'editThresholds',
-          help: 'Error-rate and latency limits every model status badge is derived from.' },
-        { label: 'AI budget', page: 'AI Cost and Usage', action: 'setAiBudget',
-          help: 'Monthly spend ceiling and who to warn as it is approached.' }
-      ] },
-      { name: 'Cost', items: [
-        { label: 'Cloud budget', page: 'Cloud Cost', action: 'addBudget',
-          help: 'Per-account budget and the threshold that raises an alert.' }
-      ] },
-      { name: 'Alerting', items: [
-        { label: 'Routing rule', page: 'Alert Management', action: 'routingRule',
-          help: 'Which team a matching alert pages, on which channels, and when it escalates.' },
-        { label: 'Automation rule', page: 'Automation', action: 'automationRule',
-          help: 'Trigger and action for a remediation the platform runs itself.' }
-      ] }
+    var connectors = [
+      { name: 'API gateway', pathName: 'int-api-gateway', icon: 'fa-plug', color: 'primary',
+        help: 'Connect Kong, APISIX, Tyk, Traefik, KrakenD, AWS API Gateway, Azure APIM or Apigee — or install ours in front of your API.',
+        feeds: 'API Gateway · API Monitoring · Traces' },
+      { name: 'Cloud accounts', pathName: 'int-cloud', icon: 'fa-cloud', color: 'warning',
+        help: 'AWS credentials, function prefixes and anomaly thresholds. GCP and Azure have no collector yet.',
+        feeds: 'Cloud Monitoring · Orchestration · Cloud Cost' },
+      { name: 'ETL tools', pathName: 'int-etl', icon: 'fa-diagram-project', color: 'info',
+        help: 'Talend, Boomi and Databricks credentials, each testable from its own card.',
+        feeds: 'ETL Monitoring · Orchestration' },
+      { name: 'Databases', pathName: 'int-databases', icon: 'fa-database', color: 'danger',
+        help: 'Register a database by connection string, tested before it is saved.',
+        feeds: 'Database Monitoring' },
+      { name: 'AI tools', pathName: 'int-ai-tools', icon: 'fa-robot', color: 'success',
+        help: 'Register the collector agent that pushes AI telemetry, and mint its key.',
+        feeds: 'AI Monitoring · AI Cost and Usage' },
+      { name: 'Databricks', pathName: 'platform-databricks', icon: 'fa-table', color: 'secondary',
+        help: 'Workspace host, SQL warehouse and token — the same connection backs table health and job runs.',
+        feeds: 'Data Observability · ETL Monitoring' }
     ];
 
-  .card.mt-4
+  .card.mt-4.mb-4
     .card-header.border-bottom.border-translucent.py-3
-      h4.mb-0 Settings and configuration
-      p.text-body-tertiary.fs-9.mb-0 Everything configurable across the product, reachable without hunting for the page that owns it
+      h4.mb-0 Connect something
+      p.text-body-tertiary.fs-9.mb-0 Every integration that needs credentials or an install, each on its own page
     .card-body
-      each group in settingsGroups
-        h6.mt-3.mb-2.text-uppercase.fs-10.text-body-tertiary= group.name
-        .row.g-3
-          each item in group.items
-            .col-12.col-md-6.col-xl-4
+      .row.g-3
+        each item in connectors
+          .col-12.col-md-6.col-xl-4
+            a.text-decoration-none.text-body-emphasis(href=`${CWD}${paths[item.pathName]}`)
               .border.border-translucent.rounded-3.p-3.h-100.d-flex.flex-column
-                h6.mb-1= item.label
+                .d-flex.align-items-center.mb-2
+                  span.fa-solid.me-2(class=`${item.icon} text-${item.color}`)
+                  h6.mb-0= item.name
                 p.text-body-tertiary.fs-9.mb-2= item.help
                 .mt-auto.d-flex.align-items-center.justify-content-between
-                  span.badge.badge-phoenix.badge-phoenix-secondary.fs-10= item.page
-                  button.btn.btn-phoenix-primary.btn-sm(type='button' data-lhb-action=item.action) Configure
+                  span.text-body-tertiary.fs-10= item.feeds
+                  span.fa-solid.fa-arrow-right.text-body-quaternary
+
+  //- Settings that configure something already connected rather than connecting it —
+  //- no credentials, no install, so they stay one click away instead of getting a page.
+  -
+    var otherSettings = [
+      { label: 'Register a model', page: 'AI Models', action: 'registerModel',
+        help: 'Track a custom or hosted model alongside the providers.' },
+      { label: 'Model thresholds', page: 'AI Models', action: 'editThresholds',
+        help: 'Error-rate and latency limits every model status badge is derived from.' },
+      { label: 'AI budget', page: 'AI Cost and Usage', action: 'setAiBudget',
+        help: 'Monthly spend ceiling and who to warn as it is approached.' },
+      { label: 'Cloud budget', page: 'Cloud Cost', action: 'addBudget',
+        help: 'Per-account budget and the threshold that raises an alert.' },
+      { label: 'Routing rule', page: 'Alert Management', action: 'routingRule',
+        help: 'Which team a matching alert pages, on which channels, and when it escalates.' },
+      { label: 'Automation rule', page: 'Automation', action: 'automationRule',
+        help: 'Trigger and action for a remediation the platform runs itself.' }
+    ];
+
+  .card
+    .card-header.border-bottom.border-translucent.py-3
+      h4.mb-0 Other settings
+      p.text-body-tertiary.fs-9.mb-0 Thresholds, budgets and rules — configuration for sources that are already connected
+    .card-body
+      .row.g-3
+        each item in otherSettings
+          .col-12.col-md-6.col-xl-4
+            .border.border-translucent.rounded-3.p-3.h-100.d-flex.flex-column
+              h6.mb-1= item.label
+              p.text-body-tertiary.fs-9.mb-2= item.help
+              .mt-auto.d-flex.align-items-center.justify-content-between
+                span.badge.badge-phoenix.badge-phoenix-secondary.fs-10= item.page
+                button.btn.btn-phoenix-primary.btn-sm(type='button' data-lhb-action=item.action) Configure

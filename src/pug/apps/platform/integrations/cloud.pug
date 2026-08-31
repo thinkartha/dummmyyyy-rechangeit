@@ -1,0 +1,57 @@
+extends ../../../layouts/LayoutTheme
+include ../../../mixins/dashboard/common
+include ../../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Platform', href: '#!' },
+      { label: 'Integrations', href: `${CWD}${paths['platform-integrations']}` },
+      { label: 'Cloud accounts', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'Cloud accounts',
+    subtitle: 'One AWS connection per organization — its credentials feed Cloud Monitoring, Orchestration, and the Lambda job stream',
+    action: 'Connect AWS account',
+    actionKey: 'connectAwsAccount'
+  })
+
+  .row.g-4.mb-4
+    .col-md-4
+      .card.h-100
+        .card-body
+          h6.mb-2 AWS
+          p.text-body-tertiary.fs-9.mb-3 Region, credentials (default chain, access keys, or an assumed role), function prefixes, log groups, and the thresholds that raise an anomaly.
+          button.btn.btn-sm.btn-primary(type='button' data-lhb-action='connectAwsAccount') Connect AWS account
+    .col-md-4
+      .card.h-100
+        .card-body
+          h6.mb-2 Google Cloud
+          p.text-body-tertiary.fs-9.mb-3 No collector yet. Apigee is readable today as an API gateway — connect it under Integrations → API gateway.
+          button.btn.btn-sm.btn-phoenix-secondary(type='button' data-lhb-action='connectGcp') Connect GCP
+    .col-md-4
+      .card.h-100
+        .card-body
+          h6.mb-2 Microsoft Azure
+          p.text-body-tertiary.fs-9.mb-3 No subscription-wide collector yet. Azure API Management is readable today as an API gateway.
+          button.btn.btn-sm.btn-phoenix-secondary(type='button' data-lhb-action='connectAzure') Connect Azure
+
+  +ObsToolTable({
+    title: 'Linked accounts',
+    live: 'cloudLambda',
+    subtitle: 'What this organization has connected — the AWS collector, plus any managed cloud gateway in use',
+    searchPlaceholder: 'Search accounts',
+    columns: [
+      { label: 'Account', className: 'ps-3' },
+      { label: 'Cloud' },
+      { label: 'Type' },
+      { label: 'Resources' },
+      { label: 'Alerts' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-cloud', iconColor: 'secondary', meta: 'nothing connected yet', cells: ['—', '—', '—', '0', '0', { text: 'Not connected', badge: 'secondary' }] }
+    ]
+  })
