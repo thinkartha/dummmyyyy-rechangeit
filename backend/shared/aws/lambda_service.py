@@ -35,12 +35,13 @@ def _mask(value: str | None) -> str | None:
 def save_config(tenant_id: str, config: AwsLambdaConfig) -> dict[str, Any]:
     _IN_MEMORY_CONFIGS[tenant_id] = config
     config_store.save_config(tenant_id, _INTEGRATION, config.model_dump_json(by_alias=True))
-    # Cost Explorer answers are cached for hours. Saving new credentials is exactly when
-    # somebody is watching for the page to change, so the stale answer goes with them.
-    # Imported here rather than at module scope: cost imports this module.
-    from . import cost
+    # Cost Explorer and inventory answers are cached for hours. Saving new credentials is
+    # exactly when somebody is watching for the page to change, so the stale answers go
+    # with them. Imported here rather than at module scope: both import this module.
+    from . import cost, inventory
 
     cost.invalidate(tenant_id)
+    inventory.invalidate(tenant_id)
     return config_status(tenant_id)
 
 

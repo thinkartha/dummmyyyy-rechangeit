@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from shared.aws.dto import AwsLambdaConfig, AwsLambdaInvocationResponse, AwsLambdaInvokeRequest, AwsLambdaOverview
+from shared.aws.inventory import AwsInventoryReport, inventory
 from shared.aws.lambda_service import (
     anomaly_events,
     config_status,
@@ -33,6 +34,21 @@ def get_lambda_config_status(tenant_id: str = Depends(get_tenant_id)) -> dict:
 @router.get("/lambda/overview", response_model=AwsLambdaOverview)
 def get_lambda_overview(tenant_id: str = Depends(get_tenant_id)) -> AwsLambdaOverview:
     return lambda_overview(tenant_id)
+
+
+@router.get("/inventory", response_model=AwsInventoryReport)
+def get_aws_inventory(
+    tenant_id: str = Depends(get_tenant_id),
+    role_name: str | None = Query(default=None, alias="roleName"),
+) -> AwsInventoryReport:
+    """DNS, CDN, buckets, alarms and IAM users for every account the credential reaches.
+
+    Accounts come from `organizations:ListAccounts` on the connected credential — nothing
+    is registered here — and each one is read through `roleName` (default
+    `OrganizationAccountAccessRole`). A standalone account returns one row with
+    `organization: false`, which is an answer rather than an error.
+    """
+    return inventory(tenant_id, role_name=role_name)
 
 
 @router.post("/lambda/poll", response_model=list[CloudEvent])

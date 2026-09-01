@@ -33,7 +33,7 @@ def _slug_org_id(request: Request) -> str | None:
 
 def get_tenant_id(
     request: Request,
-    x_tenant_id: str = Header(default="acme", alias="X-Tenant-Id"),
+    x_tenant_id: str = Header(default="", alias="X-Tenant-Id"),
     principal: Principal | None = Depends(get_optional_principal),
 ) -> str:
     """Resolve tenant id from authenticated claims, then slug, then X-Tenant-Id."""
@@ -41,7 +41,17 @@ def get_tenant_id(
         return principal.org_id
     if principal and principal.sub:
         return f"solo-{principal.sub}"
-    return _slug_org_id(request) or x_tenant_id
+    tenant_id = _slug_org_id(request) or x_tenant_id.strip()
+    if not tenant_id:
+        # This used to default to "acme" — a real tenant. Every request we could not place
+        # was therefore reading, and writing, that organization's data under its name. An
+        # unresolved tenant is a failed request, not somebody else's.
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Tenant not resolved. Sign in, use https://<slug>.loveheartbeat.com, "
+                   "or send X-Tenant-Slug.",
+        )
+    return tenant_id
 
 
 def require_tenant(tenant_id: str):

@@ -17,11 +17,16 @@ block content
     actionKey: 'refreshData'
   })
 
+  //- Keys match the stats the apiRoutes source publishes; without one a card can only
+  //- ever show "—", which is what all four did. Two labels changed to what the numbers
+  //- underneath them actually are: /observability/routes has no time window (it rolls
+  //- up every stored span, out to the 30-day record retention), so "Requests (24h)" was
+  //- a promise nothing measured, and it knows nothing about gateway registrations.
   +ObsStatCards([
-    { label: 'Requests (24h)', value: '18.4M', delta: '+8.2%', badge: 'success' },
-    { label: 'Error rate', value: '0.84%', delta: '-0.12%', badge: 'success' },
-    { label: 'p99 latency', value: '412ms', delta: '+36ms', badge: 'warning' },
-    { label: 'Gateways', value: '12', delta: '3 clouds', badge: 'info' }
+    { label: 'Requests', key: 'requests', value: '—', delta: 'no data', badge: 'info' },
+    { label: 'Error rate', key: 'errorRate', value: '—', delta: 'no data', badge: 'success' },
+    { label: 'Slowest route p99', key: 'p99Latency', value: '—', delta: 'no data', badge: 'warning' },
+    { label: 'Routes', key: 'routes', value: '—', delta: 'no data', badge: 'info' }
   ])
 
   //- Columns follow what /observability/routes actually returns — route, requests, 5xx,
@@ -31,7 +36,7 @@ block content
   +ObsToolTable({
     title: 'Route traffic',
     live: 'apiRoutes',
-    subtitle: 'Per-route request counts derived from stored spans — send an agent telemetry batch to populate',
+    subtitle: 'Per-route request counts derived from stored spans — enrolled gateways report their traffic here, as do agent telemetry batches',
     searchPlaceholder: 'Search routes',
     columns: [
       { label: 'Route', className: 'ps-3' },

@@ -47,6 +47,80 @@ on which organization a request belongs to.
 
 Full list at `/docs` when running locally.
 
+## AWS connector IAM policy
+
+The AWS integration (`shared/aws/`) reads through one role per tenant — the `roleArn` on
+`PUT /api/v1/integrations/aws/lambda/config`, assumed with the tenant's `externalId`. This
+is everything it calls; anything missing comes back as an `error` on the response rather
+than as zeros, so a short answer here shows up as a reason on the page.
+
+`GET /api/v1/integrations/aws/inventory` additionally discovers member accounts with
+`organizations:ListAccounts` and re-reads each one through `OrganizationAccountAccessRole`
+(overridable with `?roleName=`). No account list is stored anywhere — a standalone account
+or a denied `ListAccounts` simply returns the connected account alone.
+
+Attach to the role the customer creates for us:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "LambdaMonitoring",
+      "Effect": "Allow",
+      "Action": [
+        "lambda:ListFunctions",
+        "lambda:GetFunction",
+        "lambda:InvokeFunction",
+        "cloudwatch:GetMetricStatistics"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "CloudCost",
+      "Effect": "Allow",
+      "Action": ["ce:GetCostAndUsage", "ce:GetCostForecast"],
+      "Resource": "*"
+    },
+    {
+      "Sid": "Inventory",
+      "Effect": "Allow",
+      "Action": [
+        "route53:List*",
+        "route53domains:List*",
+        "cloudfront:List*",
+        "s3:ListAllMyBuckets",
+        "s3:GetBucketLocation",
+        "cloudwatch:DescribeAlarms",
+        "iam:ListUsers",
+        "organizations:ListAccounts"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "FanOutToMemberAccounts",
+      "Effect": "Allow",
+      "Action": "sts:AssumeRole",
+      "Resource": "arn:aws:iam::*:role/OrganizationAccountAccessRole"
+    }
+  ]
+}
+```
+
+Notes:
+
+- All of it is read-only except `lambda:InvokeFunction`, which backs the explicit
+  invoke/retry buttons. Drop that one statement to make the role strictly read-only.
+- The `Inventory` statement is also needed in each **member** account's
+  `OrganizationAccountAccessRole` — the org-created role is `AdministratorAccess`, which
+  already covers it; a hand-rolled replacement needs these actions.
+- `organizations:ListAccounts` only works from the organization's management account. A
+  member-account credential returns its own account only, which is a valid answer.
+- The trust policy on the role should name our account as principal and require the
+  `externalId` the tenant entered, so the ARN alone is not enough to assume it.
+- AWS has **no public API for payment methods or billing contacts** — card details are
+  console-only, so no policy grants access to them and no endpoint here reports them.
+
 ## Local
 
 ```bash

@@ -83,14 +83,14 @@ export default function Page() {
               <div className="d-flex justify-content-between align-items-start">
                 <div>
                   <h6 className="text-body-tertiary mb-2">
-                    Requests (24h)
+                    Requests
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
-                    18.4M
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="requests">
+                    —
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
-                  +8.2%
+                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="requests">
+                  no data
                 </span>
               </div>
             </div>
@@ -104,12 +104,12 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Error rate
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
-                    0.84%
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="errorRate">
+                    —
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
-                  -0.12%
+                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="errorRate">
+                  no data
                 </span>
               </div>
             </div>
@@ -121,14 +121,14 @@ export default function Page() {
               <div className="d-flex justify-content-between align-items-start">
                 <div>
                   <h6 className="text-body-tertiary mb-2">
-                    p99 latency
+                    Slowest route p99
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
-                    412ms
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="p99Latency">
+                    —
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
-                  +36ms
+                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="p99Latency">
+                  no data
                 </span>
               </div>
             </div>
@@ -140,14 +140,14 @@ export default function Page() {
               <div className="d-flex justify-content-between align-items-start">
                 <div>
                   <h6 className="text-body-tertiary mb-2">
-                    Gateways
+                    Routes
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
-                    12
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="routes">
+                    —
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta">
-                  3 clouds
+                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="routes">
+                  no data
                 </span>
               </div>
             </div>
@@ -163,7 +163,7 @@ export default function Page() {
                   Route traffic
                 </h4>
                 <p className="text-body-tertiary fs-9 mb-0">
-                  Per-route request counts derived from stored spans — send an agent telemetry batch to populate
+                  Per-route request counts derived from stored spans — enrolled gateways report their traffic here, as do agent telemetry batches
                 </p>
               </div>
             </div>

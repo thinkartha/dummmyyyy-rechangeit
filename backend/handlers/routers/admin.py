@@ -305,26 +305,47 @@ def act_on_join_request(
         user = users.get_user(email)
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-        users.update_user(email, org_id=org_id, status="active")
+        # Cognito before the local row: a warning-and-carry-on here is what produced
+        # users who were "active" in DynamoDB and absent from the pool, so every login
+        # 401'd with nothing in the UI to explain it. Failing the approval instead leaves
+        # the request pending and lets the admin retry once the cause is fixed.
         if _cognito_enabled():
             client = cognito_client()
-            if client:
+            if not client:
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Cognito unavailable"
+                )
+            pool_id = os.getenv("COGNITO_USER_POOL_ID")
+            try:
+                # Approval is the org admin vouching for the address, so it also stands in
+                # for a code the user never redeemed. Already-confirmed is the normal case
+                # and not an error.
                 try:
-                    client.admin_update_user_attributes(
-                        UserPoolId=os.getenv("COGNITO_USER_POOL_ID"),
-                        Username=email,
-                        UserAttributes=[
-                            {"Name": "custom:org_id", "Value": org_id},
-                            {"Name": "custom:role", "Value": ROLE_USER},
-                        ],
-                    )
-                    client.admin_add_user_to_group(
-                        UserPoolId=os.getenv("COGNITO_USER_POOL_ID"),
-                        Username=email,
-                        GroupName="User",
-                    )
-                except Exception as exc:  # pragma: no cover - AWS dependency
-                    log.warning("Cognito approve join request failed: %s", exc)
+                    client.admin_confirm_sign_up(UserPoolId=pool_id, Username=email)
+                except Exception as exc:
+                    if "UserNotFound" in type(exc).__name__:
+                        raise
+                    log.info("admin_confirm_sign_up for %s: %s", email, exc)
+                client.admin_update_user_attributes(
+                    UserPoolId=pool_id,
+                    Username=email,
+                    UserAttributes=[
+                        {"Name": "custom:org_id", "Value": org_id},
+                        {"Name": "custom:role", "Value": ROLE_USER},
+                    ],
+                )
+                client.admin_add_user_to_group(
+                    UserPoolId=pool_id,
+                    Username=email,
+                    GroupName="User",
+                )
+            except Exception as exc:  # pragma: no cover - AWS dependency
+                log.warning("Cognito approve join request failed: %s", exc)
+                raise HTTPException(
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail=f"Could not activate this user in Cognito: {exc}",
+                ) from exc
+        users.update_user(email, org_id=org_id, status="active")
         join_requests.delete_join_request(email, org_id)
         notifications.join_request_approved(org_id, email)
         return {"email": email, "org_id": org_id, "status": "approved"}

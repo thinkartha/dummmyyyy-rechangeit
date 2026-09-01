@@ -78,6 +78,28 @@ def _claim(payload: dict, *keys: str) -> Any:
     return ""
 
 
+def _org_id_from_store(email: str) -> str:
+    """Membership read from the user store, for a token that carries no org claim.
+
+    Cognito's V1_0 pre-token-generation trigger — the one template.yaml wires up under
+    LambdaConfig.PreTokenGeneration — can only add claims to the *ID* token. This service
+    authenticates with the **access** token (see /auth/login), and an access token never
+    carries custom attributes, so `custom:org_id` is simply absent on every request: the
+    caller looks org-less even when they are a member. The same gap swallows anyone whose
+    membership changed after their attributes were stamped (an approved join request, an
+    ownership transfer, a removal).
+
+    UsersTable is where every membership write lands, so it is the source of truth and the
+    claim is only a cache. The lookup is keyed by the email off the *verified* token — an
+    unverified claim never chooses a tenant.
+    """
+    from . import users  # local import: keeps this module importable without the store
+
+    if not email:
+        return ""
+    return (users.get_user(email) or {}).get("org_id", "") or ""
+
+
 def decode_cognito_token(token: str) -> Principal | None:
     """Decode and validate a Cognito access or ID token, returning a platform Principal."""
     if not USER_POOL_ID:
@@ -112,7 +134,7 @@ def decode_cognito_token(token: str) -> Principal | None:
 
         sub = payload.get("sub", "")
         email = _claim(payload, "email", "username", "sub")
-        org_id = _claim(payload, "custom:org_id", "org_id")
+        org_id = _claim(payload, "custom:org_id", "org_id") or _org_id_from_store(email)
         role_claim = _claim(payload, "custom:role")
         groups = payload.get("cognito:groups", [])
         if isinstance(groups, str):

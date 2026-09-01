@@ -117,10 +117,13 @@ def _cognito_sign_up(email: str, password: str, org_id: str, role: str) -> None:
     # the whole sign_up with NotAuthorizedException. Verification happens through the
     # emailed code (AutoVerifiedAttributes) and the /confirm page; the pre-sign-up
     # trigger still auto-confirms admin-created users, which do carry the attribute.
-    attrs = [
-        {"Name": "email", "Value": email},
-        {"Name": "custom:org_id", "Value": org_id or "solo"},
-    ]
+    # No placeholder org id. "solo" was written as a literal custom:org_id, and org_id is
+    # the tenant key verbatim (get_tenant_id returns principal.org_id) — so every solo
+    # account on the platform shared one tenant's data. No org means no attribute; the
+    # readers all treat it as absent, and tenancy gives an org-less caller solo-<sub>.
+    attrs = [{"Name": "email", "Value": email}]
+    if org_id:
+        attrs.append({"Name": "custom:org_id", "Value": org_id})
     if role:
         attrs.append({"Name": "custom:role", "Value": role})
     try:
@@ -276,6 +279,15 @@ def register(body: RegisterRequest) -> TokenResponse:
         # Reject duplicates: a pending or active user with this email cannot re-request.
         if users.get_user(body.email):
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
+        # Cognito first, and no org_id: membership is granted by the admin approving the
+        # request, not by asking. This branch used to skip Cognito entirely, so with a
+        # pool configured the request created a DynamoDB row for a user who had no
+        # Cognito account at all — approval's admin_update_user_attributes then threw
+        # UserNotFoundException (swallowed as a warning) and every later /login 401'd.
+        # Signing up here also means the emailed code goes out, so the address can be
+        # proven before an admin is asked to vouch for it.
+        if _cognito_enabled():
+            _cognito_sign_up(body.email, body.password, "", ROLE_USER)
         if not users.create_user(
             body.email,
             body.password,
@@ -283,6 +295,7 @@ def register(body: RegisterRequest) -> TokenResponse:
             name=body.name,
             org_id="",
             status="pending_join",
+            intent=intent,
         ):
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
         join_requests.create_join_request(body.email, org_id, name=body.name or body.email)
@@ -338,6 +351,28 @@ def register(body: RegisterRequest) -> TokenResponse:
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid signup intent")
 
 
+def _confirm_cognito_code(email: str, code: str, user: dict) -> None:
+    """Verify the emailed sign-up code. Cognito checks its own; local dev checks the stored one."""
+    if _cognito_enabled():
+        client = cognito_client()
+        if not client:
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Cognito unavailable")
+        try:
+            client.confirm_sign_up(
+                ClientId=os.getenv("COGNITO_APP_CLIENT_ID"),
+                Username=email,
+                ConfirmationCode=code,
+            )
+        except Exception as exc:
+            log.warning("Cognito confirm_sign_up failed: %s", exc)
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid confirmation code") from exc
+        return
+    # Local fallback: verify the stored code.
+    stored_code = user.get("confirmation_code")
+    if not stored_code or stored_code != code:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid confirmation code")
+
+
 @router.post("/confirm", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 def confirm(body: ConfirmRequest) -> None:
     """Confirm sign-up with a verification code. Cognito verifies its own code; local fallback verifies a stored code."""
@@ -349,28 +384,17 @@ def confirm(body: ConfirmRequest) -> None:
     if current_status == "active":
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User is already active")
     if current_status == "pending_join":
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Account is pending organization admin approval")
+        # Proving the email and being let into the org are two different gates. This used
+        # to refuse outright, which left a join_org signup holding a Cognito verification
+        # code it could never redeem — and an unconfirmed Cognito user cannot sign in even
+        # after an admin approves them. So verify the code and leave the status alone: the
+        # admin still decides membership.
+        _confirm_cognito_code(body.email, body.code, user)
+        return
     if current_status != "pending_confirmation":
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Cannot confirm user with status '{current_status}'")
 
-    if _cognito_enabled():
-        client = cognito_client()
-        if not client:
-            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Cognito unavailable")
-        try:
-            client.confirm_sign_up(
-                ClientId=os.getenv("COGNITO_APP_CLIENT_ID"),
-                Username=body.email,
-                ConfirmationCode=body.code,
-            )
-        except Exception as exc:
-            log.warning("Cognito confirm_sign_up failed: %s", exc)
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid confirmation code") from exc
-    else:
-        # Local fallback: verify the stored code.
-        stored_code = user.get("confirmation_code")
-        if not stored_code or stored_code != body.code:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid confirmation code")
+    _confirm_cognito_code(body.email, body.code, user)
 
     # Confirming the emailed code is the whole sign-up. create_org used to land in
     # pending_admin here, which meant a self-serve organization signup completed the code

@@ -455,6 +455,30 @@ export const SOURCES = {
     // every field /observability/routes returns. `errors` counts 5xx and spans the
     // exporter marked ERROR — a 4xx is the caller's mistake, not the route's, and
     // folding it in here would make a healthy route look broken.
+    /* The four cards above the table are this same response rolled up, so they are
+       published from here rather than fetched again. p99 is the slowest route's, named
+       after it: percentiles do not recombine, so there is no honest way to turn per-route
+       p99s into one fleet number. */
+    stats: (data) => {
+      const rows = data || [];
+      const requests = rows.reduce((t, r) => t + (Number(r.requests) || 0), 0);
+      const errors = rows.reduce((t, r) => t + (Number(r.errors) || 0), 0);
+      const slowest = rows.reduce(
+        (worst, r) => ((Number(r.p99_latency_ms) || 0) > (Number(worst?.p99_latency_ms) || 0) ? r : worst),
+        null);
+      return {
+        requests: { value: num(requests), delta: `${num(rows.length)} routes` },
+        errorRate: {
+          value: requests ? pct((errors / requests) * 100, 2) : '—',
+          delta: `${num(errors)} 5xx`,
+        },
+        p99Latency: {
+          value: slowest ? `${num(slowest.p99_latency_ms, 1)}ms` : '—',
+          delta: slowest ? slowest.route : 'no data',
+        },
+        routes: { value: num(rows.length), delta: 'from stored spans' },
+      };
+    },
     load: (api) => api.observability.routes(),
     rows: (data) =>
       (data || []).map((r) => ({
@@ -685,12 +709,20 @@ export const SOURCES = {
     load: (api) => api.gateways.status(),
     rows: (data) => {
       if (!data || !data.configured) return [];
+      /* masked_config() nests the connection form under `fields`; reading account and
+         region off the top level (as this did) found nothing and printed two dashes on
+         a working connection. Which field answers "which account" differs per provider
+         — Apigee has an org, Azure a resource id, AWS only a region and an API name —
+         so each column takes the first field of its provider that answers it. */
+      const fields = data.fields || {};
+      const account = fields.org || fields.resource_id || fields.api_name || fields.metrics_url || '—';
+      const region = fields.region || fields.environment || '—';
       return [{
         icon: 'fa-plug',
         iconColor: data.reachable ? 'success' : 'danger',
         meta: data.error || null,
         cells: [data.label || data.provider, data.provider || '—',
-                data.account || data.project || '—', data.region || '—',
+                account, region,
                 num(data.routes),
                 badge(data.reachable ? 'Connected' : 'Unreachable')],
       }];
@@ -957,7 +989,9 @@ export const SOURCES = {
     /* Members are org-scoped, and which org this host is belongs to /tenant — so resolve
        it rather than asking the operator to paste an org id into the page. */
     load: async (api) => {
-      const tenant = await api.tenant();
+      /* /tenant answers { tenant: {...}, url } — reading org_id off the envelope
+         instead of the org inside it made this table empty for everyone. */
+      const { tenant } = (await api.tenant()) || {};
       const orgId = tenant && (tenant.org_id || tenant.orgId);
       if (!orgId) return [];
       return api.admin.organizationUsers(orgId);

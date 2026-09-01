@@ -53,18 +53,25 @@ def save_config(tenant_id: str, integration: str, config_json: str) -> bool:
         return False
 
 
+def _is_tenant(partition: str) -> bool:
+    """A partition beginning with "~" is reserved for rows that are not any tenant's
+    integration config (customer_gateways keeps its registry in one). No tenant id can
+    start with "~", and returning one here would start ETL pollers for a fake org."""
+    return not partition.startswith("~")
+
+
 def list_tenants() -> list[str]:
     """Distinct tenant_ids that have any saved integration config — used to auto-start pollers."""
     table = _get_table()
     if not table:
-        return sorted({tenant for tenant, _ in _mem})
+        return sorted({tenant for tenant, _ in _mem if _is_tenant(tenant)})
     try:
         # ponytail: full scan; fine at expected tenant counts. Add a GSI if the table grows large.
         tenants: set[str] = set()
         kwargs: dict = {"ProjectionExpression": "tenant_id"}
         while True:
             resp = table.scan(**kwargs)
-            tenants.update(i["tenant_id"] for i in resp.get("Items", []))
+            tenants.update(i["tenant_id"] for i in resp.get("Items", []) if _is_tenant(i["tenant_id"]))
             if "LastEvaluatedKey" not in resp:
                 break
             kwargs["ExclusiveStartKey"] = resp["LastEvaluatedKey"]

@@ -17,6 +17,7 @@ measurements; a null renders as "—" instead.
 
 from __future__ import annotations
 
+import math
 import os
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -546,19 +547,39 @@ def ai_gateway_stats(tenant_id: str | None = None) -> dict[str, Any]:
     }
 
 
+def _percentile(values: list[float], fraction: float) -> float:
+    """Nearest-rank percentile of an unsorted sample.
+
+    Not statistics.quantiles: that interpolates between points and needs at least two of
+    them, and a route with one recorded request still has a p99 — it is that request.
+    """
+    if not values:
+        return 0.0
+    ordered = sorted(values)
+    rank = math.ceil(fraction * len(ordered)) - 1
+    return round(ordered[min(max(rank, 0), len(ordered) - 1)], 1)
+
+
 def route_stats(tenant_id: str | None = None) -> list[dict[str, Any]]:
     """Operation counts derived from stored spans for the optional gateway table."""
     routes: dict[str, dict[str, Any]] = {}
     for span in _all_spans(tenant_id=tenant_id):
         route = str(_attr(span, "http.route", "gen_ai.operation.name", default=span["name"]))
         code = str(_attr(span, "http.response.status_code", "http.status_code", default="500" if span["status"] == "ERROR" else "200"))
-        row = routes.setdefault(route, {"route": route, "requests": 0, "errors": 0, "by_code": {}})
+        row = routes.setdefault(route, {"route": route, "requests": 0, "errors": 0, "by_code": {}, "latencies": []})
         row["requests"] += 1
         row["by_code"][code] = row["by_code"].get(code, 0) + 1
+        row["latencies"].append(_number(span.get("duration_ms")))
         if span["status"] == "ERROR" or code.startswith("5"):
             row["errors"] += 1
     for row in routes.values():
+        latencies = row.pop("latencies")
         row["error_rate"] = round(row["errors"] / row["requests"], 4) if row["requests"] else 0.0
+        # Percentiles are per route because they cannot be recombined afterwards: an
+        # average of two routes' p99s is not the p99 of their traffic. The page's card
+        # names the slowest route rather than pretending to a fleet-wide number.
+        row["avg_latency_ms"] = round(sum(latencies) / len(latencies), 1) if latencies else 0.0
+        row["p99_latency_ms"] = _percentile(latencies, 0.99)
     return sorted(routes.values(), key=lambda row: row["requests"], reverse=True)
 
 

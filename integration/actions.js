@@ -593,7 +593,8 @@ function splitPair(arg) {
 /** Which organization this host is. Org-scoped endpoints need the id; the operator
     should not have to paste it into a form to edit a member of the org they are in. */
 async function orgId(api) {
-  const tenant = await api.tenant();
+  /* /tenant answers { tenant: {...}, url } — the id lives on the org, not the envelope. */
+  const { tenant } = (await api.tenant()) || {};
   const id = tenant && (tenant.org_id || tenant.orgId);
   if (!id) throw new Error('Could not resolve this organization from the current host.');
   return id;
@@ -1472,12 +1473,7 @@ export const ACTIONS = {
     ],
     // The invite endpoint is org-scoped; /tenant resolves which org this host belongs to
     // so the caller does not have to paste an org id into the form.
-    run: async (api, body) => {
-      const tenant = await api.tenant();
-      const orgId = tenant && (tenant.org_id || tenant.orgId);
-      if (!orgId) throw new Error('Could not resolve this organization from the current host.');
-      return api.admin.invite(orgId, body);
-    },
+    run: async (api, body) => api.admin.invite(await orgId(api), body),
   },
 
   changePassword: {

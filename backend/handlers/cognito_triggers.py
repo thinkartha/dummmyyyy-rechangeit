@@ -99,8 +99,10 @@ def post_confirmation(event, context):
 def pre_token_generation(event, context):
     """Pre token generation trigger: inject custom:org_id and custom:role claims into tokens.
 
-    This guarantees that ID and access tokens include the tenant and role claims for the
-    backend to extract, even if the attributes were set after the user signed up.
+    ID token only. template.yaml wires this as LambdaConfig.PreTokenGeneration — the V1_0
+    trigger — and V1_0 claimsToAddOrOverride cannot touch the access token, which is the
+    one this service authenticates with. shared/core/cognito.py reads membership from
+    UsersTable when the token carries no org claim, which is what makes that survivable.
     """
     user_pool_id = event.get("userPoolId")
     user_name = event.get("userName")

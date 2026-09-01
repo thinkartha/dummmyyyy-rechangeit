@@ -1,20 +1,43 @@
-"""Customer-hosted APISIX gateway onboarding and cutover management.
+"""Customer-hosted APISIX gateway onboarding, telemetry and cutover management.
 
-This is intentionally a lightweight in-memory control-plane implementation for a
-working vertical slice. It models the enrollment, validation, telemetry and rollback
-workflows required before a customer can cut over to a customer-hosted APISIX
-instance without exposing their public API host.
+Models the enrollment, validation, telemetry and rollback workflows required before a
+customer can cut over to a customer-hosted APISIX instance without exposing their
+public API host.
+
+Two things were process-local dicts here and are not any more:
+
+  * the registry itself — on Lambda a module global lives and dies with one execution
+    environment, so a gateway enrolled by one invocation was unknown to the next and
+    its telemetry came back 400. It is persisted through config_store now, the same
+    DynamoDB-with-memory-fallback store every other integration config uses.
+  * the telemetry — ingest_telemetry() validated a payload and returned "accepted"
+    without writing it anywhere, so the traffic the API Monitoring page promises to
+    show was thrown away on arrival. It is now written into the same `agent-spans`
+    stream the AI telemetry endpoint fills, which is what that page already reads.
 """
 
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-_GATEWAYS: dict[str, dict[str, Any]] = {}
-_ENROLLMENT_TOKENS: dict[str, str] = {}
-_GATEWAY_CREDENTIALS: dict[str, str] = {}
+from . import agent_telemetry
+from . import config_store
+
+# Gateway records are looked up by things that carry no tenant: /gateways/enroll has an
+# enrollment token, /telemetry/apisix has a gateway credential, and the agent's own
+# config/heartbeat calls have a gateway id. So they cannot be keyed by tenant the way an
+# integration config is, and instead share one reserved partition of the integrations
+# table (no new table, no new store). "~" cannot begin a tenant id, and
+# config_store.list_tenants() skips the partition so the ETL pollers never mistake it
+# for an organization.
+#
+# ponytail: one row per gateway, per token and per credential, all read by exact key.
+# There is no "list this tenant's gateways" — that would need a scan or a second index,
+# and nothing asks for it yet.
+_STORE_PARTITION = "~customer-gateways"
 _ALLOWED_TELEMETRY_FIELDS = {
     "gateway_id",
     "route_id",
@@ -31,6 +54,25 @@ _ALLOWED_TELEMETRY_FIELDS = {
 }
 _DEPLOYMENT_TYPES = {"kubernetes", "aws", "azure", "docker"}
 _ORIGIN_SCHEMES = {"http", "https"}
+
+
+def _read(key: str) -> Any:
+    raw = config_store.get_config(_STORE_PARTITION, key)
+    return json.loads(raw) if raw else None
+
+
+def _write(key: str, value: Any) -> None:
+    config_store.save_config(_STORE_PARTITION, key, json.dumps(value))
+
+
+def _load_gateway(gateway_id: str) -> dict[str, Any] | None:
+    return _read(f"gateway#{gateway_id}") if gateway_id else None
+
+
+def _store_gateway(gateway: dict[str, Any]) -> None:
+    """Every mutation goes through here — the record is a copy loaded from the store, so
+    unlike the old module dict, changing it in place changes nothing on its own."""
+    _write(f"gateway#{gateway['id']}", gateway)
 
 
 def _normalize_hostname(value: str | None) -> str:
@@ -54,8 +96,15 @@ def _gateway_address(gateway_id: str) -> str:
 
 
 def _get_gateway_for_tenant(tenant_id: str, gateway_id: str) -> dict[str, Any]:
-    gateway = _GATEWAYS.get(gateway_id)
+    gateway = _load_gateway(gateway_id)
     if not gateway or gateway.get("tenant_id") != tenant_id:
+        raise KeyError(f"Unknown gateway '{gateway_id}'")
+    return gateway
+
+
+def _require_gateway(gateway_id: str) -> dict[str, Any]:
+    gateway = _load_gateway(gateway_id)
+    if not gateway:
         raise KeyError(f"Unknown gateway '{gateway_id}'")
     return gateway
 
@@ -63,7 +112,7 @@ def _get_gateway_for_tenant(tenant_id: str, gateway_id: str) -> dict[str, Any]:
 def _credential_matches(gateway_id: str, credential: str | None) -> bool:
     if not credential:
         return False
-    return _GATEWAY_CREDENTIALS.get(credential) == gateway_id
+    return _read(f"credential#{credential}") == gateway_id
 
 
 def create_gateway(tenant_id: str, payload: dict[str, Any]) -> dict[str, Any]:
@@ -125,8 +174,8 @@ def create_gateway(tenant_id: str, payload: dict[str, Any]) -> dict[str, Any]:
             "instructions": _installation_instructions(deployment_type, public_hostname, origin_hostname),
         },
     }
-    _GATEWAYS[gateway_id] = gateway
-    _ENROLLMENT_TOKENS[enrollment_token] = gateway_id
+    _store_gateway(gateway)
+    _write(f"token#{enrollment_token}", gateway_id)
     return {
         "gateway_id": gateway_id,
         "name": name,
@@ -165,7 +214,7 @@ def _installation_instructions(deployment_type: str, public_hostname: str, origi
 
 
 def gateway_id_for_token(token: str) -> str | None:
-    return _ENROLLMENT_TOKENS.get(token)
+    return _read(f"token#{token}") if token else None
 
 
 def enroll_gateway(gateway_id: str | None, token: str) -> dict[str, Any]:
@@ -175,21 +224,20 @@ def enroll_gateway(gateway_id: str | None, token: str) -> dict[str, Any]:
     if not resolved_gateway_id:
         raise ValueError("Invalid enrollment token")
 
-    gateway = _GATEWAYS.get(resolved_gateway_id)
-    if not gateway:
-        raise KeyError(f"Unknown gateway '{resolved_gateway_id}'")
-    if _ENROLLMENT_TOKENS.get(token) != resolved_gateway_id:
+    gateway = _require_gateway(resolved_gateway_id)
+    if gateway_id_for_token(token) != resolved_gateway_id:
         raise ValueError("Invalid enrollment token")
     expires_at = datetime.fromisoformat(gateway["enrollment_expires_at"])
     if datetime.now(timezone.utc) > expires_at:
-        _ENROLLMENT_TOKENS.pop(token, None)
+        _write(f"token#{token}", None)  # the store has no delete; a null is "spent"
         raise ValueError("Enrollment token has expired")
 
     gateway["status"] = "ready_for_testing"
     gateway["gateway_credential"] = f"gcred_{uuid.uuid4().hex}"
-    _GATEWAY_CREDENTIALS[gateway["gateway_credential"]] = resolved_gateway_id
-    _ENROLLMENT_TOKENS.pop(token, None)
     gateway["last_heartbeat_at"] = datetime.now(timezone.utc).isoformat()
+    _write(f"credential#{gateway['gateway_credential']}", resolved_gateway_id)
+    _write(f"token#{token}", None)
+    _store_gateway(gateway)
     return {
         "gateway_id": resolved_gateway_id,
         "name": gateway["name"],
@@ -218,9 +266,7 @@ def get_gateway_config(tenant_id: str, gateway_id: str) -> dict[str, Any]:
 
 
 def get_agent_config(gateway_id: str, credential: str | None) -> dict[str, Any]:
-    gateway = _GATEWAYS.get(gateway_id)
-    if not gateway:
-        raise KeyError(f"Unknown gateway '{gateway_id}'")
+    gateway = _require_gateway(gateway_id)
     if not _credential_matches(gateway_id, credential):
         raise PermissionError("Invalid gateway credential")
     return {
@@ -243,13 +289,12 @@ def get_agent_config(gateway_id: str, credential: str | None) -> dict[str, Any]:
 
 
 def heartbeat(gateway_id: str, credential: str | None, payload: dict[str, Any] | None = None) -> dict[str, Any]:
-    gateway = _GATEWAYS.get(gateway_id)
-    if not gateway:
-        raise KeyError(f"Unknown gateway '{gateway_id}'")
+    gateway = _require_gateway(gateway_id)
     if not _credential_matches(gateway_id, credential):
         raise PermissionError("Invalid gateway credential")
     gateway["status"] = str((payload or {}).get("status") or gateway["status"]).strip() or gateway["status"]
     gateway["last_heartbeat_at"] = datetime.now(timezone.utc).isoformat()
+    _store_gateway(gateway)
     return {
         "gateway_id": gateway_id,
         "status": gateway["status"],
@@ -299,6 +344,78 @@ def validate_cutover(tenant_id: str, gateway_id: str, gateway_address: str | Non
     }
 
 
+def _float(value: Any) -> float:
+    try:
+        return round(float(value), 3)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _start_time(value: Any) -> str:
+    """APISIX timestamps as an ISO instant.
+
+    APISIX's access log emits epoch seconds and its http-logger emits milliseconds, so a
+    numeric value is read by magnitude: a millisecond timestamp for any date this
+    century is above 1e11 and a second timestamp is two orders of magnitude below it.
+    Anything unparseable becomes now, which is off by the delivery delay at worst.
+    """
+    if isinstance(value, (int, float)):
+        seconds = float(value)
+        if seconds > 1e11:
+            seconds /= 1000.0
+        return datetime.fromtimestamp(seconds, tz=timezone.utc).isoformat()
+    return str(value or "").strip() or datetime.now(timezone.utc).isoformat()
+
+
+def _telemetry_span(gateway: dict[str, Any], row: dict[str, Any]) -> dict[str, Any]:
+    """One allowlisted APISIX access record as an OTel-shaped span.
+
+    agents.route_stats() — what the API Monitoring page reads — groups on the
+    `http.route` attribute and counts `http.response.status_code`, and nothing in that
+    read path is specific to AI telemetry. So gateway traffic goes into the same
+    `agent-spans` stream rather than a second stream that route_stats would then have to
+    merge: no new storage, no new read path, and traces/{id} gets these spans for free.
+
+    The rollups that *are* AI-specific stay clean because agents._is_llm_span() keys off
+    a span kind or a model attribute, and a gateway span carries neither.
+
+    ponytail: one span per request, sharing the AI telemetry budget — the same 30-day
+    record retention and the same 5000-span read window per tenant. A gateway busy
+    enough to blow through that needs pre-aggregation on write, not a bigger window.
+    """
+    method = str(row.get("method") or "GET").strip().upper()
+    path = str(row.get("normalized_path") or "/").strip() or "/"
+    route = f"{method} {path}"
+    status_code = str(row.get("status") or "").strip() or "200"
+    # A retried delivery of the same request must not be counted twice; the record id
+    # is the span id, and both DynamoDB and _dedupe() collapse a repeat of it.
+    span_id = str(row.get("request_id") or "").strip() or uuid.uuid4().hex
+    attributes = {
+        "http.route": route,
+        "http.request.method": method,
+        "http.response.status_code": status_code,
+        "http.upstream.status_code": row.get("upstream_status"),
+        "http.upstream.latency_ms": row.get("upstream_latency"),
+        "http.request.body.size": row.get("request_size"),
+        "http.response.body.size": row.get("response_size"),
+        "gateway.id": gateway["id"],
+        "gateway.route_id": row.get("route_id"),
+        "gateway.public_hostname": gateway["public_hostname"],
+    }
+    return {
+        "span_id": span_id,
+        "trace_id": span_id,
+        "name": route,
+        "span_kind": "SERVER",
+        "start_time": _start_time(row.get("timestamp")),
+        "duration_ms": _float(row.get("total_latency")),
+        # Only 5xx is the gateway's or the upstream's failure. A 4xx is the caller's
+        # mistake and marking it ERROR here would make a healthy route read as down.
+        "status_code": "ERROR" if status_code.startswith("5") else "OK",
+        "attributes": {k: v for k, v in attributes.items() if v is not None},
+    }
+
+
 def ingest_telemetry(payload: dict[str, Any], credential: str | None = None) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise ValueError("Telemetry payload must be a JSON object")
@@ -312,14 +429,18 @@ def ingest_telemetry(payload: dict[str, Any], credential: str | None = None) -> 
             sanitized[key] = value
         else:
             dropped.append(key)
-    if gateway_id not in _GATEWAYS:
-        raise KeyError(f"Unknown gateway '{gateway_id}'")
+    gateway = _require_gateway(gateway_id)
     if credential and not _credential_matches(gateway_id, credential):
         raise PermissionError("Invalid gateway credential")
+    span = _telemetry_span(gateway, sanitized)
+    # Written through before the agent is told "accepted", the same contract the AI
+    # telemetry endpoint gives: on Lambda there is no later chance to flush a buffer.
+    agent_telemetry.ingest(gateway["tenant_id"], [], [span], [])
     return {
         "gateway_id": gateway_id,
         "accepted": 1,
         "dropped_fields": dropped,
         "stored_fields": sorted(sanitized.keys()),
+        "span_id": span["span_id"],
         "status": "accepted",
     }
