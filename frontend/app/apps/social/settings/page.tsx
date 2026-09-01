@@ -22,7 +22,7 @@ export default function Page() {
           "code": "\n      window.lhbReady = new Promise(function(resolve) {\n        window.__lhbResolve = resolve;\n      });\n    "
         },
         {
-          "code": "\n      import {\n        api,\n        currentTenantSlug,\n        tenantUrl,\n        getToken,\n        setToken\n      } from '/assets/js/integration/api-client.js';\n      import {\n        hydrate\n      } from '/assets/js/integration/live-data.js';\n      import {\n        bind\n      } from '/assets/js/integration/actions.js';\n      import {\n        init as initAuth\n      } from '/assets/js/integration/auth.js';\n      window.lhb = {\n        api,\n        currentTenantSlug,\n        tenantUrl,\n        getToken,\n        setToken\n      };\n      window.__lhbResolve(window.lhb);\n      //- The guard runs first: a page about to redirect a signed-out visitor should not\n      //- spend a round trip per table finding out it had no session.\n      //- .catch, not .then alone: a guard that throws must not take the page's data with\n      //- it — an unhydrated dashboard is a silent one.\n      initAuth().catch(() => {}).then(() => {\n        hydrate(api);\n        bind(api);\n      });\n    ",
+          "code": "\n      import {\n        api,\n        currentTenantSlug,\n        tenantUrl,\n        getToken,\n        setToken\n      } from '/assets/js/integration/api-client.js';\n      import {\n        hydrate\n      } from '/assets/js/integration/live-data.js';\n      import {\n        bind\n      } from '/assets/js/integration/actions.js';\n      import {\n        init as initAuth\n      } from '/assets/js/integration/auth.js';\n      import {\n        init as initAccount\n      } from '/assets/js/integration/account.js';\n      window.lhb = {\n        api,\n        currentTenantSlug,\n        tenantUrl,\n        getToken,\n        setToken\n      };\n      window.__lhbResolve(window.lhb);\n      //- The guard runs first: a page about to redirect a signed-out visitor should not\n      //- spend a round trip per table finding out it had no session.\n      //- .catch, not .then alone: a guard that throws must not take the page's data with\n      //- it — an unhydrated dashboard is a silent one.\n      initAuth().catch(() => {}).then(() => {\n        hydrate(api);\n        bind(api);\n        //- Paints the signed-in account onto any page that asks for it, and reveals the\n        //- owner-only block. Same .catch reasoning as the guard above.\n        initAccount().catch(() => {});\n      });\n    ",
           "module": true
         },
         {
@@ -65,30 +65,22 @@ export default function Page() {
                 <div className="row">
                   <div className="col-12">
                     <div className="d-flex flex-wrap mb-2 align-items-center">
-                      <h3 className="me-2">
-                        Ansolo Lazinatov
+                      <h3 className="me-2" data-lhb-account="name">
+                        —
                       </h3>
-                      <span className="fw-normal fs-8">
-                        u/hansolo
-                      </span>
+                      <span className="fw-normal fs-8" data-lhb-account="email"></span>
                     </div>
                     <div className="d-flex d-xl-block d-xxl-flex align-items-center">
                       <div className="d-flex mb-xl-2 mb-xxl-0">
-                        <span className="fa-solid fa-user-group fs-10 me-2 me-lg-1 me-xl-2"></span>
-                        <h6 className="d-inline-block mb-0">
-                          1297
-                          <span className="fw-semibold ms-1 me-4">
-                            Followers
-                          </span>
+                        <span className="fa-solid fa-building fs-10 me-2 me-lg-1 me-xl-2"></span>
+                        <h6 className="d-inline-block mb-0 me-4" data-lhb-account="orgName">
+                          —
                         </h6>
                       </div>
                       <div className="d-flex">
-                        <span className="fa-solid fa-user-check fs-10 me-2 me-lg-1 me-xl-2"></span>
-                        <h6 className="d-block d-xl-inline-block mb-0">
-                          3971
-                          <span className="fw-semibold ms-1">
-                            Following
-                          </span>
+                        <span className="fa-solid fa-user-shield fs-10 me-2 me-lg-1 me-xl-2"></span>
+                        <h6 className="d-block d-xl-inline-block mb-0" data-lhb-account="role">
+                          —
                         </h6>
                       </div>
                     </div>
@@ -376,27 +368,31 @@ export default function Page() {
                 </div>
               </div>
             </div>
-            <div className="row gy-5">
+            <div className="row gy-5" data-lhb-owner-only="data-lhb-owner-only" hidden={true}>
               <div className="col-12 col-md-6">
                 <h4 className="text-body-emphasis">
-                  Transfer Ownership
+                  Invite people
                 </h4>
                 <p className="text-body-tertiary">
-                  Transfer this account to another person or to a company repository.
+                  Send someone an invite to
+                  <span className="fw-semibold ms-1" data-lhb-account="orgName">
+                    your organization
+                  </span>
+                  and choose what they can do once they accept.
                 </p>
-                <button className="btn btn-phoenix-warning">
-                  Transfer
+                <button className="btn btn-phoenix-primary" type="button" data-lhb-action="inviteMember">
+                  Invite a member
                 </button>
               </div>
               <div className="col-12 col-md-6">
                 <h4 className="text-body-emphasis">
-                  Account Deletion
+                  Transfer ownership
                 </h4>
                 <p className="text-body-tertiary">
-                  Transfer this account to another person or to a company repository.
+                  Hand the organization to another member. They become an admin and the owner; you keep your admin access.
                 </p>
-                <button className="btn btn-phoenix-danger">
-                  Delete account
+                <button className="btn btn-phoenix-warning" type="button" data-lhb-action="transferOwnership">
+                  Transfer ownership
                 </button>
               </div>
             </div>

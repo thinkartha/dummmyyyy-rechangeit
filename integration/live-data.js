@@ -909,6 +909,8 @@ function esc(value) {
 function render(root, rows, plain) {
   const tbody = root.querySelector('tbody.list') || root.querySelector('tbody');
   if (!tbody) return;
+  /* These rows are real, so they are no longer what the pre-paint rule hides. */
+  tbody.removeAttribute('data-sample-rows');
   const keys = Array.from(root.querySelectorAll('thead th[data-sort]')).map((th) => th.dataset.sort);
   tbody.innerHTML = rows
     .map((row) => '<tr>' +
@@ -928,6 +930,7 @@ function clearSamples(root) {
   const tbody = root.querySelector('tbody.list') || root.querySelector('tbody');
   if (!tbody || tbody.dataset.lhbCleared === '1') return;
   tbody.dataset.lhbCleared = '1';
+  tbody.removeAttribute('data-sample-rows');
   const columns = root.querySelectorAll('thead th').length || 1;
   const cell = document.createElement('td');
   cell.className = 'text-center text-body-tertiary fs-9 py-4';
@@ -966,8 +969,18 @@ export async function hydrate(api) {
   /* Stat cards are markup, not measurements — nothing loads them. With mock data off
      they would be the last fabricated numbers left on the page, so blank them. */
   if (!MOCK_DATA) {
-    for (const el of document.querySelectorAll('[data-obs-stat]')) el.textContent = '—';
-    for (const el of document.querySelectorAll('[data-obs-stat-delta]')) el.textContent = 'no data';
+    /* Blank, then drop the attribute: the same attribute is what the stylesheet in
+       <head> hides on, so removing it is what makes the dash visible. Without that the
+       invented number is painted for one frame before this runs — which is exactly the
+       flash of demo data this pair of rules exists to prevent. */
+    for (const el of document.querySelectorAll('[data-obs-stat]')) {
+      el.textContent = '—';
+      el.removeAttribute('data-obs-stat');
+    }
+    for (const el of document.querySelectorAll('[data-obs-stat-delta]')) {
+      el.textContent = 'no data';
+      el.removeAttribute('data-obs-stat-delta');
+    }
     /* Cards written by hand from invented rows — a trace waterfall, a critical-path
        list, "recent failures". Nothing loads them, so with mock data off they are
        removed rather than emptied: an always-blank card is its own kind of lie. */

@@ -309,43 +309,26 @@ append variables
             path: 'apps/chat',
             pathName: 'app-chat',
           },
-          {
-            name: 'email',
-            icon: 'mail',
-            pages: [
-              {
-                name: 'inbox',
-                path: 'apps/email/inbox',
-                pathName: 'email-inbox',
-              },
-              {
-                name: 'email-detail',
-                path: 'apps/email/email-detail',
-                pathName: 'email-detail',
-              },
-              {
-                name: 'compose',
-                path: 'apps/email/compose',
-                pathName: 'email-compose',
-              },
-            ]
-          },
-          {
-            name: 'events',
-            icon: 'bookmark',
-            pages: [
-              {
-                name: 'create-an-event',
-                path: 'apps/events/create-an-event',
-                pathName: 'create-an-event',
-              },
-              {
-                name: 'event-detail',
-                path: 'apps/events/event-detail',
-                pathName: 'event-detail',
-              },
-            ]
-          },
+          // Email and Events are hidden for now — theme apps with no backend behind
+          // them. The pages still compile; uncomment these two entries (and the
+          // matching lines in frontend/scripts/port-html.mjs) to put them back.
+          // {
+          //   name: 'email',
+          //   icon: 'mail',
+          //   pages: [
+          //     { name: 'inbox', path: 'apps/email/inbox', pathName: 'email-inbox' },
+          //     { name: 'email-detail', path: 'apps/email/email-detail', pathName: 'email-detail' },
+          //     { name: 'compose', path: 'apps/email/compose', pathName: 'email-compose' },
+          //   ]
+          // },
+          // {
+          //   name: 'events',
+          //   icon: 'bookmark',
+          //   pages: [
+          //     { name: 'create-an-event', path: 'apps/events/create-an-event', pathName: 'create-an-event' },
+          //     { name: 'event-detail', path: 'apps/events/event-detail', pathName: 'event-detail' },
+          //   ]
+          // },
         ]
       },
       {

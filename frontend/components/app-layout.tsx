@@ -61,15 +61,6 @@ const NAV_GROUPS: Record<string, string[]> = {
     "/apps/organization/members/",
     "/apps/organization/authentication/"
   ],
-  "nv-email": [
-    "/apps/email/inbox/",
-    "/apps/email/email-detail/",
-    "/apps/email/compose/"
-  ],
-  "nv-events": [
-    "/apps/events/create-an-event/",
-    "/apps/events/event-detail/"
-  ],
   "nv-FAQ": [
     "/pages/faq/faq-accordion/",
     "/pages/faq/faq-tab/"
@@ -610,102 +601,6 @@ export default function AppLayout({
                           </span>
                         </div>
                       </a>
-                    </div>
-                    {/* parent pages */}
-                    <div className="nav-item-wrapper">
-                      <a className={'nav-link dropdown-indicator label-1'} href="#nv-email" role="button" data-bs-toggle="collapse" aria-expanded={open('nv-email')} aria-controls="nv-email">
-                        <div className="d-flex align-items-center">
-                          <div className="dropdown-indicator-icon-wrapper">
-                            <span className="fas fa-caret-right dropdown-indicator-icon"></span>
-                          </div>
-                          <span className="nav-link-icon">
-                            <span data-feather="mail"></span>
-                          </span>
-                          <span className="nav-link-text">
-                            Email
-                          </span>
-                        </div>
-                      </a>
-                      <div className="parent-wrapper label-1">
-                        <ul className={'nav collapse parent' + (open('nv-email') ? ' show' : '')} data-bs-parent="#navbarVerticalCollapse" id="nv-email">
-                          <li className="collapsed-nav-item-title d-none">
-                            Email
-                          </li>
-                          <li className="nav-item">
-                            <a className={'nav-link' + (path === '/apps/email/inbox/' ? ' active' : '')} href="/apps/email/inbox/">
-                              <div className="d-flex align-items-center">
-                                <span className="nav-link-text">
-                                  Inbox
-                                </span>
-                              </div>
-                            </a>
-                            {/* more inner pages */}
-                          </li>
-                          <li className="nav-item">
-                            <a className={'nav-link' + (path === '/apps/email/email-detail/' ? ' active' : '')} href="/apps/email/email-detail/">
-                              <div className="d-flex align-items-center">
-                                <span className="nav-link-text">
-                                  Email detail
-                                </span>
-                              </div>
-                            </a>
-                            {/* more inner pages */}
-                          </li>
-                          <li className="nav-item">
-                            <a className={'nav-link' + (path === '/apps/email/compose/' ? ' active' : '')} href="/apps/email/compose/">
-                              <div className="d-flex align-items-center">
-                                <span className="nav-link-text">
-                                  Compose
-                                </span>
-                              </div>
-                            </a>
-                            {/* more inner pages */}
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                    {/* parent pages */}
-                    <div className="nav-item-wrapper">
-                      <a className={'nav-link dropdown-indicator label-1'} href="#nv-events" role="button" data-bs-toggle="collapse" aria-expanded={open('nv-events')} aria-controls="nv-events">
-                        <div className="d-flex align-items-center">
-                          <div className="dropdown-indicator-icon-wrapper">
-                            <span className="fas fa-caret-right dropdown-indicator-icon"></span>
-                          </div>
-                          <span className="nav-link-icon">
-                            <span data-feather="bookmark"></span>
-                          </span>
-                          <span className="nav-link-text">
-                            Events
-                          </span>
-                        </div>
-                      </a>
-                      <div className="parent-wrapper label-1">
-                        <ul className={'nav collapse parent' + (open('nv-events') ? ' show' : '')} data-bs-parent="#navbarVerticalCollapse" id="nv-events">
-                          <li className="collapsed-nav-item-title d-none">
-                            Events
-                          </li>
-                          <li className="nav-item">
-                            <a className={'nav-link' + (path === '/apps/events/create-an-event/' ? ' active' : '')} href="/apps/events/create-an-event/">
-                              <div className="d-flex align-items-center">
-                                <span className="nav-link-text">
-                                  Create an event
-                                </span>
-                              </div>
-                            </a>
-                            {/* more inner pages */}
-                          </li>
-                          <li className="nav-item">
-                            <a className={'nav-link' + (path === '/apps/events/event-detail/' ? ' active' : '')} href="/apps/events/event-detail/">
-                              <div className="d-flex align-items-center">
-                                <span className="nav-link-text">
-                                  Event detail
-                                </span>
-                              </div>
-                            </a>
-                            {/* more inner pages */}
-                          </li>
-                        </ul>
-                      </div>
                     </div>
                   </li>
                   <li className="nav-item">

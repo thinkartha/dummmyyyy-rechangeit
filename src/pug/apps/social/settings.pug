@@ -25,13 +25,18 @@ block content
             div
               button.btn.btn-phoenix-secondary.me-2 Cancel Changes
               button.btn.btn-phoenix-primary Save Information
-        .row.gy-5
+        //- Owner-only. `data-lhb-owner-only` is hidden until account.js confirms the
+        //- signed-in user is the owner_email on their organization — the two things
+        //- only the person who created the organization should be able to do.
+        .row.gy-5(data-lhb-owner-only hidden)
           .col-12.col-md-6
-            h4.text-body-emphasis Transfer Ownership
-            p.text-body-tertiary Transfer this account to another person or to a company repository.
-            button.btn.btn-phoenix-warning Transfer
+            h4.text-body-emphasis Invite people
+            p.text-body-tertiary Send someone an invite to
+              span.fw-semibold.ms-1(data-lhb-account='orgName') your organization
+              |  and choose what they can do once they accept.
+            button.btn.btn-phoenix-primary(type='button' data-lhb-action='inviteMember') Invite a member
           .col-12.col-md-6
-            h4.text-body-emphasis Account Deletion
-            p.text-body-tertiary Transfer this account to another person or to a company repository.
-            button.btn.btn-phoenix-danger Delete account
+            h4.text-body-emphasis Transfer ownership
+            p.text-body-tertiary Hand the organization to another member. They become an admin and the owner; you keep your admin access.
+            button.btn.btn-phoenix-warning(type='button' data-lhb-action='transferOwnership') Transfer ownership
   

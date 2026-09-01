@@ -1480,6 +1480,43 @@ export const ACTIONS = {
     },
   },
 
+  /**
+   * Hand the organization to another of its members.
+   *
+   * The new owner has to be someone already in the organization — the endpoint refuses
+   * anyone else, because an organization owned by an address that cannot sign in is an
+   * organization nobody can administer. The list is fetched so the choice is a pick,
+   * not a retyped address with a typo in it.
+   */
+  transferOwnership: {
+    title: 'Transfer ownership',
+    submit: 'Transfer',
+    success: 'Ownership transferred.',
+    prefill: async (api) => {
+      const org = await api.admin.myOrganization();
+      const members = await api.admin.organizationUsers(org.org_id || org.id).catch(() => []);
+      return { org, members };
+    },
+    fields: ({ org, members } = {}) => {
+      const owner = (org && org.owner_email || '').toLowerCase();
+      const others = (members || [])
+        .map((m) => m.email)
+        .filter((email) => email && email.toLowerCase() !== owner);
+      return others.length
+        ? [{ name: 'new_owner_email', label: 'New owner', type: 'select', required: true,
+             options: others,
+             help: 'They become an admin and the owner. You keep your admin access.' }]
+        : [{ name: 'new_owner_email', label: 'New owner', required: true,
+             placeholder: 'them@company.com',
+             help: 'Nobody else has joined yet — invite them first, then transfer.' }];
+    },
+    run: async (api, body, _arg) => {
+      const org = await api.admin.myOrganization();
+      await api.admin.transferOwnership(org.org_id || org.id, body);
+      return `${body.new_owner_email} now owns ${org.name || 'this organization'}.`;
+    },
+  },
+
   adminCreateOrganization: {
     title: 'Create organization',
     submit: 'Create',

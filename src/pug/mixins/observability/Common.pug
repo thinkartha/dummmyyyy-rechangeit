@@ -107,7 +107,10 @@ mixin ObsToolTable(config)
                   )= col.label
                 if config.rowAction
                   th.align-middle.text-end.pe-3(scope='col')
-            tbody.list
+            //- `data-sample-rows` is what the pre-paint CSS hides when mock data is off.
+            //- live-data.js drops the attribute the moment it puts real rows (or the
+            //- empty state) here, which is what makes them visible.
+            tbody.list(data-sample-rows)
               each row in config.rows
                 tr
                   each cell, idx in row.cells

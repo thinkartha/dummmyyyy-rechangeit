@@ -53,6 +53,30 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             means API_BASE_URL falls back to http://localhost:8000 in production. */}
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script src="/assets/js/runtime-config.js"></script>
+        {/* Mock data is decided before first paint, not after the modules load.
+            Everything fabricated the pages ship with — sample table rows, the stat-card
+            numbers, the hand-written demo cards — used to be visible until live-data.js
+            cleared it, which is a flash of invented numbers on every load. The class of
+            fix that works is CSS in <head>: hide them now, and let live-data.js reveal
+            each one as it replaces it with something real. */}
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "document.documentElement.dataset.mock=" +
+              "(window.__MOCK_DATA__==='1'?'1':'0')",
+          }}
+        />
+        <style
+          dangerouslySetInnerHTML={{
+            __html: [
+              "html[data-mock='0'] [data-mock-block]{display:none!important}",
+              "html[data-mock='0'] [data-sample-rows]>tr{display:none!important}",
+              "html[data-mock='0'] [data-obs-stat],",
+              "html[data-mock='0'] [data-obs-stat-delta]{visibility:hidden}",
+            ].join(''),
+          }}
+        />
         {/* Both must run before first paint: config.js reads the persisted theme and
             simplebar is queried by the vertical navbar during init. Raw blocking tags
             for the same reason as runtime-config.js above — under `output: export`

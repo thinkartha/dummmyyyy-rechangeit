@@ -524,6 +524,11 @@ export const api = {
     user: (email) => get(`/admin/users/${email}`),
     updateUser: (email, body) => put(`/admin/users/${email}`, body),
     deleteUser: (email) => del(`/admin/users/${email}`),
+    /* The one organization read a member (not a platform admin) is allowed: it is how
+       the settings page learns who owns the org it belongs to. */
+    myOrganization: () => get('/admin/my-organization'),
+    transferOwnership: (orgId, body) =>
+      post(`/admin/organizations/${orgId}/transfer-ownership`, body),
     approveUser: (email) => post(`/admin/users/${email}/approve`),
     denyUser: (email) => post(`/admin/users/${email}/deny`),
     pendingApprovals: () => get('/admin/pending-approvals'),

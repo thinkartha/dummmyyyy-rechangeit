@@ -13,18 +13,19 @@ mixin SettingsProfileCard
 		.card-body
 			.row
 				.col-12
+					//- Filled by integration/account.js from the signed-in session. The theme
+					//- shipped a person and a follower count; this is an observability
+					//- product, so the identity that matters is email, role and organization.
 					.d-flex.flex-wrap.mb-2.align-items-center
-						h3.me-2 Ansolo Lazinatov
-						span.fw-normal.fs-8 u/hansolo
+						h3.me-2(data-lhb-account='name') —
+						span.fw-normal.fs-8(data-lhb-account='email')
 					.d-flex.d-xl-block.d-xxl-flex.align-items-center
 						.d-flex.mb-xl-2.mb-xxl-0
-							span.fa-solid.fa-user-group.fs-10.me-2.me-lg-1.me-xl-2
-							h6.d-inline-block.mb-0 1297
-								span.fw-semibold.ms-1.me-4 Followers
+							span.fa-solid.fa-building.fs-10.me-2.me-lg-1.me-xl-2
+							h6.d-inline-block.mb-0.me-4(data-lhb-account='orgName') —
 						.d-flex
-							span.fa-solid.fa-user-check.fs-10.me-2.me-lg-1.me-xl-2
-							h6.d-block.d-xl-inline-block.mb-0 3971
-								span.fw-semibold.ms-1 Following
+							span.fa-solid.fa-user-shield.fs-10.me-2.me-lg-1.me-xl-2
+							h6.d-block.d-xl-inline-block.mb-0(data-lhb-account='role') —
 
 mixin LeftSidebar
 	.border-bottom.border-translucent.border-dashed.pb-3.mb-4

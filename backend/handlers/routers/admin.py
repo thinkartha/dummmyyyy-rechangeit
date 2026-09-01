@@ -43,6 +43,10 @@ class InviteUserRequest(BaseModel):
     role: str = ROLE_USER
 
 
+class TransferOwnershipRequest(BaseModel):
+    new_owner_email: str
+
+
 class JoinRequestAction(BaseModel):
     action: str  # approve | deny
 
@@ -212,6 +216,63 @@ def invite_user(
     }
 
 
+@router.post("/organizations/{org_id}/transfer-ownership", response_model=dict)
+def transfer_ownership(
+    org_id: str,
+    body: TransferOwnershipRequest,
+    principal: Principal = Depends(get_current_principal),
+) -> dict:
+    """Hand an organization to another of its members.
+
+    Only the current owner (or a platform admin) can do this — being an org admin is not
+    enough, or any admin could take the organization from the person who created it. The
+    new owner must already be a member: transferring to an address that has not accepted
+    an invite would leave the organization owned by nobody who can sign in.
+
+    The outgoing owner keeps org_admin rather than being demoted. Losing your own access
+    as a side effect of handing over the title is the kind of surprise that needs a
+    separate, deliberate click — Members can remove them.
+    """
+    org = orgs.get_org(org_id)
+    if not org:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
+
+    is_owner = (org.get("owner_email") or "").lower() == (principal.sub or "").lower()
+    if ROLE_PLATFORM_ADMIN not in principal.roles and not (is_owner and principal.org_id == org_id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Only the organization owner can transfer ownership")
+
+    new_owner = users.get_user(body.new_owner_email)
+    if not new_owner or new_owner.get("org_id") != org_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="That person is not a member of this organization. Invite them first.")
+    if (new_owner.get("email") or "").lower() == (org.get("owner_email") or "").lower():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="They already own this organization")
+
+    roles = list(new_owner.get("roles") or [])
+    if ROLE_ORG_ADMIN not in roles:
+        roles.append(ROLE_ORG_ADMIN)
+        users.update_user(new_owner["email"], roles=roles)
+        if _cognito_enabled():
+            client = cognito_client()
+            if client:
+                try:
+                    client.admin_add_user_to_group(
+                        UserPoolId=os.getenv("COGNITO_USER_POOL_ID"),
+                        Username=new_owner["email"],
+                        GroupName=_cognito_group_name(ROLE_ORG_ADMIN),
+                    )
+                except Exception as exc:  # pragma: no cover
+                    log.warning("Cognito group add failed during transfer: %s", exc)
+
+    if not orgs.update_org(org_id, owner_email=new_owner["email"]):
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Transfer failed")
+
+    log.info("Organization %s transferred from %s to %s", org_id, principal.sub, new_owner["email"])
+    return {"org_id": org_id, "owner_email": new_owner["email"], "previous_owner": principal.sub}
+
+
 @router.get("/organizations/{org_id}/join-requests", response_model=list[dict])
 def list_pending_join_requests(
     org_id: str,
@@ -375,6 +436,24 @@ def _serialize_org(org: dict) -> dict:
         "id": org.get("org_id"),
         "createdAt": org.get("created_at"),
     }
+
+
+@router.get("/my-organization", response_model=dict)
+def get_my_organization(principal: Principal = Depends(get_current_principal)) -> dict:
+    """The caller's own organization.
+
+    Every other read of an organization is platform-admin only, which left a member with
+    no way to learn the one fact the settings screen needs: who owns the organization
+    they are in. Ownership cannot be inferred from a role — org_admin is a role several
+    people can hold, owner_email is one address — so the UI has to be told.
+    """
+    if not principal.org_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="This account does not belong to an organization")
+    org = orgs.get_org(principal.org_id)
+    if not org:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
+    return _serialize_org(org)
 
 
 @router.get("/organizations/{org_id}", response_model=dict)

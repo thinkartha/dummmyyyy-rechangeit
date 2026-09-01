@@ -22,6 +22,16 @@ append variables
   - var attrsNavbarVertical = {}
 
 append headScripts
+  //- Decide mock data before first paint. Everything fabricated the pages ship with is
+  //- hidden by the rule below and revealed by live-data.js only once it has something
+  //- real to put there — otherwise the invented numbers are painted for a frame first.
+  script.
+    document.documentElement.dataset.mock = (window.__MOCK_DATA__ === '1' ? '1' : '0');
+  style.
+    html[data-mock='0'] [data-mock-block] { display: none !important; }
+    html[data-mock='0'] [data-sample-rows] > tr { display: none !important; }
+    html[data-mock='0'] [data-obs-stat],
+    html[data-mock='0'] [data-obs-stat-delta] { visibility: hidden; }
   script(src=`${CWD}vendors/simplebar/simplebar.min.js`)
   script(src=`${CWD}assets/js/config.js`)
 
@@ -73,13 +83,20 @@ append layoutScripts
     import { hydrate } from '#{MOD}assets/js/integration/live-data.js';
     import { bind } from '#{MOD}assets/js/integration/actions.js';
     import { init as initAuth } from '#{MOD}assets/js/integration/auth.js';
+    import { init as initAccount } from '#{MOD}assets/js/integration/account.js';
     window.lhb = { api, currentTenantSlug, tenantUrl, getToken, setToken };
     window.__lhbResolve(window.lhb);
     //- The guard runs first: a page about to redirect a signed-out visitor should not
     //- spend a round trip per table finding out it had no session.
     //- .catch, not .then alone: a guard that throws must not take the page's data with
     //- it — an unhydrated dashboard is a silent one.
-    initAuth().catch(() => {}).then(() => { hydrate(api); bind(api); });
+    initAuth().catch(() => {}).then(() => {
+      hydrate(api);
+      bind(api);
+      //- Paints the signed-in account onto any page that asks for it, and reveals the
+      //- owner-only block. Same .catch reasoning as the guard above.
+      initAccount().catch(() => {});
+    });
 
   script(src=`${CWD}vendors/fontawesome/all.min.js`)
   script(src=`${CWD}vendors/lodash/lodash.min.js`)

@@ -40,11 +40,13 @@ const PAGES = [
   ...['authentication', 'members', 'multi-tenant', 'onboarding', 'organizations']
     .map(p => `apps/organization/${p}.html`),
   'apps/chat.html',
-  'apps/email/compose.html',
-  'apps/email/email-detail.html',
-  'apps/email/inbox.html',
-  'apps/events/create-an-event.html',
-  'apps/events/event-detail.html',
+  // Email and Events are commented out of the nav (src/pug/mixins/Variables.pug), so
+  // they are not ported either — a route nothing links to is dead weight in the export.
+  // 'apps/email/compose.html',
+  // 'apps/email/email-detail.html',
+  // 'apps/email/inbox.html',
+  // 'apps/events/create-an-event.html',
+  // 'apps/events/event-detail.html',
   'apps/social/settings.html',
   'pages/faq/faq-accordion.html',
   'pages/faq/faq-tab.html',
