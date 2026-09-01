@@ -88,11 +88,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Raw alerts (24h)
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     1,904
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info">
+                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta">
                   +212
                 </span>
               </div>
@@ -107,11 +107,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Correlated incidents
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     46
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success">
+                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
                   97.6% reduction
                 </span>
               </div>
@@ -126,11 +126,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Open incidents
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     7
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning">
+                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
                   2 critical
                 </span>
               </div>
@@ -145,11 +145,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Mean time to RCA
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     6m
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success">
+                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
                   -4m
                 </span>
               </div>
@@ -157,7 +157,7 @@ export default function Page() {
           </div>
         </div>
       </div>
-      <div className="card mb-4">
+      <div className="card mb-4" data-mock-block="data-mock-block">
         <div className="card-header border-bottom border-translucent py-3">
           <h4 className="mb-0">
             INC-4821 · Checkout failures across three services

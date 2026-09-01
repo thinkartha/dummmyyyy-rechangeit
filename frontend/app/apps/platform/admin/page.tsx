@@ -91,11 +91,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Organizations
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     1,284
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info">
+                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta">
                   of 30,000 capacity
                 </span>
               </div>
@@ -110,11 +110,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Users
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     18,402
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success">
+                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
                   +312 (30d)
                 </span>
               </div>
@@ -129,11 +129,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Pending approvals
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     23
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning">
+                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
                   awaiting review
                 </span>
               </div>
@@ -148,11 +148,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Suspended
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     7
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-danger">
+                <span className="badge badge-phoenix badge-phoenix-danger" data-obs-stat-delta="data-obs-stat-delta">
                   billing or policy
                 </span>
               </div>

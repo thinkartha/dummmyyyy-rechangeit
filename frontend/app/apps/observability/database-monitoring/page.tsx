@@ -85,11 +85,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Databases
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     48
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info">
+                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta">
                   +6
                 </span>
               </div>
@@ -104,11 +104,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Healthy
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     43
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success">
+                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
                   89.6%
                 </span>
               </div>
@@ -123,11 +123,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Degraded
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     4
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning">
+                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
                   replication lag
                 </span>
               </div>
@@ -142,11 +142,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Down
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     1
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-danger">
+                <span className="badge badge-phoenix badge-phoenix-danger" data-obs-stat-delta="data-obs-stat-delta">
                   connect refused
                 </span>
               </div>
@@ -551,7 +551,7 @@ export default function Page() {
       </div>
       <div className="row g-4">
         <div className="col-12 col-lg-6">
-          <div className="card h-100">
+          <div className="card h-100" data-mock-block="data-mock-block">
             <div className="card-body">
               <h4 className="mb-3">
                 Slowest queries (24h)

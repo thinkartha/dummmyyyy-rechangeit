@@ -91,11 +91,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Open alerts
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     27
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-danger">
+                <span className="badge badge-phoenix badge-phoenix-danger" data-obs-stat-delta="data-obs-stat-delta">
                   12 critical
                 </span>
               </div>
@@ -110,11 +110,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Acknowledged
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     9
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info">
+                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta">
                   today
                 </span>
               </div>
@@ -129,11 +129,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Resolved (24h)
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     41
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success">
+                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
                   +6
                 </span>
               </div>
@@ -148,11 +148,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     MTTR
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     34m
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success">
+                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
                   -8m
                 </span>
               </div>

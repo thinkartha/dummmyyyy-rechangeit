@@ -367,10 +367,31 @@ def confirm(body: ConfirmRequest) -> None:
         if not stored_code or stored_code != body.code:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid confirmation code")
 
-    intent = user.get("intent")
-    # create_org still needs global-admin approval; solo accounts activate on confirmation.
-    new_status = "pending_admin" if intent == "create_org" else "active"
-    users.update_user(body.email, status=new_status, confirmation_code=None)
+    # Confirming the emailed code is the whole sign-up. create_org used to land in
+    # pending_admin here, which meant a self-serve organization signup completed the code
+    # step and then could not sign in — /login answers any non-active user with "Account
+    # is not active", so it read as a broken auth system rather than a queue. The
+    # organization row already exists (register created it with this user as its owner),
+    # so there is nothing for a platform admin to decide. Approve/deny still exist in the
+    # admin API for suspending an account after the fact.
+    users.update_user(body.email, status="active", confirmation_code=None)
+
+
+def _activate_stranded_org_owner(user: dict | None) -> dict | None:
+    """Let through an account the old confirm() parked in pending_admin.
+
+    Anyone who signed up to create an organization before that changed is stuck: they
+    cannot confirm again (confirm rejects a non-pending_confirmation status) and they
+    cannot sign in. They own a real organization and they proved the email, so this
+    activates them on their next sign-in attempt rather than needing a manual fix per
+    account. Only create_org signups qualify — an account a platform admin parked in
+    pending_admin by hand keeps that status.
+    """
+    if not user or user.get("status") != "pending_admin" or user.get("intent") != "create_org":
+        return user
+    users.update_user(user["email"], status="active")
+    log.info("Activated stranded org owner %s on sign-in", user["email"])
+    return users.get_user(user["email"]) or {**user, "status": "active"}
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -404,7 +425,7 @@ def login(body: LoginRequest) -> TokenResponse:
             access_token = auth_result.get("AccessToken", "")
             refresh_token = auth_result.get("RefreshToken") or None
             # Enforce backend user status even when Cognito credentials are valid.
-            user = users.get_user(body.email)
+            user = _activate_stranded_org_owner(users.get_user(body.email))
             if user and user.get("status") != "active":
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Account is not active")
             # Decode the Cognito access token to get org_id and roles for the response.
@@ -464,6 +485,7 @@ def login(body: LoginRequest) -> TokenResponse:
     user = users.authenticate(body.email, body.password)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
+    user = _activate_stranded_org_owner(user)
     if user.get("status") != "active":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Account is not active")
     token = create_token(user["email"], user["roles"], org_id=user.get("org_id", ""))

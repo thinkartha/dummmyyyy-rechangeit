@@ -85,11 +85,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Requests (24h)
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     18.4M
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success">
+                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
                   +8.2%
                 </span>
               </div>
@@ -104,11 +104,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Error rate
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     0.84%
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success">
+                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
                   -0.12%
                 </span>
               </div>
@@ -123,11 +123,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     p99 latency
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     412ms
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning">
+                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
                   +36ms
                 </span>
               </div>
@@ -142,11 +142,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Gateways
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     12
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info">
+                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta">
                   3 clouds
                 </span>
               </div>

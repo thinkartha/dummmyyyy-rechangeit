@@ -85,11 +85,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     MTD AI spend
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     $12.8k
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning">
+                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
                   +18%
                 </span>
               </div>
@@ -104,11 +104,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Tokens MTD
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     162M
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info">
+                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta">
                   +22%
                 </span>
               </div>
@@ -123,11 +123,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Top tool
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     ChatGPT
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-primary">
+                <span className="badge badge-phoenix badge-phoenix-primary" data-obs-stat-delta="data-obs-stat-delta">
                   34%
                 </span>
               </div>
@@ -142,11 +142,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Budget remaining
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     $2.2k
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success">
+                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
                   of $15k
                 </span>
               </div>

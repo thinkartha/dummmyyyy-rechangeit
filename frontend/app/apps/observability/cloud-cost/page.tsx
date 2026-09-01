@@ -88,11 +88,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     MTD cloud spend
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     $184.2k
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning">
+                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
                   +9%
                 </span>
               </div>
@@ -107,11 +107,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Forecast EOM
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     $241k
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-danger">
+                <span className="badge badge-phoenix badge-phoenix-danger" data-obs-stat-delta="data-obs-stat-delta">
                   over +6%
                 </span>
               </div>
@@ -126,11 +126,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Accounts over budget
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     3
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning">
+                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
                   of 18
                 </span>
               </div>
@@ -145,11 +145,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Savings opportunities
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     $12.4k
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success">
+                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
                   idle
                 </span>
               </div>

@@ -85,11 +85,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Organizations
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     4
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info">
+                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta">
                   demo tenants
                 </span>
               </div>
@@ -104,11 +104,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Slug URLs
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     4
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-primary">
+                <span className="badge badge-phoenix badge-phoenix-primary" data-obs-stat-delta="data-obs-stat-delta">
                   *.loveheartbeat.com
                 </span>
               </div>
@@ -123,11 +123,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     SSO enabled
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     2
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success">
+                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
                   Okta / SAML
                 </span>
               </div>
@@ -142,11 +142,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Capacity target
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     30k+
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning">
+                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
                   orgs
                 </span>
               </div>

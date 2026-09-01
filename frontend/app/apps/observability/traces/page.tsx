@@ -85,11 +85,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Spans (1h)
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     42.7M
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info">
+                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta">
                   +3.1%
                 </span>
               </div>
@@ -104,11 +104,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Services
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     68
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-primary">
+                <span className="badge badge-phoenix badge-phoenix-primary" data-obs-stat-delta="data-obs-stat-delta">
                   +2
                 </span>
               </div>
@@ -123,11 +123,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Error spans
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     0.61%
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning">
+                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
                   +0.08%
                 </span>
               </div>
@@ -142,11 +142,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     p99 trace
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     2.4s
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning">
+                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
                   +310ms
                 </span>
               </div>
@@ -154,7 +154,7 @@ export default function Page() {
           </div>
         </div>
       </div>
-      <div className="card mb-4">
+      <div className="card mb-4" data-mock-block="data-mock-block">
         <div className="card-header border-bottom border-translucent py-3">
           <h4 className="mb-0">
             Slowest trace · checkout POST /v1/orders

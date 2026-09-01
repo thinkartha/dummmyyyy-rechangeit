@@ -91,11 +91,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Tokens (7d)
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     48.2M
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning">
+                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
                   +26%
                 </span>
               </div>
@@ -110,11 +110,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     AI spend (7d)
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     $4,280
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning">
+                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
                   +18%
                 </span>
               </div>
@@ -129,11 +129,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Active tools
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     11
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info">
+                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta">
                   org-wide
                 </span>
               </div>
@@ -148,11 +148,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Failed calls
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     1.2%
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success">
+                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
                   -0.3%
                 </span>
               </div>

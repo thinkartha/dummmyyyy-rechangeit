@@ -82,11 +82,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Ingested (24h)
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     918M
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info">
+                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta">
                   +4.2%
                 </span>
               </div>
@@ -101,11 +101,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Error lines
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     1.4M
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning">
+                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
                   +18%
                 </span>
               </div>
@@ -120,11 +120,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Indices
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     31
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-primary">
+                <span className="badge badge-phoenix badge-phoenix-primary" data-obs-stat-delta="data-obs-stat-delta">
                   7d hot · 30d warm
                 </span>
               </div>
@@ -139,11 +139,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Index lag
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     2.1s
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success">
+                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
                   -0.4s
                 </span>
               </div>

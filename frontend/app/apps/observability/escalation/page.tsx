@@ -85,11 +85,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Awaiting approval
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     4
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning">
+                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
                   2 expiring
                 </span>
               </div>
@@ -104,11 +104,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Escalation paths
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     6
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success">
+                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
                   all active
                 </span>
               </div>
@@ -123,11 +123,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Reached level 3+
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     3
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-danger">
+                <span className="badge badge-phoenix badge-phoenix-danger" data-obs-stat-delta="data-obs-stat-delta">
                   last 7d
                 </span>
               </div>
@@ -142,11 +142,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Median time to ack
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     4m 12s
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success">
+                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
                   -38s
                 </span>
               </div>
@@ -416,7 +416,7 @@ export default function Page() {
       </div>
       <div className="row g-4 my-0">
         <div className="col-12 col-xl-7">
-          <div className="card h-100">
+          <div className="card h-100" data-mock-block="data-mock-block">
             <div className="card-header border-bottom border-translucent py-3">
               <h4 className="mb-0">
                 Escalation paths
@@ -560,7 +560,7 @@ export default function Page() {
           </div>
         </div>
         <div className="col-12 col-xl-5">
-          <div className="card h-100">
+          <div className="card h-100" data-mock-block="data-mock-block">
             <div className="card-header border-bottom border-translucent py-3">
               <h4 className="mb-0">
                 Approval workflows
@@ -672,7 +672,7 @@ export default function Page() {
           </div>
         </div>
       </div>
-      <div className="card">
+      <div className="card" data-mock-block="data-mock-block">
         <div className="card-header border-bottom border-translucent py-3">
           <h4 className="mb-0">
             Escalation analytics

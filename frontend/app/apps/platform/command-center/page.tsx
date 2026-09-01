@@ -82,11 +82,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Open incidents
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     7
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-danger">
+                <span className="badge badge-phoenix badge-phoenix-danger" data-obs-stat-delta="data-obs-stat-delta">
                   2 critical
                 </span>
               </div>
@@ -101,11 +101,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Services healthy
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     61 / 68
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success">
+                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
                   89.7%
                 </span>
               </div>
@@ -120,11 +120,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Signals (24h)
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     2.1M
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info">
+                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta">
                   +6.4%
                 </span>
               </div>
@@ -139,11 +139,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Spend today
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     $4,182
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning">
+                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
                   +$310
                 </span>
               </div>
@@ -312,7 +312,7 @@ export default function Page() {
           </div>
         </div>
         <div className="col-12 col-xl-4">
-          <div className="card h-100">
+          <div className="card h-100" data-mock-block="data-mock-block">
             <div className="card-header border-bottom border-translucent py-3">
               <h4 className="mb-0">
                 Area health

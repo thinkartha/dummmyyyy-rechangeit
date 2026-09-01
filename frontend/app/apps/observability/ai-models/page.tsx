@@ -88,11 +88,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Models
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     12
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info">
+                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta">
                   +2
                 </span>
               </div>
@@ -107,11 +107,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Inferences (24h)
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     4.8M
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success">
+                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
                   +11%
                 </span>
               </div>
@@ -126,11 +126,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Failure rate
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     0.42%
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning">
+                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
                   +0.09%
                 </span>
               </div>
@@ -145,11 +145,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     p95 latency
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     318ms
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success">
+                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
                   -24ms
                 </span>
               </div>
@@ -526,7 +526,7 @@ export default function Page() {
               </button>
             </div>
           </div>
-          <div className="card">
+          <div className="card" data-mock-block="data-mock-block">
             <div className="card-body">
               <h4 className="mb-3">
                 Recent failures

@@ -34,16 +34,6 @@ export default function Page() {
               <div className="card border border-translucent">
                 <div className="card-body p-4" data-lhb-auth="signin">
                   <div className="mb-4">
-                    <label className="form-label fs-9" htmlFor="organization">
-                      Organization
-                    </label>
-                    <select className="form-select" id="organization" data-lhb-org-picker="">
-                      <option value="">
-                        Loading organizations…
-                      </option>
-                    </select>
-                  </div>
-                  <div className="mb-4">
                     <label className="form-label fs-9" htmlFor="email">
                       Email
                     </label>

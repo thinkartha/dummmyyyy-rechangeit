@@ -88,11 +88,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Active rules
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     19
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info">
+                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta">
                   of 24
                 </span>
               </div>
@@ -107,11 +107,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Executions (7d)
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     412
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success">
+                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
                   +64
                 </span>
               </div>
@@ -126,11 +126,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Success rate
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     97.1%
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success">
+                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
                   +0.6%
                 </span>
               </div>
@@ -145,11 +145,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Awaiting approval
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     5
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning">
+                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
                   high impact
                 </span>
               </div>
@@ -484,7 +484,7 @@ export default function Page() {
           </div>
         </div>
         <div className="col-12 col-lg-5">
-          <div className="card h-100">
+          <div className="card h-100" data-mock-block="data-mock-block">
             <div className="card-body">
               <h4 className="mb-3">
                 Predictive insights

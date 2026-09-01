@@ -91,11 +91,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Open alerts
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     37
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success">
+                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
                   -8
                 </span>
               </div>
@@ -110,11 +110,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Breaching SLA
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     4
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-danger">
+                <span className="badge badge-phoenix badge-phoenix-danger" data-obs-stat-delta="data-obs-stat-delta">
                   ack overdue
                 </span>
               </div>
@@ -129,11 +129,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Routing rules
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     22
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info">
+                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta">
                   19 enabled
                 </span>
               </div>
@@ -148,11 +148,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Windows active
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     2
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning">
+                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
                   suppressing
                 </span>
               </div>

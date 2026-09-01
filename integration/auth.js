@@ -184,9 +184,10 @@ export const FLOWS = {
       remember(values.email);
       const status = (result && result.status) || '';
 
-      /* Three of the four intents end somewhere other than "signed in", and saying which
+      /* Two of the four intents end somewhere other than "signed in", and saying which
          is the whole value of this screen — an account waiting on an admin looks exactly
-         like a broken sign-up otherwise. */
+         like a broken sign-up otherwise. Creating an organization is not one of them any
+         more: it confirms by code and signs straight in. */
       if (status === 'pending_confirmation') {
         const hint = result.confirmation_code
           ? ` Your code is ${result.confirmation_code} (shown only in local dev).`
@@ -196,10 +197,6 @@ export const FLOWS = {
       }
       if (status === 'pending_join') {
         say(root, 'Request sent. An administrator of that organization has to approve it before you can sign in.', 'info');
-        return null;
-      }
-      if (status === 'pending_admin') {
-        say(root, 'Organization created. It needs platform-admin approval before you can sign in.', 'info');
         return null;
       }
       say(root, 'Account created. Sending you to sign in…', 'success');

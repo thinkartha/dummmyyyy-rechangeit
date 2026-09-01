@@ -77,11 +77,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Design target
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     30k+
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info">
+                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta">
                   orgs
                 </span>
               </div>
@@ -96,11 +96,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     URL model
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     slug
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-primary">
+                <span className="badge badge-phoenix badge-phoenix-primary" data-obs-stat-delta="data-obs-stat-delta">
                   *.loveheartbeat.com
                 </span>
               </div>
@@ -115,11 +115,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Plans
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     Trial → Ent
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success">
+                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
                   self-serve + sales
                 </span>
               </div>
@@ -134,11 +134,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Isolation
                   </h6>
-                  <h3 className="mb-0">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
                     org_id
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning">
+                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
                   data + auth
                 </span>
               </div>
