@@ -37,11 +37,14 @@ def get_tenant_id(
     principal: Principal | None = Depends(get_optional_principal),
 ) -> str:
     """Resolve tenant id from authenticated claims, then slug, then X-Tenant-Id."""
+    # One exit, because the answer is now also published on the request (below) and a
+    # branch that returns early is a branch that silently skips doing so.
     if principal and principal.org_id:
-        return principal.org_id
-    if principal and principal.sub:
-        return f"solo-{principal.sub}"
-    tenant_id = _slug_org_id(request) or x_tenant_id.strip()
+        tenant_id = principal.org_id
+    elif principal and principal.sub:
+        tenant_id = f"solo-{principal.sub}"
+    else:
+        tenant_id = _slug_org_id(request) or x_tenant_id.strip()
     if not tenant_id:
         # This used to default to "acme" — a real tenant. Every request we could not place
         # was therefore reading, and writing, that organization's data under its name. An
@@ -51,6 +54,11 @@ def get_tenant_id(
             detail="Tenant not resolved. Sign in, use https://<slug>.loveheartbeat.com, "
                    "or send X-Tenant-Slug.",
         )
+    # Published for request_spans: the middleware runs outside the dependency system and
+    # cannot call this, and re-deriving the tenant there would be a second implementation
+    # of exactly the rule above — free to disagree with it, and misfile a request into the
+    # wrong organization's traffic. Reading back what the request itself resolved cannot.
+    request.state.tenant_id = tenant_id
     return tenant_id
 
 

@@ -281,14 +281,21 @@ export const api = {
            token is still good, so fall back to the login payload. */
         let roles = result.roles || [];
         let orgId = result.org_id || null;
+        /* The person's name, and the address the account was registered with. Both live
+           on the user record; the token only carries a login identifier, which is what
+           the navbar used to print. */
+        let name = '';
+        let address = result.sub || email;
         try {
           const me = await get('/auth/me');
           roles = me.roles || roles;
           orgId = me.org_id ?? orgId;
+          name = me.name || '';
+          address = me.email || address;
         } catch {
           /* keep what login returned */
         }
-        setSession({ email: result.sub || email, sub: result.sub || email, roles, orgId, role: roleOf(roles) });
+        setSession({ email: address, sub: result.sub || email, name, roles, orgId, role: roleOf(roles) });
       }
       return result;
     },

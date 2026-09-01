@@ -17,8 +17,30 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 
+import pytest  # noqa: E402
+
 from shared.aws import lambda_service  # noqa: E402
 from shared.core import agents, mock_data  # noqa: E402
+
+# The tests below stub module globals by plain assignment rather than through the
+# monkeypatch fixture, so that the file still runs as a script (see __main__). Under
+# pytest the process outlives the file, and a stubbed agent_telemetry.spans leaking into
+# another module's tests fails there instead — a long way from the cause. Put them back.
+_STUBBED = (
+    (agents.obs, "_fetch_spans"),
+    (agents.agent_telemetry, "uses_store"),
+    (agents.agent_telemetry, "spans"),
+    (lambda_service, "get_config"),
+    (lambda_service, "_session"),
+)
+
+
+@pytest.fixture(autouse=True)
+def restore_stubbed_globals():
+    originals = [(module, name, getattr(module, name)) for module, name in _STUBBED]
+    yield
+    for module, name, original in originals:
+        setattr(module, name, original)
 
 
 def _mock(on):

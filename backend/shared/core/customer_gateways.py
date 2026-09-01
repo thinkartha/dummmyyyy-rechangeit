@@ -344,13 +344,6 @@ def validate_cutover(tenant_id: str, gateway_id: str, gateway_address: str | Non
     }
 
 
-def _float(value: Any) -> float:
-    try:
-        return round(float(value), 3)
-    except (TypeError, ValueError):
-        return 0.0
-
-
 def _start_time(value: Any) -> str:
     """APISIX timestamps as an ISO instant.
 
@@ -382,38 +375,28 @@ def _telemetry_span(gateway: dict[str, Any], row: dict[str, Any]) -> dict[str, A
     ponytail: one span per request, sharing the AI telemetry budget — the same 30-day
     record retention and the same 5000-span read window per tenant. A gateway busy
     enough to blow through that needs pre-aggregation on write, not a bigger window.
+
+    The span shape itself lives in agent_telemetry.http_span: this API's own request
+    middleware produces the same kind of record, and one definition is what keeps the
+    two from drifting apart underneath route_stats().
     """
-    method = str(row.get("method") or "GET").strip().upper()
-    path = str(row.get("normalized_path") or "/").strip() or "/"
-    route = f"{method} {path}"
-    status_code = str(row.get("status") or "").strip() or "200"
-    # A retried delivery of the same request must not be counted twice; the record id
-    # is the span id, and both DynamoDB and _dedupe() collapse a repeat of it.
-    span_id = str(row.get("request_id") or "").strip() or uuid.uuid4().hex
-    attributes = {
-        "http.route": route,
-        "http.request.method": method,
-        "http.response.status_code": status_code,
-        "http.upstream.status_code": row.get("upstream_status"),
-        "http.upstream.latency_ms": row.get("upstream_latency"),
-        "http.request.body.size": row.get("request_size"),
-        "http.response.body.size": row.get("response_size"),
-        "gateway.id": gateway["id"],
-        "gateway.route_id": row.get("route_id"),
-        "gateway.public_hostname": gateway["public_hostname"],
-    }
-    return {
-        "span_id": span_id,
-        "trace_id": span_id,
-        "name": route,
-        "span_kind": "SERVER",
-        "start_time": _start_time(row.get("timestamp")),
-        "duration_ms": _float(row.get("total_latency")),
-        # Only 5xx is the gateway's or the upstream's failure. A 4xx is the caller's
-        # mistake and marking it ERROR here would make a healthy route read as down.
-        "status_code": "ERROR" if status_code.startswith("5") else "OK",
-        "attributes": {k: v for k, v in attributes.items() if v is not None},
-    }
+    return agent_telemetry.http_span(
+        row.get("method"),
+        row.get("normalized_path"),
+        row.get("status"),
+        row.get("total_latency"),
+        start_time=_start_time(row.get("timestamp")),
+        span_id=str(row.get("request_id") or "").strip() or None,
+        attributes={
+            "http.upstream.status_code": row.get("upstream_status"),
+            "http.upstream.latency_ms": row.get("upstream_latency"),
+            "http.request.body.size": row.get("request_size"),
+            "http.response.body.size": row.get("response_size"),
+            "gateway.id": gateway["id"],
+            "gateway.route_id": row.get("route_id"),
+            "gateway.public_hostname": gateway["public_hostname"],
+        },
+    )
 
 
 def ingest_telemetry(payload: dict[str, Any], credential: str | None = None) -> dict[str, Any]:

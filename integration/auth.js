@@ -388,7 +388,9 @@ function paint() {
   const session = getSession();
 
   for (const el of document.querySelectorAll('[data-lhb-user]')) {
-    el.textContent = session ? (session.email || session.sub) : 'Not signed in';
+    /* A name slot wants a name. The address is the fallback for an account that has
+       none, and `sub` — a login identifier — only when there is no address either. */
+    el.textContent = session ? (session.name || session.email || session.sub) : 'Not signed in';
   }
   for (const el of document.querySelectorAll('[data-lhb-role]')) {
     el.textContent = session ? (ROLE_LABELS[session.role] || session.role) : '—';

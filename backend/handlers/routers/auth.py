@@ -600,9 +600,33 @@ def refresh(body: RefreshRequest) -> TokenResponse:
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session expired, sign in again")
 
 
-@router.get("/me", response_model=Principal)
-def me(principal: Principal = Depends(get_current_principal)) -> Principal:
-    return principal
+class MeResponse(Principal):
+    """The principal, plus the profile the screens that show a *person* need.
+
+    `principal.sub` is an authentication identifier, not a profile. On the Cognito path it
+    is whatever `_claim(payload, "email", "username", "sub")` found — an access token
+    carries no `email` claim, so that is the `username` claim, which is only the pool's
+    login handle and is not required to be the address the account was registered with.
+    The navbar and the settings page were printing that handle as the user's name.
+
+    UsersTable holds both the name someone typed at sign-up and the address they
+    registered with, so this answers from there.
+    """
+
+    name: str = ""
+    email: str = ""
+
+
+@router.get("/me", response_model=MeResponse)
+def me(principal: Principal = Depends(get_current_principal)) -> MeResponse:
+    # create_user stores `name or email`, so an account with no name still answers
+    # something readable and the UI's own fallback never has to fire.
+    user = users.get_user(principal.sub) or {}
+    return MeResponse(
+        **principal.model_dump(),
+        name=user.get("name") or "",
+        email=user.get("email") or principal.sub,
+    )
 
 
 @router.get("/admin-check", response_model=Principal)

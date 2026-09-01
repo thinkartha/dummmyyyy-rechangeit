@@ -5,6 +5,7 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from shared.core.auth import get_current_principal
+from shared.core.request_spans import record_request_span
 from handlers.routers import (
     health, rca, ingest, finops, slo, auth, correlation, drift, stream, etl, aws, elk,
     admin, observability, databricks, gateways, databases, ai_models, alerts,
@@ -39,6 +40,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Added after CORS, so it sits *inside* it: a CORS preflight is answered by the
+# middleware above and never reaches this one, which is right — an OPTIONS carries no
+# credentials, resolves no tenant, and is not traffic anybody wants counted. Without
+# this the product's own API calls were recorded nowhere and the API Monitoring page
+# had nothing to show however much the app was used.
+app.middleware("http")(record_request_span)
 
 # Auth is enforced here, not at API Gateway: get_current_principal accepts Cognito
 # tokens, local JWTs, and API keys, while the gateway authorizer only accepted the

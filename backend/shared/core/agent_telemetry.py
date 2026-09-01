@@ -38,6 +38,61 @@ def _moment(value: Any) -> datetime:
     return datetime.now(timezone.utc)
 
 
+def http_span(
+    method: Any,
+    path: Any,
+    status_code: Any,
+    duration_ms: Any,
+    *,
+    start_time: Any = None,
+    span_id: str | None = None,
+    attributes: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """One handled HTTP request as an OTel-shaped SERVER span.
+
+    agents.route_stats() — what the API Monitoring page reads — groups on the
+    `http.route` attribute and counts `http.response.status_code`. Two different things
+    now produce that traffic: a customer's enrolled APISIX gateway, and this API
+    instrumenting its own requests. They have to agree with the read path down to the
+    attribute names, so the shape is defined once, here, next to the writer that stores
+    it — not copied into each producer where the two copies can drift apart.
+
+    `path` must be a route template (`/api/v1/orgs/{org_id}`), never a concrete path:
+    the caller's ids are the grouping key otherwise and every request becomes its own
+    single-hit "route".
+    """
+    method = str(method or "GET").strip().upper()
+    path = str(path or "/").strip() or "/"
+    route = f"{method} {path}"
+    code = str(status_code or "").strip() or "200"
+    try:
+        duration = round(float(duration_ms), 3)
+    except (TypeError, ValueError):
+        duration = 0.0
+    identity = str(span_id or "").strip() or uuid.uuid4().hex
+    attrs: dict[str, Any] = {
+        "http.route": route,
+        "http.request.method": method,
+        "http.response.status_code": code,
+        **(attributes or {}),
+    }
+    return {
+        # A retried delivery of the same request must not be counted twice; when the
+        # caller has a stable request id it is the span id, and both DynamoDB and
+        # _dedupe() collapse a repeat of it.
+        "span_id": identity,
+        "trace_id": identity,
+        "name": route,
+        "span_kind": "SERVER",
+        "start_time": start_time or datetime.now(timezone.utc).isoformat(),
+        "duration_ms": duration,
+        # Only 5xx is the server's failure. A 4xx is the caller's mistake and marking it
+        # ERROR here would make a healthy route read as down.
+        "status_code": "ERROR" if code.startswith("5") else "OK",
+        "attributes": {k: v for k, v in attrs.items() if v is not None},
+    }
+
+
 def _dedupe(rows: list[dict[str, Any]], key: str) -> list[dict[str, Any]]:
     # DynamoDB overwrites a retry with the same deterministic key. The local in-memory
     # fallback is append-only, so deduplicate here to give both modes the same contract.
