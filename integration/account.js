@@ -35,19 +35,21 @@ export async function init() {
 
   const session = api.auth.session() || {};
   const email = session.email || session.sub || '';
-  /* Name first, email as the subtitle — and when there is no name, the email carries
-     both rather than leaving a dash above it. */
+  /* The session is enough for the personal half; only the organization needs a call. */
   paint({
     name: session.name || email || 'Not signed in',
-    email: session.name ? email : '',
+    email,
     role: roleLabel(session.roles),
-    orgName: '',
   });
   if (!email) return;
 
   const org = await api.admin.myOrganization().catch(() => null);
   if (!org) return;
-  paint({ orgName: org.name || org.slug || org.org_id || '' });
+  paint({
+    orgName: org.name || org.slug || org.org_id || '',
+    orgOwner: org.owner_email || '',
+    orgPlan: org.plan || '',
+  });
 
   const owner = (org.owner_email || '').toLowerCase();
   if (!owner || owner !== email.toLowerCase()) return;

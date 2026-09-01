@@ -1480,6 +1480,28 @@ export const ACTIONS = {
     },
   },
 
+  changePassword: {
+    title: 'Change password',
+    submit: 'Change password',
+    success: 'Password changed.',
+    refresh: false,
+    fields: [
+      { name: 'old_password', label: 'Current password', type: 'password', required: true },
+      { name: 'new_password', label: 'New password', type: 'password', required: true },
+      { name: 'confirm', label: 'Confirm new password', type: 'password', required: true },
+    ],
+    /* The confirm box is checked here and never sent: the API has no use for it, and a
+       mistyped confirmation should say so before it costs a round trip. */
+    run: async (api, body) => {
+      if (body.new_password !== body.confirm) throw new Error('The new passwords do not match.');
+      await api.auth.changePassword({
+        old_password: body.old_password,
+        new_password: body.new_password,
+      });
+      return 'Password changed.';
+    },
+  },
+
   /**
    * Hand the organization to another of its members.
    *

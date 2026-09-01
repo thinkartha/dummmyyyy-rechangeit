@@ -920,6 +920,28 @@ function render(root, rows, plain) {
     .join('');
 }
 
+/** Remove a block and close the gap it leaves in the grid around it. */
+function dropWithLayout(el) {
+  const column = el.closest('[class*="col-"]');
+  /* Only take the column when the block was all it held — a column with a second card
+     in it still has something to show. */
+  const target = column && column.children.length === 1 ? column : el;
+  const row = target.parentElement;
+  target.remove();
+  if (!row || !row.classList.contains('row')) return;
+  const survivors = Array.from(row.children);
+  if (!survivors.length) {
+    row.remove();
+    return;
+  }
+  if (survivors.length === 1 && /(^|\s)col-/.test(survivors[0].className)) {
+    const kept = survivors[0].className
+      .replace(/(^|\s)col(-(sm|md|lg|xl|xxl))?(-\d+)?(?=\s|$)/g, ' ')
+      .trim();
+    survivors[0].className = kept ? `${kept} col-12` : 'col-12';
+  }
+}
+
 /**
  * Wipe the sample rows a page ships as markup and say the table is empty.
  *
@@ -983,8 +1005,11 @@ export async function hydrate(api) {
     }
     /* Cards written by hand from invented rows — a trace waterfall, a critical-path
        list, "recent failures". Nothing loads them, so with mock data off they are
-       removed rather than emptied: an always-blank card is its own kind of lie. */
-    for (const el of document.querySelectorAll('[data-mock-block]')) el.remove();
+       removed rather than emptied: an always-blank card is its own kind of lie.
+       Taking the card alone leaves its grid column standing, which is why the pages
+       had a third of a row of nothing where one used to be — so the column goes with
+       it, an emptied row goes too, and a lone survivor widens to fill the row. */
+    for (const el of document.querySelectorAll('[data-mock-block]')) dropWithLayout(el);
   }
   const roots = document.querySelectorAll('[data-live-table]');
   await Promise.all(Array.from(roots).map(async (root) => {

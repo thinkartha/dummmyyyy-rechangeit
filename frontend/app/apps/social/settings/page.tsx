@@ -44,355 +44,167 @@ export default function Page() {
           "src": "/assets/js/phoenix.js"
         }
       ]}>
+      <nav className="mb-3" aria-label="breadcrumb">
+        <ol className="breadcrumb mb-0">
+          <li className="breadcrumb-item">
+            <a href="#!">
+              Account
+            </a>
+          </li>
+          <li className="breadcrumb-item active">
+            Profile
+          </li>
+        </ol>
+      </nav>
       <div className="mb-9">
-        <div className="row g-6">
+        <div className="row g-4">
           <div className="col-12 col-xl-4">
-            <div className="card mb-5">
-              <div className="card-header hover-actions-trigger position-relative mb-6" style={{ minHeight: "130px" }}>
-                <div className="bg-holder rounded-top" style={{ backgroundImage: "linear-gradient(0deg, #000000 -3%, rgba(0, 0, 0, 0) 83%), url(../../assets/img/generic/59.png)" }}>
-                  <input className="d-none" id="upload-settings-cover-image" type="file" />
-                  <label className="cover-image-file-input" htmlFor="upload-settings-cover-image"></label>
-                  <div className="hover-actions end-0 bottom-0 pe-1 pb-2 text-white dark__text-gray-1100">
-                    <span className="fa-solid fa-camera me-2"></span>
+            <div className="card h-100">
+              <div className="card-body text-center">
+                <img className="rounded-circle img-thumbnail shadow-sm border-0 mb-3" src="/assets/img/team/72x72/57.webp" width="112" height="112" alt="" />
+                <h3 className="mb-1" data-lhb-account="name">
+                  —
+                </h3>
+                <p className="text-body-tertiary fs-9 mb-3" data-lhb-account="email"></p>
+                <div className="d-flex justify-content-center gap-4 fs-9">
+                  <div>
+                    <span className="fa-solid fa-building text-body-tertiary me-2"></span>
+                    <span data-lhb-account="orgName">
+                      —
+                    </span>
+                  </div>
+                  <div>
+                    <span className="fa-solid fa-user-shield text-body-tertiary me-2"></span>
+                    <span data-lhb-account="role">
+                      —
+                    </span>
                   </div>
                 </div>
-                <input className="d-none" id="upload-settings-porfile-picture" type="file" />
-                <label className="avatar avatar-4xl status-online feed-avatar-profile cursor-pointer" htmlFor="upload-settings-porfile-picture">
-                  <img className="rounded-circle img-thumbnail shadow-sm border-0" src="/assets/img/team/20.webp" width="200" alt="" />
-                </label>
-              </div>
-              <div className="card-body">
-                <div className="row">
-                  <div className="col-12">
-                    <div className="d-flex flex-wrap mb-2 align-items-center">
-                      <h3 className="me-2" data-lhb-account="name">
-                        —
-                      </h3>
-                      <span className="fw-normal fs-8" data-lhb-account="email"></span>
-                    </div>
-                    <div className="d-flex d-xl-block d-xxl-flex align-items-center">
-                      <div className="d-flex mb-xl-2 mb-xxl-0">
-                        <span className="fa-solid fa-building fs-10 me-2 me-lg-1 me-xl-2"></span>
-                        <h6 className="d-inline-block mb-0 me-4" data-lhb-account="orgName">
-                          —
-                        </h6>
-                      </div>
-                      <div className="d-flex">
-                        <span className="fa-solid fa-user-shield fs-10 me-2 me-lg-1 me-xl-2"></span>
-                        <h6 className="d-block d-xl-inline-block mb-0" data-lhb-account="role">
-                          —
-                        </h6>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="border-bottom border-translucent border-dashed pb-3 mb-4">
-              <h5 className="text-body mb-3">
-                Who will be able to see your profile?
-              </h5>
-              <div className="form-check">
-                <input className="form-check-input" id="onlyMe" type="radio" defaultChecked={true} name="profiileVisibility" />
-                <label className="form-check-label fs-8" htmlFor="onlyMe">
-                  Only me
-                </label>
-              </div>
-              <div className="form-check">
-                <input className="form-check-input" id="myFollowers" type="radio" name="profiileVisibility" />
-                <label className="form-check-label fs-8" htmlFor="myFollowers">
-                  My followers
-                </label>
-              </div>
-              <div className="form-check">
-                <input className="form-check-input" id="everyone" type="radio" name="profiileVisibility" />
-                <label className="form-check-label fs-8" htmlFor="everyone">
-                  Everyone
-                </label>
-              </div>
-            </div>
-            <div className="border-bottom border-translucent border-dashed pb-3 mb-4">
-              <h5 className="text-body mb-3">
-                Who can tag you?
-              </h5>
-              <div className="form-check">
-                <input className="form-check-input" id="tagGroupMembers" type="radio" defaultChecked={true} name="tagPermission" />
-                <label className="form-check-label fs-8" htmlFor="tagGroupMembers">
-                  Group Members
-                </label>
-              </div>
-              <div className="form-check">
-                <input className="form-check-input" id="tagEveryone" type="radio" name="tagPermission" />
-                <label className="form-check-label fs-8" htmlFor="tagEveryone">
-                  Everyone
-                </label>
-              </div>
-            </div>
-            <div className="border-bottom border-translucent border-dashed pb-3 mb-4">
-              <div className="form-check">
-                <input className="form-check-input" id="showEmail" type="checkbox" name="showEmail" />
-                <label className="form-check-label fs-8" htmlFor="showEmail">
-                  Allow users to show your email
-                </label>
-              </div>
-              <div className="form-check">
-                <input className="form-check-input" id="showExperiences" type="checkbox" name="showExperiences" />
-                <label className="form-check-label fs-8" htmlFor="showExperiences">
-                  Allow users to show your experiences
-                </label>
-              </div>
-              <div className="form-check">
-                <input className="form-check-input" id="showFollowers" type="checkbox" defaultChecked={true} name="showFollowers" />
-                <label className="form-check-label fs-8" htmlFor="showFollowers">
-                  Allow users to show your followers
-                </label>
-              </div>
-            </div>
-            <div className="mb-4">
-              <div className="form-check form-switch">
-                <input className="form-check-input" id="showPhone" type="checkbox" defaultChecked={true} name="showPhone" />
-                <label className="form-check-label fs-8" htmlFor="showPhone">
-                  Show your phone number
-                </label>
-              </div>
-              <div className="form-check form-switch">
-                <input className="form-check-input" id="permitFollow" type="checkbox" defaultChecked={true} name="permitFollow" />
-                <label className="form-check-label fs-8" htmlFor="permitFollow">
-                  Permit users to follow you.
-                </label>
               </div>
             </div>
           </div>
           <div className="col-12 col-xl-8">
-            <div className="border-bottom mb-4">
-              <div className="mb-6">
-                <h4 className="mb-4">
-                  Personal Information
+            <div className="card mb-4">
+              <div className="card-body">
+                <h4 className="mb-3">
+                  Personal details
                 </h4>
-                <div className="row g-3">
+                <div className="row g-3 fs-9">
                   <div className="col-12 col-sm-6">
-                    <div className="form-icon-container">
-                      <div className="form-floating">
-                        <input className="form-control form-icon-input" id="firstName" type="text" placeholder="First Name" />
-                        <label className="text-body-tertiary form-icon-label" htmlFor="firstName">
-                          FIRST NAME
-                        </label>
-                      </div>
-                      <span className="fa-solid fa-user text-body fs-9 form-icon"></span>
-                    </div>
+                    <p className="text-body-tertiary fs-10 text-uppercase mb-1">
+                      Name
+                    </p>
+                    <p className="mb-0 fw-semibold" data-lhb-account="name">
+                      —
+                    </p>
                   </div>
                   <div className="col-12 col-sm-6">
-                    <div className="form-icon-container">
-                      <div className="form-floating">
-                        <input className="form-control form-icon-input" id="lastName" type="text" placeholder="Last Name" />
-                        <label className="text-body-tertiary form-icon-label" htmlFor="lastName">
-                          LAST NAME
-                        </label>
-                      </div>
-                      <span className="fa-solid fa-user text-body fs-9 form-icon"></span>
-                    </div>
+                    <p className="text-body-tertiary fs-10 text-uppercase mb-1">
+                      Email
+                    </p>
+                    <p className="mb-0 fw-semibold" data-lhb-account="email">
+                      —
+                    </p>
                   </div>
                   <div className="col-12 col-sm-6">
-                    <div className="form-icon-container">
-                      <div className="form-floating">
-                        <input className="form-control form-icon-input" id="emailSocial" type="email" placeholder="Email" />
-                        <label className="text-body-tertiary form-icon-label" htmlFor="emailSocial">
-                          ENTER YOUR EMAIL
-                        </label>
-                      </div>
-                      <span className="fa-solid fa-envelope text-body fs-9 form-icon"></span>
-                    </div>
+                    <p className="text-body-tertiary fs-10 text-uppercase mb-1">
+                      Role
+                    </p>
+                    <p className="mb-0 fw-semibold" data-lhb-account="role">
+                      —
+                    </p>
                   </div>
                   <div className="col-12 col-sm-6">
-                    <div className="form-icon-container">
-                      <div className="form-floating">
-                        <input className="form-control form-icon-input" id="phone" type="tel" placeholder="Phone" />
-                        <label className="text-body-tertiary form-icon-label" htmlFor="phone">
-                          ENTER YOUR PHONE
-                        </label>
-                      </div>
-                      <span className="fa-solid fa-phone text-body fs-9 form-icon"></span>
-                    </div>
-                  </div>
-                  <div className="col-12 col-sm-6">
-                    <div className="form-icon-container">
-                      <div className="form-floating">
-                        <textarea className="form-control form-icon-input" id="info" style={{ height: "115px" }} placeholder="Info" />
-                        <label className="text-body-tertiary form-icon-label" htmlFor="info">
-                          Info
-                        </label>
-                      </div>
-                      <span className="fa-solid fa-circle-info text-body fs-9 form-icon"></span>
-                    </div>
+                    <p className="text-body-tertiary fs-10 text-uppercase mb-1">
+                      Signed in as
+                    </p>
+                    <p className="mb-0 fw-semibold font-monospace fs-10" data-lhb-account="email">
+                      —
+                    </p>
                   </div>
                 </div>
+                <p className="text-body-tertiary fs-10 mt-3 mb-0">
+                  Name and email come from your sign-in account.
+                </p>
               </div>
-              <div className="row gx-3 mb-6 gy-6 gy-sm-3">
-                <div className="col-12 col-sm-6">
-                  <h4 className="mb-4">
-                    Company Info
-                  </h4>
-                  <div className="form-icon-container mb-3">
-                    <div className="form-floating">
-                      <input className="form-control form-icon-input" id="companyName" type="text" placeholder="Company Name" />
-                      <label className="text-body-tertiary form-icon-label" htmlFor="companyName">
-                        COMPANY NAME
-                      </label>
-                    </div>
-                    <span className="fa-solid fa-building text-body fs-9 form-icon"></span>
-                  </div>
-                  <div className="form-icon-container">
-                    <div className="form-floating">
-                      <input className="form-control form-icon-input" id="website" type="text" placeholder="Website" />
-                      <label className="text-body-tertiary form-icon-label" htmlFor="website">
-                        Website
-                      </label>
-                    </div>
-                    <span className="fa-solid fa-globe text-body fs-9 form-icon"></span>
-                  </div>
-                </div>
-                <div className="col-12 col-sm-6">
-                  <h4 className="mb-4">
-                    Change Password
-                  </h4>
-                  <div className="form-icon-container mb-3">
-                    <div className="form-floating">
-                      <input className="form-control form-icon-input" id="oldPassword" type="password" placeholder="Old password" />
-                      <label className="text-body-tertiary form-icon-label" htmlFor="oldPassword">
-                        Old Password
-                      </label>
-                    </div>
-                    <span className="fa-solid fa-lock text-body fs-9 form-icon"></span>
-                  </div>
-                  <div className="form-icon-container mb-3">
-                    <div className="form-floating">
-                      <input className="form-control form-icon-input" id="newPassword" type="password" placeholder="New password" />
-                      <label className="text-body-tertiary form-icon-label" htmlFor="newPassword">
-                        New Password
-                      </label>
-                    </div>
-                    <span className="fa-solid fa-key text-body fs-9 form-icon"></span>
-                  </div>
-                  <div className="form-icon-container">
-                    <div className="form-floating">
-                      <input className="form-control form-icon-input" id="newPassword2" type="password" placeholder="Confirm New password" />
-                      <label className="text-body-tertiary form-icon-label" htmlFor="newPassword2">
-                        Confirm New Password
-                      </label>
-                    </div>
-                    <span className="fa-solid fa-key text-body fs-9 form-icon"></span>
-                  </div>
-                </div>
-              </div>
-              <div className="mb-6">
-                <h4 className="mb-4">
-                  Social
+            </div>
+            <div className="card mb-4">
+              <div className="card-body">
+                <h4 className="mb-3">
+                  Organization
                 </h4>
-                <div className="row g-3">
+                <div className="row g-3 fs-9">
                   <div className="col-12 col-sm-6">
-                    <div className="form-icon-container">
-                      <div className="form-floating">
-                        <input className="form-control form-icon-input" id="facebook" type="text" placeholder="Facebook" />
-                        <label className="text-body-tertiary form-icon-label" htmlFor="facebook">
-                          Facebook
-                        </label>
-                      </div>
-                      <span className="fa-brands fa-facebook text-body fs-9 form-icon"></span>
-                    </div>
+                    <p className="text-body-tertiary fs-10 text-uppercase mb-1">
+                      Organization
+                    </p>
+                    <p className="mb-0 fw-semibold" data-lhb-account="orgName">
+                      —
+                    </p>
                   </div>
                   <div className="col-12 col-sm-6">
-                    <div className="form-icon-container">
-                      <div className="form-floating">
-                        <input className="form-control form-icon-input" id="twitter" type="text" placeholder="Twitter" />
-                        <label className="text-body-tertiary form-icon-label" htmlFor="twitter">
-                          Twitter
-                        </label>
-                      </div>
-                      <span className="fa-brands fa-twitter text-body fs-9 form-icon"></span>
-                    </div>
+                    <p className="text-body-tertiary fs-10 text-uppercase mb-1">
+                      Owner
+                    </p>
+                    <p className="mb-0 fw-semibold" data-lhb-account="orgOwner">
+                      —
+                    </p>
                   </div>
                   <div className="col-12 col-sm-6">
-                    <div className="form-icon-container">
-                      <div className="form-floating">
-                        <input className="form-control form-icon-input" id="linkedin" type="text" placeholder="Linkedin" />
-                        <label className="text-body-tertiary form-icon-label" htmlFor="linkedin">
-                          linkedin
-                        </label>
-                      </div>
-                      <span className="fa-brands fa-linkedin-in text-body fs-9 form-icon"></span>
-                    </div>
+                    <p className="text-body-tertiary fs-10 text-uppercase mb-1">
+                      Plan
+                    </p>
+                    <p className="mb-0 fw-semibold" data-lhb-account="orgPlan">
+                      —
+                    </p>
                   </div>
                   <div className="col-12 col-sm-6">
-                    <div className="form-icon-container">
-                      <div className="form-floating">
-                        <input className="form-control form-icon-input" id="youtube" type="text" placeholder="youtube" />
-                        <label className="text-body-tertiary form-icon-label" htmlFor="youtube">
-                          youtube
-                        </label>
-                      </div>
-                      <span className="fa-brands fa-youtube text-body fs-9 form-icon"></span>
-                    </div>
-                  </div>
-                  <div className="col-12 col-sm-6">
-                    <div className="form-icon-container">
-                      <div className="form-floating">
-                        <input className="form-control form-icon-input" id="artstation" type="text" placeholder="artstation" />
-                        <label className="text-body-tertiary form-icon-label" htmlFor="artstation">
-                          artstation
-                        </label>
-                      </div>
-                      <span className="fa-brands fa-artstation text-body fs-9 form-icon"></span>
-                    </div>
-                  </div>
-                  <div className="col-12 col-sm-6">
-                    <div className="form-icon-container">
-                      <div className="form-floating">
-                        <input className="form-control form-icon-input" id="behance" type="text" placeholder="behance" />
-                        <label className="text-body-tertiary form-icon-label" htmlFor="behance">
-                          behance
-                        </label>
-                      </div>
-                      <span className="fa-brands fa-behance text-body fs-9 form-icon"></span>
-                    </div>
+                    <p className="text-body-tertiary fs-10 text-uppercase mb-1">
+                      Your role
+                    </p>
+                    <p className="mb-0 fw-semibold" data-lhb-account="role">
+                      —
+                    </p>
                   </div>
                 </div>
-              </div>
-              <div className="text-end mb-6">
-                <div>
-                  <button className="btn btn-phoenix-secondary me-2">
-                    Cancel Changes
-                  </button>
-                  <button className="btn btn-phoenix-primary">
-                    Save Information
-                  </button>
+                <div className="border-top border-translucent mt-4 pt-4" data-lhb-owner-only="data-lhb-owner-only" hidden={true}>
+                  <div className="row gy-4">
+                    <div className="col-12 col-md-6">
+                      <h5 className="text-body-emphasis mb-1">
+                        Invite people
+                      </h5>
+                      <p className="text-body-tertiary fs-9">
+                        Send someone an invite and choose what they can do once they accept.
+                      </p>
+                      <button className="btn btn-phoenix-primary btn-sm" type="button" data-lhb-action="inviteMember">
+                        Invite a member
+                      </button>
+                    </div>
+                    <div className="col-12 col-md-6">
+                      <h5 className="text-body-emphasis mb-1">
+                        Transfer ownership
+                      </h5>
+                      <p className="text-body-tertiary fs-9">
+                        Hand the organization to another member. They become an admin and the owner; you keep your admin access.
+                      </p>
+                      <button className="btn btn-phoenix-warning btn-sm" type="button" data-lhb-action="transferOwnership">
+                        Transfer ownership
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="row gy-5" data-lhb-owner-only="data-lhb-owner-only" hidden={true}>
-              <div className="col-12 col-md-6">
-                <h4 className="text-body-emphasis">
-                  Invite people
+            <div className="card">
+              <div className="card-body">
+                <h4 className="mb-2">
+                  Password
                 </h4>
-                <p className="text-body-tertiary">
-                  Send someone an invite to
-                  <span className="fw-semibold ms-1" data-lhb-account="orgName">
-                    your organization
-                  </span>
-                  and choose what they can do once they accept.
+                <p className="text-body-tertiary fs-9">
+                  Rotate it with the current one. Forgotten it instead? Sign out and use "Forgot password" to get a code by email.
                 </p>
-                <button className="btn btn-phoenix-primary" type="button" data-lhb-action="inviteMember">
-                  Invite a member
-                </button>
-              </div>
-              <div className="col-12 col-md-6">
-                <h4 className="text-body-emphasis">
-                  Transfer ownership
-                </h4>
-                <p className="text-body-tertiary">
-                  Hand the organization to another member. They become an admin and the owner; you keep your admin access.
-                </p>
-                <button className="btn btn-phoenix-warning" type="button" data-lhb-action="transferOwnership">
-                  Transfer ownership
+                <button className="btn btn-phoenix-secondary btn-sm" type="button" data-lhb-action="changePassword">
+                  Change password
                 </button>
               </div>
             </div>

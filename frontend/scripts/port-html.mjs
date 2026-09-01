@@ -48,10 +48,12 @@ const PAGES = [
   // 'apps/events/create-an-event.html',
   // 'apps/events/event-detail.html',
   'apps/social/settings.html',
-  'pages/faq/faq-accordion.html',
-  'pages/faq/faq-tab.html',
-  'pages/notifications.html',
-  'pages/timeline.html',
+  // Hidden with their nav entries (src/pug/mixins/Variables.pug): theme pages with no
+  // backend behind them. Uncomment here and there together.
+  // 'pages/faq/faq-accordion.html',
+  // 'pages/faq/faq-tab.html',
+  // 'pages/notifications.html',
+  // 'pages/timeline.html',
 ]
 
 // Loaded in the root layout for every page; a page must not re-emit them.

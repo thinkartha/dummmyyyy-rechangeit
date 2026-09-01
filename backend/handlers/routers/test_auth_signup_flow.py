@@ -82,6 +82,43 @@ def test_account_stranded_by_the_old_flow_is_let_in():
     assert store.record["status"] == "active"
 
 
+def test_change_password_checks_the_current_one():
+    """Rotating a password must prove you know the old one — otherwise a stolen session
+    cookie is enough to lock the owner out of their own account."""
+    class _Store:
+        saved = None
+
+        def authenticate(self, email, password):
+            return {"email": email} if password == "right" else None
+
+        def update_user(self, email, **fields):
+            self.saved = (email, fields)
+            return True
+
+    class _Request:
+        headers = {}
+
+    store = _Store()
+    auth.users = store
+    principal = auth.Principal(sub="a@b.com", roles=["user"], org_id="org-1")
+    try:
+        auth.change_password(
+            auth.ChangePasswordRequest(old_password="wrong", new_password="whatever"),
+            _Request(), principal=principal,
+        )
+    except auth.HTTPException as exc:
+        assert exc.status_code == 401
+    else:
+        raise AssertionError("a wrong current password must not change anything")
+    assert store.saved is None
+
+    auth.change_password(
+        auth.ChangePasswordRequest(old_password="right", new_password="newpass"),
+        _Request(), principal=principal,
+    )
+    assert store.saved == ("a@b.com", {"password": "newpass"})
+
+
 def test_a_hand_parked_account_stays_parked():
     """Only create_org signups are unstuck — a platform admin's own hold must hold."""
     store = _with_users({
@@ -99,4 +136,5 @@ if __name__ == "__main__":
     test_wrong_code_still_rejected()
     test_account_stranded_by_the_old_flow_is_let_in()
     test_a_hand_parked_account_stays_parked()
+    test_change_password_checks_the_current_one()
     print("ok — confirming an org sign-up activates it, and stranded owners can sign in")

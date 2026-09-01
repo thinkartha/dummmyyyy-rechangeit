@@ -291,6 +291,8 @@ export const api = {
     confirm: (body) => post('/auth/confirm', body),
     forgotPassword: (email) => post('/auth/forgot-password', { email }),
     resetPassword: (body) => post('/auth/reset-password', body),
+    /* Signed-in rotation, proving the old password — not the emailed-code flow. */
+    changePassword: (body) => post('/auth/change-password', body),
     refresh: (body) => post('/auth/refresh', body),
     apiKeyToken: (apiKey) => post('/auth/token', { api_key: apiKey }),
     me: () => get('/auth/me'),

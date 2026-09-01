@@ -309,6 +309,12 @@ append variables
             path: 'apps/chat',
             pathName: 'app-chat',
           },
+          {
+            name: 'account-settings',
+            icon: 'settings',
+            path: 'apps/social/settings',
+            pathName: 'social-settings',
+          },
           // Email and Events are hidden for now — theme apps with no backend behind
           // them. The pages still compile; uncomment these two entries (and the
           // matching lines in frontend/scripts/port-html.mjs) to put them back.
@@ -331,46 +337,23 @@ append variables
           // },
         ]
       },
-      {
-        label: 'pages',
-        icon: 'uil-document-layout-left',
-        pages: [
-          {
-            name: 'FAQ',
-            icon: 'help-circle',
-            pages: [
-              {
-                name: 'FAQ-accordion',
-                path: 'pages/faq/faq-accordion',
-                pathName: 'faq-accordion',
-              },
-              {
-                name: 'FAQ-tab',
-                path: 'pages/faq/faq-tab',
-                pathName: 'faq-tab',
-              },
-            ]
-          },
-          {
-            name: 'settings',
-            icon: 'settings',
-            path: 'apps/social/settings',
-            pathName: 'social-settings',
-          },
-          {
-            name: 'timeline',
-            icon: 'clock',
-            path: 'pages/timeline',
-            pathName: 'page-timeline',
-          },
-          {
-            name: 'notifications',
-            icon: 'bell',
-            path: 'pages/notifications',
-            pathName: 'page-notifications',
-          },
-        ]
-      },
+      // The "pages" group is hidden for now — FAQ, Timeline and Notifications are theme
+      // pages with nothing behind them, and Settings (the one real page in the group)
+      // moved up into "apps" above. A label with an empty section under it is the gap
+      // that was left in the sidebar. Uncomment this block, minus whichever entries you
+      // do not want, together with the matching lines in frontend/scripts/port-html.mjs.
+      // {
+      //   label: 'pages',
+      //   icon: 'uil-document-layout-left',
+      //   pages: [
+      //     { name: 'FAQ', icon: 'help-circle', pages: [
+      //       { name: 'FAQ-accordion', path: 'pages/faq/faq-accordion', pathName: 'faq-accordion' },
+      //       { name: 'FAQ-tab', path: 'pages/faq/faq-tab', pathName: 'faq-tab' },
+      //     ] },
+      //     { name: 'timeline', icon: 'clock', path: 'pages/timeline', pathName: 'page-timeline' },
+      //     { name: 'notifications', icon: 'bell', path: 'pages/notifications', pathName: 'page-notifications' },
+      //   ]
+      // },
     ];
 
   -

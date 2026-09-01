@@ -17,7 +17,7 @@ import os
 import secrets
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 
 from shared.core.auth import (
@@ -95,6 +95,11 @@ class ForgotPasswordRequest(BaseModel):
 class ResetPasswordRequest(BaseModel):
     email: str
     code: str
+    new_password: str
+
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str
     new_password: str
 
 
@@ -580,6 +585,53 @@ def me(principal: Principal = Depends(get_current_principal)) -> Principal:
 def admin_check(principal: Principal = Depends(require_role(ROLE_PLATFORM_ADMIN))) -> Principal:
     """Demonstrates RBAC — requires the platform_admin role."""
     return principal
+
+
+@router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
+def change_password(
+    body: ChangePasswordRequest,
+    request: Request,
+    principal: Principal = Depends(get_current_principal),
+) -> None:
+    """Change your own password, proving you know the current one.
+
+    Distinct from /reset-password, which is the forgot-my-password path and takes an
+    emailed code instead. Someone signed in should not have to lock themselves out and
+    check their email to rotate a password they still know.
+
+    Cognito wants the caller's own access token — the change is made as the user, not by
+    an admin, which is what keeps "knows the old password" part of the check rather than
+    something this endpoint could skip.
+    """
+    if _cognito_enabled():
+        client = cognito_client()
+        if not client:
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Cognito unavailable")
+        token = request.headers.get("authorization", "")
+        token = token[7:].strip() if token.lower().startswith("bearer ") else token.strip()
+        if not token:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not signed in")
+        try:
+            client.change_password(
+                PreviousPassword=body.old_password,
+                ProposedPassword=body.new_password,
+                AccessToken=token,
+            )
+        except client.exceptions.NotAuthorizedException as exc:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                detail="Current password is incorrect") from exc
+        except client.exceptions.InvalidPasswordException as exc:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="New password does not meet the password policy") from exc
+        except Exception as exc:
+            log.warning("Cognito change_password failed: %s", exc)
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password change failed") from exc
+        return
+
+    if not users.authenticate(principal.sub, body.old_password):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Current password is incorrect")
+    if not users.update_user(principal.sub, password=body.new_password):
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Password change failed")
 
 
 @router.post("/forgot-password", response_model=ForgotPasswordResponse)
