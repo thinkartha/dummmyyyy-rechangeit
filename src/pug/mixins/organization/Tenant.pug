@@ -1,30 +1,29 @@
+//- Both of these used to name RootVyana, Acme and Contoso in the markup, so every
+//- tenant's top bar advertised three organizations they are not in and one they might
+//- not be. Filled by integration/account.js from /admin/my-organization instead: one
+//- org, the caller's own.
 mixin TenantContextBar
   .d-none.d-lg-flex.align-items-center.border.border-translucent.rounded-pill.px-3.py-1.bg-body-emphasis.me-2
     span.fa-solid.fa-building.text-primary.me-2.fs-10
     div
-      p.mb-0.fs-10.text-body-tertiary.lh-1 Tenant
+      p.mb-0.fs-10.text-body-tertiary.lh-1 Organization
       a.fw-semibold.fs-9.text-body-emphasis.text-decoration-none(href=`${CWD}${paths['org-organizations']}`)
-        | RootVyana
-        span.text-body-tertiary.fw-normal.ms-1 rootvyana.loveheartbeat.com
+        span(data-lhb-account='orgName') —
+        span.text-body-tertiary.fw-normal.ms-1(data-lhb-account='orgHost')
 
 mixin OrgSwitcherDropdown
   li.nav-item.dropdown
     a.nav-link.dropdown-toggle.lh-1.pe-0(href='#!' role='button' data-bs-toggle='dropdown' data-bs-auto-close='outside' aria-expanded='false')
       span.fa-solid.fa-building.me-1
-      span.d-none.d-sm-inline RootVyana
+      span.d-none.d-sm-inline(data-lhb-account='orgName') —
     .dropdown-menu.dropdown-menu-end.shadow.border.py-2(style='min-width: 18rem;')
-      h6.dropdown-header Multi-tenant organizations
-      a.dropdown-item(href='https://rootvyana.loveheartbeat.com' target='_blank' rel='noopener')
+      h6.dropdown-header Your organization
+      a.dropdown-item(href='#!' target='_blank' rel='noopener' data-lhb-org-url)
         .d-flex.justify-content-between.align-items-center
-          span RootVyana
-          span.badge.badge-phoenix.badge-phoenix-success Active
-        .fs-10.text-body-tertiary rootvyana.loveheartbeat.com
-      a.dropdown-item(href='https://acme.loveheartbeat.com' target='_blank' rel='noopener')
-        span Acme Corp
-        .fs-10.text-body-tertiary acme.loveheartbeat.com
-      a.dropdown-item(href='https://contoso.loveheartbeat.com' target='_blank' rel='noopener')
-        span Contoso
-        .fs-10.text-body-tertiary contoso.loveheartbeat.com
+          span(data-lhb-account='orgName') —
+          span.badge.badge-phoenix.badge-phoenix-success(data-lhb-account='orgPlan')
+        .fs-10.text-body-tertiary(data-lhb-account='orgHost')
       .dropdown-divider
       a.dropdown-item(href=`${CWD}${paths['org-organizations']}`) Manage organizations
-      a.dropdown-item(href=`${CWD}${paths['org-onboarding']}`) Onboard new organization
+      //- Onboarding a new tenant is a platform-admin action; auth.js hides it otherwise.
+      a.dropdown-item(href=`${CWD}${paths['org-onboarding']}` data-lhb-requires-role='platform_admin') Onboard new organization

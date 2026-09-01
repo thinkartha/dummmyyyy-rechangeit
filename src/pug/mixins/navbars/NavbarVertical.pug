@@ -2,11 +2,14 @@ include Mixins
 
 mixin LinkTopParent(config)
   - var config = Object.assign({}, config)
-  - var { url, icon,iconSet, text, badge, hasHash, isDisabled, depth, dot, innerPage, newtab } = config;
+  - var { url, icon,iconSet, text, badge, hasHash, isDisabled, depth, dot, innerPage, newtab, role } = config;
   - var href = hasHash ? text!=='modal' ? `${CWD}${url}.html` : `${CWD}${url}` : url
+  //- role: the link is hidden unless the signed-in session holds one of these roles
+  //- (integration/auth.js). Hiding only — the API enforces the same rule server-side.
   a.nav-link(
     href=href
     target=newtab ? "_blank" : undefined
+    data-lhb-requires-role=role
     class=`${isDisabled ? 'nav-link-disable' :  href.includes(`${pathName}.html`) ? 'active' : ''}`
   )&attributes(attributes)
     .d-flex.align-items-center
@@ -64,6 +67,7 @@ mixin PageLooper(page,label, depth = 0, target='#navbarVerticalCollapse')
               hasHash: innerPage.pages ? false : true,
               dot: innerPage.dot,
               newtab: innerPage.newtab,
+              role: innerPage.role,
               innerPage: true
             })(
               class= innerPage.pages ? `dropdown-indicator`: ''
@@ -108,6 +112,7 @@ mixin Looper(sitemap)
               depth: 0,
               dot: page.dot,
               newtab: page.newtab,
+              role: page.role,
             })(
               role="button"
               class= page.pages? 'dropdown-indicator label-1': 'label-1'

@@ -7,7 +7,7 @@ response passes through dbmon.masked(), which rebuilds the URI without the passw
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
-from shared.core import dbmon
+from shared.core import dbinspect, dbmon
 from shared.core.auth import ROLE_ORG_ADMIN, ROLE_PLATFORM_ADMIN, Principal, get_current_principal
 from shared.core.tenancy import get_tenant_id
 
@@ -95,6 +95,33 @@ def get_summary(tenant_id: str = Depends(get_tenant_id)) -> dict:
 def get_health(tenant_id: str = Depends(get_tenant_id)) -> list[dict]:
     """Live health for every registered database. Never raises: it is the diagnostic."""
     return dbmon.check_all(tenant_id)
+
+
+@router.get("/findings")
+def get_findings(tenant_id: str = Depends(get_tenant_id)) -> list[dict]:
+    """Catalog findings across every registered database.
+
+    Health says whether the server is coping. This says whether the data in it is
+    right: schemas that have drifted between environments, tables that stopped
+    loading, indexes and rows duplicated. A database can be green on the first and
+    full of findings here.
+    """
+    return dbmon.inspect_all(tenant_id)
+
+
+@router.get("/{database_id}/inspect")
+def inspect_one(database_id: str, tenant_id: str = Depends(get_tenant_id)) -> dict:
+    try:
+        result = dbmon.inspect(tenant_id, database_id)
+    except dbinspect.Unsupported as exc:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=str(exc)
+        ) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Database not found")
+    return result
 
 
 @router.get("/{database_id}/health")

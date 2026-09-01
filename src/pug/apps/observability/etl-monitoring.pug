@@ -17,11 +17,14 @@ block content
     linkText: 'Configure in Integrations'
   })
 
+  //- The first three come from /integrations/etl/summary, published by the `etl` source
+  //- below. Avg duration has no key: /summary does not carry one, and the Job runs table
+  //- reports duration per run, which is the honest place for it.
   +ObsStatCards([
-    { label: 'Pipelines', value: '286', delta: '+12', badge: 'info' },
-    { label: 'Success rate', value: '96.4%', delta: '+1.1%', badge: 'success' },
-    { label: 'Failed runs (24h)', value: '14', delta: '-3', badge: 'success' },
-    { label: 'Avg duration', value: '18m', delta: '+2m', badge: 'warning' }
+    { label: 'Pipelines', key: 'pipelines', value: '—', delta: 'no data', badge: 'info' },
+    { label: 'Success rate', key: 'successRate', value: '—', delta: 'no data', badge: 'success' },
+    { label: 'Failed runs (24h)', key: 'failedRuns', value: '—', delta: 'no data', badge: 'success' },
+    { label: 'Avg duration', value: '—', delta: 'no data', badge: 'warning' }
   ])
 
   +ObsToolTable({
@@ -51,4 +54,27 @@ block content
       { icon: 'fa-wind', iconColor: 'secondary', meta: 'dags', cells: ['Apache Airflow', 'Orchestration', '40', '3m ago', '99%', { text: 'Healthy', badge: 'success' }] },
       { icon: 'fa-industry', iconColor: 'primary', meta: 'fivetran syncs', cells: ['Fivetran', 'ELT ingest', '33', '11m ago', '99%', { text: 'Healthy', badge: 'success' }] }
     ]
+  })
+
+  //- The run-level view. The table above answers "which platforms are connected"; this
+  //- one answers "what did they actually run", which is the question the page is opened
+  //- for. Rows come from /integrations/etl/events — every run the pollers see, including
+  //- the ones scheduled inside Talend or Databricks rather than launched from here — and
+  //- a failed run this app launched gets a Retry action.
+  +ObsToolTable({
+    title: 'Job runs',
+    live: 'etlJobs',
+    subtitle: 'Latest state per execution across every connected platform — connect a platform and poll it to populate',
+    searchPlaceholder: 'Search jobs, platforms, or environments',
+    pageSize: 10,
+    columns: [
+      { label: 'Job', className: 'ps-3' },
+      { label: 'Platform' },
+      { label: 'Environment' },
+      { label: 'Status' },
+      { label: 'Duration' },
+      { label: 'Records' },
+      { label: 'Last run' }
+    ],
+    rows: []
   })

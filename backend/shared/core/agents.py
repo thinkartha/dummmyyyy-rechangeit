@@ -127,8 +127,12 @@ def _all_spans(
     # rollup below run unchanged, so what a demo shows is what production computes.
     if agent_seed.enabled():
         raw = agent_seed.spans()
-    elif tenant_id and agent_telemetry.uses_store(tenant_id):
-        raw = agent_telemetry.spans(tenant_id, limit)
+    elif tenant_id:
+        # A tenant sees its own stored telemetry or nothing. The shared Phoenix project
+        # is one pool with no tenant label on it, so the old fallback here handed every
+        # tenant that had not pushed a batch yet whatever spans happened to be in it —
+        # which is where the unexplained routes and traces came from.
+        raw = agent_telemetry.spans(tenant_id, limit) if agent_telemetry.uses_store(tenant_id) else []
     else:
         raw = obs._fetch_spans(limit, project=agent_project())
     return [obs._normalize(row) for row in raw]

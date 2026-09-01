@@ -22,11 +22,15 @@ mixin ObsPageHeader(config)
           if config.secondaryAction
             button.btn.btn-phoenix-secondary(type='button' data-lhb-action=config.secondaryActionKey)= config.secondaryAction
           if config.action
-            button.btn.btn-primary(type='button' data-lhb-action=config.actionKey)= config.action
+            //- actionRole hides the button unless the session holds that role. The API
+            //- 403s either way; this is so the page does not offer what it cannot do.
+            button.btn.btn-primary(type='button' data-lhb-action=config.actionKey data-lhb-requires-role=config.actionRole)= config.action
 
-//- The numbers in these cards are illustrative, not measured: nothing hydrates them.
-//- `data-obs-stat` lets live-data.js blank them when mock data is off, so a page never
-//- shows a fabricated total beside a table that correctly says it has no data.
+//- The numbers in these cards are illustrative unless the card carries a `key`, which
+//- names a figure a live source publishes. `data-obs-stat` is what live-data.js blanks
+//- when mock data is off, so a page never shows a fabricated total beside a table that
+//- correctly says it has no data; `data-obs-stat-key` is what it then fills back in for
+//- the cards that do have a measurement behind them.
 mixin ObsStatCards(stats)
   .row.g-3.mb-6
     each stat in stats
@@ -36,8 +40,8 @@ mixin ObsStatCards(stats)
             .d-flex.justify-content-between.align-items-start
               div
                 h6.text-body-tertiary.mb-2= stat.label
-                h3.mb-0(data-obs-stat)= stat.value
-              span.badge.badge-phoenix(class=`badge-phoenix-${stat.badge || 'primary'}` data-obs-stat-delta)= stat.delta
+                h3.mb-0(data-obs-stat data-obs-stat-key=stat.key)= stat.value
+              span.badge.badge-phoenix(class=`badge-phoenix-${stat.badge || 'primary'}` data-obs-stat-delta data-obs-stat-delta-key=stat.key)= stat.delta
 
 mixin ObsToolTable(config)
   -

@@ -224,6 +224,8 @@ append variables
                 name: 'administration',
                 path: 'apps/platform/admin',
                 pathName: 'platform-admin',
+                // The platform console: every org, every user. Not a tenant's page.
+                role: 'platform_admin',
               },
               {
                 name: 'integrations',
@@ -290,6 +292,7 @@ append variables
                 name: 'onboarding',
                 path: 'apps/organization/onboarding',
                 pathName: 'org-onboarding',
+                role: 'platform_admin',
               },
               {
                 name: 'members',

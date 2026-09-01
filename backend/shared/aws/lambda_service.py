@@ -8,7 +8,7 @@ from statistics import mean
 from typing import Any, Deque
 
 from shared.collector.cloudevents import CloudEvent, make_event
-from shared.core import config_store
+from shared.core import config_store, mock_data
 from .dto import (
     AwsLambdaConfig,
     AwsLambdaFunction,
@@ -35,6 +35,12 @@ def _mask(value: str | None) -> str | None:
 def save_config(tenant_id: str, config: AwsLambdaConfig) -> dict[str, Any]:
     _IN_MEMORY_CONFIGS[tenant_id] = config
     config_store.save_config(tenant_id, _INTEGRATION, config.model_dump_json(by_alias=True))
+    # Cost Explorer answers are cached for hours. Saving new credentials is exactly when
+    # somebody is watching for the page to change, so the stale answer goes with them.
+    # Imported here rather than at module scope: cost imports this module.
+    from . import cost
+
+    cost.invalidate(tenant_id)
     return config_status(tenant_id)
 
 
@@ -67,6 +73,31 @@ def config_status(tenant_id: str) -> dict[str, Any]:
             "collection_interval_seconds": str(cfg.collection_interval_seconds) if cfg else None,
         },
     }
+
+
+def _empty_overview(cfg: AwsLambdaConfig | None, error: str | None = None) -> AwsLambdaOverview:
+    """Zeros, plus why. What a tenant sees before connecting, or when AWS refused.
+
+    This used to be `_demo_overview`, which fabricated three functions and a traffic
+    curve for both cases — so a connection whose credentials AWS rejected rendered
+    identically to a working one, and the page looked populated with numbers that
+    belonged to nobody.
+    """
+    return AwsLambdaOverview(
+        region=cfg.region if cfg else "us-east-1",
+        configured=cfg is not None,
+        source="error" if error else "none",
+        functions=0,
+        invocationsPerMinute=0,
+        errorRate=0.0,
+        avgDurationMs=0.0,
+        throttles=0,
+        activeAlarms=0,
+        logGroups=len(cfg.log_groups) if cfg and cfg.log_groups else 0,
+        metrics=[],
+        functionList=[],
+        error=error,
+    )
 
 
 def _demo_overview(cfg: AwsLambdaConfig | None) -> AwsLambdaOverview:
@@ -155,7 +186,7 @@ def _avg_duration(cw, function_name: str, start: datetime, end: datetime) -> flo
 def lambda_overview(tenant_id: str) -> AwsLambdaOverview:
     cfg = get_config(tenant_id)
     if not cfg:
-        return _demo_overview(None)
+        return _demo_overview(None) if mock_data.enabled() else _empty_overview(None)
     try:
         session = _session(cfg)
         lambda_client = session.client("lambda")
@@ -210,8 +241,10 @@ def lambda_overview(tenant_id: str) -> AwsLambdaOverview:
             metrics=[point],
             functionList=functions,
         )
-    except Exception:
-        return _demo_overview(cfg)
+    except Exception as exc:
+        if mock_data.enabled():
+            return _demo_overview(cfg)
+        return _empty_overview(cfg, f"{type(exc).__name__}: {exc}")
 
 
 def anomaly_events(tenant_id: str) -> list[CloudEvent]:

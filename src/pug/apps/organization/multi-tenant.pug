@@ -31,16 +31,14 @@ block content
           p.text-body-tertiary Each organization gets a reserved slug that becomes its SaaS hostname:
           .bg-body-emphasis.border.border-translucent.rounded-3.p-3.mb-3.font-monospace.fs-9
             | https://&lt;organization-slug&gt;.loveheartbeat.com
+          //- Three named tenants used to be listed here as if they were neighbours on
+          //- the platform. Only the caller's own org belongs on a tenant's page;
+          //- account.js fills it.
           ul.mb-0
             li
-              code rootvyana.loveheartbeat.com
-              span.text-body-tertiary  — RootVyana
-            li
-              code acme.loveheartbeat.com
-              span.text-body-tertiary  — Acme Corp
-            li
-              code contoso.loveheartbeat.com
-              span.text-body-tertiary  — Contoso
+              code(data-lhb-account='orgHost') —
+              span.text-body-tertiary  — 
+                span(data-lhb-account='orgName') your organization
           p.text-body-tertiary.fs-9.mb-0.mt-3 Apex
             code.mx-1 loveheartbeat.com
             | handles marketing + login routing; subdomain resolves the tenant.

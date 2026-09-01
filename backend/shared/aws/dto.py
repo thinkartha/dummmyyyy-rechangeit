@@ -49,7 +49,7 @@ class AwsLambdaMetricPoint(BaseModel):
 class AwsLambdaOverview(BaseModel):
     region: str
     configured: bool
-    source: Literal["demo", "cloudwatch"]
+    source: Literal["demo", "cloudwatch", "none", "error"]
     functions: int
     invocations_per_minute: int = Field(alias="invocationsPerMinute")
     error_rate: float = Field(alias="errorRate")
@@ -59,6 +59,9 @@ class AwsLambdaOverview(BaseModel):
     log_groups: int = Field(alias="logGroups")
     metrics: list[AwsLambdaMetricPoint]
     function_list: list[AwsLambdaFunction] = Field(default_factory=list, alias="functionList")
+    # Why the numbers are zero. A connected account that AWS refused has to say so —
+    # the page used to show fabricated functions instead and read as healthy.
+    error: str | None = None
 
     model_config = {"populate_by_name": True}
 

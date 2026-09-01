@@ -51,6 +51,32 @@ block content
     ]
   })
 
+  //- Health above says whether the server is coping. This says whether the data in it
+  //- is right — the failures that never move a connection count: a migration applied to
+  //- one environment and not the other, a table that quietly stopped loading, an index
+  //- created twice. Backed by GET /databases/findings, which reads the catalog live.
+  +ObsToolTable({
+    live: 'databaseFindings',
+    title: 'Catalog findings',
+    subtitle: 'Schema drift, volume drops, and redundancy — read from the catalog on every load, never stored',
+    searchPlaceholder: 'Search objects, findings, or databases',
+    pageSize: 8,
+    columns: [
+      { label: 'Object', className: 'ps-3' },
+      { label: 'Finding' },
+      { label: 'Database' },
+      { label: 'Detail' },
+      { label: 'Severity' }
+    ],
+    rows: [
+      { icon: 'fa-code-branch', iconColor: 'danger', meta: 'commerce', cells: ['prod.orders ↔ stage.orders', 'Schema drift', 'commerce', '1 column missing from stage; 1 only in stage; 2 type changes', { text: 'critical', badge: 'danger' }] },
+      { icon: 'fa-arrow-trend-down', iconColor: 'danger', meta: 'commerce', cells: ['prod.daily_events', 'Volume drop', 'commerce', '94% below its 29-day median', { text: 'critical', badge: 'danger' }] },
+      { icon: 'fa-clone', iconColor: 'warning', meta: 'commerce', cells: ['prod.orders', 'Duplicate index', 'commerce', '2 indexes on the same column (customer_id)', { text: 'warning', badge: 'warning' }] },
+      { icon: 'fa-copy', iconColor: 'warning', meta: 'commerce', cells: ['prod.payments', 'Duplicate rows', 'commerce', '120 duplicate rows across 120 distinct values', { text: 'warning', badge: 'warning' }] },
+      { icon: 'fa-key', iconColor: 'info', meta: 'commerce', cells: ['prod.audit_log', 'No primary key', 'commerce', 'Duplicate rows cannot be rejected', { text: 'info', badge: 'info' }] }
+    ]
+  })
+
   .row.g-4
     .col-12.col-lg-6
       .card.h-100(data-mock-block)

@@ -84,7 +84,16 @@ def resolve_tenant(event: dict[str, Any]) -> TenantContext | dict[str, Any]:
     if not _SLUG_RE.match(slug):
         return bad_request("Invalid organization slug")
 
-    record = _DEMO_TENANTS.get(slug)
+    # Real organizations live in the org store; the demo registry is only the seed set
+    # that ships with the repo, so it is consulted second and never shadows a real org.
+    from shared.core import orgs  # local import: keeps the Lambda cold start off boto3
+
+    org = orgs.get_org_by_identifier(slug)
+    record = (
+        {"org_id": org["org_id"], "name": org.get("name", slug), "plan": org.get("plan", "free")}
+        if org
+        else _DEMO_TENANTS.get(slug)
+    )
     if not record:
         return not_found(f"Unknown organization slug: {slug}")
 

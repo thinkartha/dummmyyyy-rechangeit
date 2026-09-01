@@ -17,16 +17,25 @@ block content
     actionKey: 'addBudget'
   })
 
+  //- The first three are measured: the `cloudCost` source publishes them by key from the
+  //- same Cost Explorer response that fills the table below. "Savings opportunities" has
+  //- no key because nothing computes it for a real tenant — rightsizing needs per-tenant
+  //- utilization that is not collected — so it stays blank rather than quoting a figure.
   +ObsStatCards([
-    { label: 'MTD cloud spend', value: '$184.2k', delta: '+9%', badge: 'warning' },
-    { label: 'Forecast EOM', value: '$241k', delta: 'over +6%', badge: 'danger' },
-    { label: 'Accounts over budget', value: '3', delta: 'of 18', badge: 'warning' },
-    { label: 'Savings opportunities', value: '$12.4k', delta: 'idle', badge: 'success' }
+    { label: 'MTD cloud spend', key: 'mtdSpend', value: '—', delta: 'no data', badge: 'warning' },
+    { label: 'Forecast EOM', key: 'forecastEom', value: '—', delta: 'no data', badge: 'danger' },
+    { label: 'Accounts over budget', key: 'accountsOverBudget', value: '—', delta: 'no data', badge: 'warning' },
+    { label: 'Savings opportunities', value: '—', delta: 'no data', badge: 'success' }
   ])
 
+  //- Month-to-date spend from AWS Cost Explorer for the account connected under
+  //- Integrations → Cloud accounts, joined against the budgets stored for this tenant.
+  //- A payer account lists every member account it settles for; a standalone account is
+  //- one row. GCP and Azure have no cost connector yet, so neither appears.
   +ObsToolTable({
     title: 'Spend by account',
-    subtitle: 'Organization roll-up with per-account drill-down',
+    live: 'cloudCost',
+    subtitle: 'Month-to-date AWS spend from Cost Explorer, against the budgets you have set',
     searchPlaceholder: 'Search accounts',
     columns: [
       { label: 'Account', className: 'ps-3' },
@@ -36,13 +45,7 @@ block content
       { label: 'Variance' },
       { label: 'Status' }
     ],
-    rows: [
-      { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'warning', meta: 'prod-workloads', cells: ['prod-workloads', 'AWS', '$62.4k', '$58k', '+7.6%', { text: 'Over', badge: 'danger' }] },
-      { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'warning', meta: 'data-platform', cells: ['data-platform', 'AWS', '$28.1k', '$30k', '-6.3%', { text: 'On track', badge: 'success' }] },
-      { iconSet: 'fa-brands', icon: 'fa-google', iconColor: 'danger', meta: 'acme-analytics', cells: ['acme-analytics', 'GCP', '$19.8k', '$18k', '+10%', { text: 'Over', badge: 'danger' }] },
-      { iconSet: 'fa-brands', icon: 'fa-microsoft', iconColor: 'info', meta: 'contoso-prod', cells: ['Contoso Prod', 'Azure', '$24.6k', '$26k', '-5.4%', { text: 'On track', badge: 'success' }] },
-      { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'warning', meta: 'dev-sandbox', cells: ['dev-sandbox', 'AWS', '$4.2k', '$5k', '-16%', { text: 'On track', badge: 'success' }] }
-    ]
+    rows: []
   })
 
   //- Rightsizing recommendations from /api/v1/finops/recommendations. Kept separate

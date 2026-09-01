@@ -23,7 +23,7 @@ import urllib.parse
 import uuid
 from typing import Any
 
-from . import config_store
+from . import config_store, dbinspect
 
 log = logging.getLogger("pinghold.dbmon")
 
@@ -395,6 +395,50 @@ def test_dsn(dsn: str) -> dict[str, Any]:
     """Probe a connection string without registering it — the form's 'Test' button."""
     parts = parse_dsn(dsn)
     return check({"id": "test", "name": parts["host"], "dsn": dsn})
+
+
+def inspect(tenant_id: str, database_id: str) -> dict[str, Any] | None:
+    """Catalog findings for one registered database — drift, volume, redundancy.
+
+    Separate from check(): that one asks whether the server is coping, this one asks
+    whether the data in it is right. A database can pass the first and fail the second,
+    which is exactly the failure nobody is paged for.
+    """
+    entry = _find(tenant_id, database_id)
+    if not entry:
+        return None
+    parts = parse_dsn(entry["dsn"])
+    view = masked(entry)
+    if parts["engine"] != "postgresql":
+        raise dbinspect.Unsupported(
+            f"{ENGINES[parts['engine']]['label']} has no catalog inspector yet — PostgreSQL only"
+        )
+    result = dbinspect.inspect_postgres(entry["dsn"])
+    return {**view, **result,
+            "inspected_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+
+
+def inspect_all(tenant_id: str) -> list[dict[str, Any]]:
+    """Findings across every registered database, worst first.
+
+    An engine with no inspector is reported as such rather than dropped: a page that
+    silently lists only the Postgres entries reads as "the others are clean".
+    """
+    out = []
+    for entry in _load(tenant_id):
+        try:
+            result = inspect(tenant_id, entry["id"])
+        except dbinspect.Unsupported as exc:
+            out.append({**masked(entry), "findings": [], "counts": {"total": 0},
+                        "unsupported": str(exc)})
+            continue
+        except Exception as exc:
+            out.append({**masked(entry), "findings": [], "counts": {"total": 0},
+                        "error": str(exc).strip()})
+            continue
+        if result:
+            out.append(result)
+    return out
 
 
 def summary(tenant_id: str) -> dict[str, Any]:

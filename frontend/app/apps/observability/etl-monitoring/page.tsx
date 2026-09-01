@@ -7,6 +7,9 @@ export default function Page() {
           "code": "\n          (function() {\n            document.querySelectorAll('[data-obs-sort]').forEach(function(select) {\n              if (select.dataset.bound === '1') return;\n              select.dataset.bound = '1';\n              select.addEventListener('change', function() {\n                var key = select.value;\n                if (!key) return;\n                var root = select.closest('[data-list]');\n                if (!root) return;\n                var header = root.querySelector('th[data-sort=\"' + key + '\"]');\n                if (header) header.click();\n              });\n            });\n          })();\n        "
         },
         {
+          "code": "\n          (function() {\n            document.querySelectorAll('[data-obs-sort]').forEach(function(select) {\n              if (select.dataset.bound === '1') return;\n              select.dataset.bound = '1';\n              select.addEventListener('change', function() {\n                var key = select.value;\n                if (!key) return;\n                var root = select.closest('[data-list]');\n                if (!root) return;\n                var header = root.querySelector('th[data-sort=\"' + key + '\"]');\n                if (header) header.click();\n              });\n            });\n          })();\n        "
+        },
+        {
           "code": "\n        var navbarTopStyle = window.config.config.phoenixNavbarTopStyle;\n        var navbarTop = document.querySelector('.navbar-top');\n        if (navbarTopStyle === 'darker') {\n          navbarTop.setAttribute('data-navbar-appearance', 'darker');\n        }\n\n        var navbarVerticalStyle = window.config.config.phoenixNavbarVerticalStyle;\n        var navbarVertical = document.querySelector('.navbar-vertical');\n        if (navbarVertical && navbarVerticalStyle === 'darker') {\n          navbarVertical.setAttribute('data-navbar-appearance', 'darker');\n        }\n      "
         },
         {
@@ -85,12 +88,12 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Pipelines
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
-                    286
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="pipelines">
+                    —
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta">
-                  +12
+                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="pipelines">
+                  no data
                 </span>
               </div>
             </div>
@@ -104,12 +107,12 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Success rate
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
-                    96.4%
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="successRate">
+                    —
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
-                  +1.1%
+                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="successRate">
+                  no data
                 </span>
               </div>
             </div>
@@ -123,12 +126,12 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Failed runs (24h)
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
-                    14
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="failedRuns">
+                    —
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
-                  -3
+                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="failedRuns">
+                  no data
                 </span>
               </div>
             </div>
@@ -143,11 +146,11 @@ export default function Page() {
                     Avg duration
                   </h6>
                   <h3 className="mb-0" data-obs-stat="data-obs-stat">
-                    18m
+                    —
                   </h3>
                 </div>
                 <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
-                  +2m
+                  no data
                 </span>
               </div>
             </div>
@@ -630,6 +633,129 @@ export default function Page() {
                     </td>
                   </tr>
                 </tbody>
+              </table>
+            </div>
+            <div className="text-center p-3 fallback d-none">
+              <p className="mb-0 text-body-tertiary">
+                No matching results
+              </p>
+            </div>
+          </div>
+          <div className="card-footer border-top border-translucent">
+            <div className="row align-items-center g-2">
+              <div className="pagination d-none"></div>
+              <div className="col d-flex fs-9 flex-wrap">
+                <p className="mb-0 d-none d-sm-block me-3 fw-semibold text-body" data-list-info="data-list-info"></p>
+                <a className="fw-semibold" href="#!" data-list-view="*">
+                  View all
+                  <span className="fas fa-angle-right ms-1" data-fa-transform="down-1"></span>
+                </a>
+                <a className="fw-semibold d-none" href="#!" data-list-view="less">
+                  View less
+                </a>
+              </div>
+              <div className="col-auto d-flex">
+                <button className="btn btn-link px-1 me-1" type="button" title="Previous" data-list-pagination="prev">
+                  <span className="fas fa-chevron-left me-2"></span>
+                  Previous
+                </button>
+                <button className="btn btn-link px-1 ms-1" type="button" title="Next" data-list-pagination="next">
+                  Next
+                  <span className="fas fa-chevron-right ms-2"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="obs-list-root" data-list={"{\"valueNames\":[\"col0\",\"col1\",\"col2\",\"col3\",\"col4\",\"col5\",\"col6\"],\"page\":10,\"filter\":{\"key\":\"col6\"}}"} data-live-table="etlJobs">
+        <div className="card">
+          <div className="card-header border-bottom border-translucent py-3">
+            <div className="row align-items-center g-2 mb-3">
+              <div className="col">
+                <h4 className="mb-0">
+                  Job runs
+                </h4>
+                <p className="text-body-tertiary fs-9 mb-0">
+                  Latest state per execution across every connected platform — connect a platform and poll it to populate
+                </p>
+              </div>
+            </div>
+            <div className="row align-items-center g-2">
+              <div className="col-12 col-md">
+                <div className="search-box w-100">
+                  <form className="position-relative">
+                    <input className="form-control search-input search form-control-sm" type="search" placeholder="Search jobs, platforms, or environments" aria-label="Search" />
+                    <span className="fas fa-search search-box-icon"></span>
+                  </form>
+                </div>
+              </div>
+              <div className="col-6 col-md-auto">
+                <select className="form-select form-select-sm" data-list-filter="data-list-filter" aria-label="Filter">
+                  <option value="">
+                    Filter: All
+                  </option>
+                </select>
+              </div>
+              <div className="col-6 col-md-auto">
+                <select className="form-select form-select-sm" aria-label="Sort by" data-obs-sort="data-obs-sort">
+                  <option value="">
+                    Sort by
+                  </option>
+                  <option value="col0">
+                    Job
+                  </option>
+                  <option value="col1">
+                    Platform
+                  </option>
+                  <option value="col2">
+                    Environment
+                  </option>
+                  <option value="col3">
+                    Status
+                  </option>
+                  <option value="col4">
+                    Duration
+                  </option>
+                  <option value="col5">
+                    Records
+                  </option>
+                  <option value="col6">
+                    Last run
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div className="card-body p-0">
+            <div className="table-responsive scrollbar">
+              <table className="table table-sm fs-9 mb-0">
+                <thead>
+                  <tr>
+                    <th className="sort align-middle white-space-nowrap text-uppercase ps-3" scope="col" data-sort="col0">
+                      Job
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col1">
+                      Platform
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col2">
+                      Environment
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col3">
+                      Status
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col4">
+                      Duration
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col5">
+                      Records
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col6">
+                      Last run
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="list" data-sample-rows="data-sample-rows"></tbody>
               </table>
             </div>
             <div className="text-center p-3 fallback d-none">

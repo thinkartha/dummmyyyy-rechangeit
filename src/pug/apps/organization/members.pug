@@ -12,13 +12,13 @@ append variables
 block content
   +ObsPageHeader({
     title: 'Organization members',
-    subtitle: 'People in RootVyana — roles, invites, and auth source (SSO or native)',
+    subtitle: 'People in your organization — roles, invites, and auth source (SSO or native)',
     action: 'Invite member',
     actionKey: 'inviteMember'
   })
 
   +ObsStatCards([
-    { label: 'Members', value: '86', delta: 'RootVyana', badge: 'info' },
+    { label: 'Members', value: '86', delta: 'this organization', badge: 'info' },
     { label: 'Admins', value: '6', delta: 'privileged', badge: 'warning' },
     { label: 'SSO users', value: '71', delta: 'Okta', badge: 'success' },
     { label: 'Native login', value: '15', delta: 'password', badge: 'primary' }

@@ -64,7 +64,9 @@ for (const file of pugFiles(new URL('../src/pug', import.meta.url).pathname)) {
 // no entry behind it, and a row button with no entry is silently inert — bind() looks
 // the key up, finds nothing, and returns.
 const rowSource = readFileSync(new URL('./live-data.js', import.meta.url), 'utf8');
-for (const m of rowSource.matchAll(/key: '([^']+)'/g)) {
+// \b so the pattern matches the `key:` of a row action and not the tail of any
+// property whose name happens to end in "key" (no_primary_key, foreign_key, …).
+for (const m of rowSource.matchAll(/\bkey: '([^']+)'/g)) {
   referenced.add(m[1]);
   used++;
   if (!known.has(m[1])) missing.push(`integration/live-data.js: ${m[1]}`);

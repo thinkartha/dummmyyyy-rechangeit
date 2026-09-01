@@ -50,13 +50,17 @@ function slugFromHostname(hostname = '') {
   return null;
 }
 
+/* No default. A hardcoded fallback slug made every request claim to be that tenant,
+   which is how the top bar and the members table ended up showing an org the user is
+   not in. Signed in, the backend reads org_id off the verified token and ignores this
+   header anyway; signed out, no slug is the honest answer. */
 function currentTenantSlug() {
   if (typeof window === 'undefined') return null;
   return (
     window.__TENANT_SLUG__ ||
     slugFromHostname(window.location.hostname) ||
     localStorage.getItem('lhb_tenant_slug') ||
-    'rootvyana'
+    null
   );
 }
 
@@ -254,8 +258,9 @@ export const api = {
   health: () => request(`/health${query()}`),
   storeHealth: () => request(`/health/store${query()}`),
   tenant: () => get('/tenant'),
+  /* Scoped server-side: a platform admin gets the directory, everyone else gets only
+     the organization they belong to. */
   organizations: () => get('/organizations'),
-  onboardOrganization: (body) => post('/organizations', body),
 
   /* Auth — login stores the tokens so later calls carry them automatically */
   auth: {
@@ -442,6 +447,10 @@ export const api = {
     engines: () => get('/databases/engines'),
     health: () => get('/databases/health'),
     databaseHealth: (id) => get(`/databases/${id}/health`),
+    /* Catalog findings — schema drift, volume drops, redundancy. Distinct from health:
+       a database can be green on every operational metric and full of these. */
+    findings: () => get('/databases/findings'),
+    inspect: (id) => get(`/databases/${id}/inspect`),
     add: (body) => post('/databases', body),
     test: (body) => post('/databases/test', body),
     remove: (id) => del(`/databases/${id}`)
@@ -473,6 +482,9 @@ export const api = {
     /* Monthly ceilings. `scope` is 'cloud' or 'ai'; the Budget column on both cost
        pages is this joined against the spend they already report. */
     budgets: (params) => get('/finops/budgets', params),
+    /* MTD spend per linked AWS account, from Cost Explorer. Cached server-side: the
+       source lags a day and bills per request, so this is not a poll. */
+    cloudCost: () => get('/finops/cloud-cost'),
     saveBudget: (body) => post('/finops/budgets', body),
     deleteBudget: (id) => del(`/finops/budgets/${id}`)
   },

@@ -88,12 +88,12 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     MTD cloud spend
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
-                    $184.2k
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="mtdSpend">
+                    —
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
-                  +9%
+                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="mtdSpend">
+                  no data
                 </span>
               </div>
             </div>
@@ -107,12 +107,12 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Forecast EOM
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
-                    $241k
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="forecastEom">
+                    —
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-danger" data-obs-stat-delta="data-obs-stat-delta">
-                  over +6%
+                <span className="badge badge-phoenix badge-phoenix-danger" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="forecastEom">
+                  no data
                 </span>
               </div>
             </div>
@@ -126,12 +126,12 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Accounts over budget
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
-                    3
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="accountsOverBudget">
+                    —
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
-                  of 18
+                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountsOverBudget">
+                  no data
                 </span>
               </div>
             </div>
@@ -146,18 +146,18 @@ export default function Page() {
                     Savings opportunities
                   </h6>
                   <h3 className="mb-0" data-obs-stat="data-obs-stat">
-                    $12.4k
+                    —
                   </h3>
                 </div>
                 <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
-                  idle
+                  no data
                 </span>
               </div>
             </div>
           </div>
         </div>
       </div>
-      <div className="obs-list-root" data-list={"{\"valueNames\":[\"col0\",\"col1\",\"col2\",\"col3\",\"col4\",\"col5\"],\"page\":5,\"filter\":{\"key\":\"col5\"}}"}>
+      <div className="obs-list-root" data-list={"{\"valueNames\":[\"col0\",\"col1\",\"col2\",\"col3\",\"col4\",\"col5\"],\"page\":5,\"filter\":{\"key\":\"col5\"}}"} data-live-table="cloudCost">
         <div className="card">
           <div className="card-header border-bottom border-translucent py-3">
             <div className="row align-items-center g-2 mb-3">
@@ -166,7 +166,7 @@ export default function Page() {
                   Spend by account
                 </h4>
                 <p className="text-body-tertiary fs-9 mb-0">
-                  Organization roll-up with per-account drill-down
+                  Month-to-date AWS spend from Cost Explorer, against the budgets you have set
                 </p>
               </div>
             </div>
@@ -183,12 +183,6 @@ export default function Page() {
                 <select className="form-select form-select-sm" data-list-filter="data-list-filter" aria-label="Filter">
                   <option value="">
                     Filter: All
-                  </option>
-                  <option value="Over">
-                    Over
-                  </option>
-                  <option value="On track">
-                    On track
                   </option>
                 </select>
               </div>
@@ -244,168 +238,7 @@ export default function Page() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="list" data-sample-rows="data-sample-rows">
-                  <tr>
-                    <td className="align-middle ps-3 py-3 col0">
-                      <div className="d-flex align-items-center">
-                        <span className="me-2 fa-brands fa-aws text-warning"></span>
-                        <div>
-                          <h6 className="mb-0">
-                            prod-workloads
-                          </h6>
-                          <p className="text-body-tertiary fs-10 mb-0">
-                            prod-workloads
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="align-middle col1">
-                      AWS
-                    </td>
-                    <td className="align-middle col2">
-                      $62.4k
-                    </td>
-                    <td className="align-middle col3">
-                      $58k
-                    </td>
-                    <td className="align-middle col4">
-                      +7.6%
-                    </td>
-                    <td className="align-middle col5">
-                      <span className="badge badge-phoenix badge-phoenix-danger">
-                        Over
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="align-middle ps-3 py-3 col0">
-                      <div className="d-flex align-items-center">
-                        <span className="me-2 fa-brands fa-aws text-warning"></span>
-                        <div>
-                          <h6 className="mb-0">
-                            data-platform
-                          </h6>
-                          <p className="text-body-tertiary fs-10 mb-0">
-                            data-platform
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="align-middle col1">
-                      AWS
-                    </td>
-                    <td className="align-middle col2">
-                      $28.1k
-                    </td>
-                    <td className="align-middle col3">
-                      $30k
-                    </td>
-                    <td className="align-middle col4">
-                      -6.3%
-                    </td>
-                    <td className="align-middle col5">
-                      <span className="badge badge-phoenix badge-phoenix-success">
-                        On track
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="align-middle ps-3 py-3 col0">
-                      <div className="d-flex align-items-center">
-                        <span className="me-2 fa-brands fa-google text-danger"></span>
-                        <div>
-                          <h6 className="mb-0">
-                            acme-analytics
-                          </h6>
-                          <p className="text-body-tertiary fs-10 mb-0">
-                            acme-analytics
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="align-middle col1">
-                      GCP
-                    </td>
-                    <td className="align-middle col2">
-                      $19.8k
-                    </td>
-                    <td className="align-middle col3">
-                      $18k
-                    </td>
-                    <td className="align-middle col4">
-                      +10%
-                    </td>
-                    <td className="align-middle col5">
-                      <span className="badge badge-phoenix badge-phoenix-danger">
-                        Over
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="align-middle ps-3 py-3 col0">
-                      <div className="d-flex align-items-center">
-                        <span className="me-2 fa-brands fa-microsoft text-info"></span>
-                        <div>
-                          <h6 className="mb-0">
-                            Contoso Prod
-                          </h6>
-                          <p className="text-body-tertiary fs-10 mb-0">
-                            contoso-prod
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="align-middle col1">
-                      Azure
-                    </td>
-                    <td className="align-middle col2">
-                      $24.6k
-                    </td>
-                    <td className="align-middle col3">
-                      $26k
-                    </td>
-                    <td className="align-middle col4">
-                      -5.4%
-                    </td>
-                    <td className="align-middle col5">
-                      <span className="badge badge-phoenix badge-phoenix-success">
-                        On track
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="align-middle ps-3 py-3 col0">
-                      <div className="d-flex align-items-center">
-                        <span className="me-2 fa-brands fa-aws text-warning"></span>
-                        <div>
-                          <h6 className="mb-0">
-                            dev-sandbox
-                          </h6>
-                          <p className="text-body-tertiary fs-10 mb-0">
-                            dev-sandbox
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="align-middle col1">
-                      AWS
-                    </td>
-                    <td className="align-middle col2">
-                      $4.2k
-                    </td>
-                    <td className="align-middle col3">
-                      $5k
-                    </td>
-                    <td className="align-middle col4">
-                      -16%
-                    </td>
-                    <td className="align-middle col5">
-                      <span className="badge badge-phoenix badge-phoenix-success">
-                        On track
-                      </span>
-                    </td>
-                  </tr>
-                </tbody>
+                <tbody className="list" data-sample-rows="data-sample-rows"></tbody>
               </table>
             </div>
             <div className="text-center p-3 fallback d-none">

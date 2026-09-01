@@ -2029,19 +2029,21 @@ export const ACTIONS = {
     run: async (api, id) => { await api.databases.remove(id); return 'Database removed.'; },
   },
 
+  /* Platform-admin only. The public POST /organizations it used to call was a stub
+     that returned "pending" and wrote nothing, so every org created here vanished. */
   createOrganization: {
     title: 'Create organization',
     submit: 'Create',
     success: 'Organization created.',
     fields: [
-      { name: 'name', label: 'Organization name', required: true, width: 'half' },
-      { name: 'slug', label: 'Slug', required: true, width: 'half',
-        help: 'Becomes <slug>.loveheartbeat.com.' },
+      { name: 'name', label: 'Organization name', required: true, width: 'half',
+        help: 'The slug — <slug>.loveheartbeat.com — is derived from this.' },
+      { name: 'owner_email', label: 'Owner email', type: 'email', required: true, width: 'half' },
       { name: 'plan', label: 'Plan', type: 'select', width: 'half',
-        options: ['trial', 'business', 'enterprise'] },
-      { name: 'admin_email', label: 'Admin email', type: 'email', width: 'half' },
+        options: ['free', 'trial', 'business', 'enterprise'] },
+      { name: 'seats', label: 'Seats', type: 'number', width: 'half' },
     ],
-    run: (api, body) => api.onboardOrganization(body),
+    run: (api, body) => api.admin.createOrganization(body),
   },
 };
 

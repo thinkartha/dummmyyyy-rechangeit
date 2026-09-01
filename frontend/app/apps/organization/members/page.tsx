@@ -66,7 +66,7 @@ export default function Page() {
               Organization members
             </h2>
             <h5 className="text-body-tertiary fw-semibold mb-0">
-              People in RootVyana — roles, invites, and auth source (SSO or native)
+              People in your organization — roles, invites, and auth source (SSO or native)
             </h5>
           </div>
           <div className="col-auto">
@@ -90,7 +90,7 @@ export default function Page() {
                   </h3>
                 </div>
                 <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta">
-                  RootVyana
+                  this organization
                 </span>
               </div>
             </div>

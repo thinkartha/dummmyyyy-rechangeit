@@ -44,12 +44,24 @@ export async function init() {
   if (!email) return;
 
   const org = await api.admin.myOrganization().catch(() => null);
-  if (!org) return;
+  if (!org) {
+    /* Solo accounts have no org. Say so rather than leaving the theme's em-dash, which
+       reads as "still loading". */
+    paint({ orgName: 'No organization' });
+    return;
+  }
+  const slug = org.slug || '';
   paint({
-    orgName: org.name || org.slug || org.org_id || '',
+    orgName: org.name || slug || org.org_id || '',
     orgOwner: org.owner_email || '',
     orgPlan: org.plan || '',
+    orgId: org.org_id || '',
+    orgSlug: slug,
+    orgHost: slug ? `${slug}.loveheartbeat.com` : '',
   });
+  for (const el of document.querySelectorAll('[data-lhb-org-url]')) {
+    if (slug) el.href = `https://${slug}.loveheartbeat.com`;
+  }
 
   const owner = (org.owner_email || '').toLowerCase();
   if (!owner || owner !== email.toLowerCase()) return;

@@ -43,12 +43,83 @@ const ETL_SLUGS = { 'dell boomi': 'boomi', boomi: 'boomi', talend: 'talend', dat
 /* Which form configures each ETL platform. Anything unmapped falls back to the chooser. */
 const ETL_CONFIG = { talend: 'connectTalend', boomi: 'connectBoomi', databricks: 'connectDatabricks' };
 
+/* What each catalog finding is called on screen, and the glyph that carries it. Keyed
+   by the `kind` the inspector emits, so a new check needs one entry, not a new table. */
+const FINDING_LABELS = {
+  schema_drift: 'Schema drift',
+  volume_drop: 'Volume drop',
+  duplicate_index: 'Duplicate index',
+  redundant_index: 'Redundant index',
+  unused_index: 'Unused index',
+  duplicate_rows: 'Duplicate rows',
+  no_primary_key: 'No primary key',
+};
+
+const FINDING_ICONS = {
+  schema_drift: 'fa-code-branch',
+  volume_drop: 'fa-arrow-trend-down',
+  duplicate_index: 'fa-clone',
+  redundant_index: 'fa-clone',
+  unused_index: 'fa-layer-group',
+  duplicate_rows: 'fa-copy',
+  no_primary_key: 'fa-key',
+};
+
 const etlPlatform = (name) => ETL_SLUGS[String(name || '').toLowerCase()] || String(name || '').toLowerCase();
 
 const num = (v, digits = 0) =>
   v === null || v === undefined || Number.isNaN(Number(v))
     ? '—'
     : Number(v).toLocaleString(undefined, { maximumFractionDigits: digits });
+
+/**
+ * One vocabulary for ETL run status.
+ *
+ * Every vendor spells it differently — Talend says COMPLETE, Boomi says ERROR,
+ * Databricks says TERMINATING, and this app's own executions say dry_run_started. The
+ * table has one Status column, so they are collapsed to four words here rather than
+ * shown raw, where "TIMEDOUT" and "launch_failed" would read as two different outcomes.
+ */
+const ETL_STATUS = {
+  COMPLETE: 'Success', SUCCESS: 'Success', execution_success: 'Success', succeeded: 'Success',
+  ERROR: 'Failed', FAILED: 'Failed', TIMEDOUT: 'Failed', INTERNAL_ERROR: 'Failed',
+  CANCELED: 'Failed', CANCELLED: 'Failed', execution_failed: 'Failed', launch_failed: 'Failed',
+  RUNNING: 'Running', TERMINATING: 'Running', BLOCKED: 'Running', WAITING_FOR_RETRY: 'Running',
+  running: 'Running', started: 'Running', execution_running: 'Running', dry_run_started: 'Running',
+  QUEUED: 'Queued', PENDING: 'Queued', queued: 'Queued', execution_queued: 'Queued',
+  submitted: 'Queued',
+};
+
+const ETL_EVENT_STATUS = {
+  'etl.job.succeeded': 'Success',
+  'etl.job.failed': 'Failed',
+  'etl.job.warning': 'Failed',
+  'etl.job.running': 'Running',
+  'etl.job.started': 'Running',
+};
+
+/* The event type is the fallback, not the first choice: a poller that reports a run as
+   etl.job.running while the payload already says COMPLETE is describing the sweep, not
+   the run. */
+const etlStatus = (data, type) => {
+  const raw = String(data.status ?? data.result_state ?? data.life_cycle_state ?? '');
+  return ETL_STATUS[raw] || ETL_EVENT_STATUS[type] || raw || 'Unknown';
+};
+
+/** Duration from whichever pair of fields the vendor happened to send. */
+const etlDuration = (data) => {
+  let ms = [data.duration_ms, data.run_duration, data.execution_duration]
+    .find((v) => typeof v === 'number' && Number.isFinite(v));
+  if (ms == null && data.started_at && data.ended_at) {
+    ms = Date.parse(String(data.ended_at)) - Date.parse(String(data.started_at));
+  }
+  if (ms == null && data.start_time && data.finish_time) {
+    ms = Date.parse(String(data.finish_time)) - Date.parse(String(data.start_time));
+  }
+  if (ms == null || !Number.isFinite(ms) || ms < 0) return '—';
+  const s = Math.floor(ms / 1000);
+  return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${s % 60}s`;
+};
 
 /** What the logs page's filter bar is asking for, in /logs/search's own parameters. */
 function logFilters() {
@@ -182,7 +253,57 @@ export const SOURCES = {
       })),
   },
 
+  /* One row per catalog finding, flattened across every registered database, worst
+     first — the API already sorts within a database, so only the outer list is joined
+     here. An engine with no inspector still gets a row saying so, because a page that
+     lists only the Postgres entries reads as "the rest are clean". */
+  databaseFindings: {
+    load: (api) => api.databases.findings(),
+    rows: (data) =>
+      (data || []).flatMap((db) => {
+        const where = db.name || db.host || db.database;
+        if (db.unsupported || db.error) {
+          return [{
+            icon: 'fa-circle-question',
+            iconColor: 'secondary',
+            meta: where,
+            cells: [where, 'Not inspected', '—', db.unsupported || db.error,
+                    badge('Unknown')],
+          }];
+        }
+        return (db.findings || []).map((f) => ({
+          icon: FINDING_ICONS[f.kind] || 'fa-triangle-exclamation',
+          iconColor: f.severity === 'critical' ? 'danger'
+            : f.severity === 'warning' ? 'warning' : 'info',
+          meta: where,
+          cells: [f.object, FINDING_LABELS[f.kind] || f.kind, where, f.summary,
+                  badge(f.severity)],
+        }));
+      }),
+  },
+
   etl: {
+    /* The cards above the table, from the same /summary response. Success rate is
+       weighted by job count rather than averaged across platforms: three platforms at
+       100%, 100% and 50% is not "83% of runs succeeded" unless they ran equal numbers,
+       and they never do. */
+    stats: (data) => {
+      const rows = (data || []).filter((p) => p.status !== 'not_configured');
+      const jobs = rows.reduce((t, p) => t + (Number(p.totalJobs) || 0), 0);
+      const succeeded = rows.reduce((t, p) => t + (Number(p.totalJobs) || 0) * (Number(p.successRate) || 0), 0);
+      const failed = rows.reduce((t, p) => t + Math.round((Number(p.jobsPerDay) || 0) * (Number(p.failureRate) || 0) / 100), 0);
+      return {
+        pipelines: {
+          value: num(rows.reduce((t, p) => t + (Number(p.jobsPerDay) || 0), 0)),
+          delta: `${num(rows.length)} connected`,
+        },
+        successRate: {
+          value: jobs ? pct(succeeded / jobs, 1) : '—',
+          delta: jobs ? `${num(jobs)} runs` : 'no runs yet',
+        },
+        failedRuns: { value: num(failed), delta: 'last 24h' },
+      };
+    },
     load: (api) => api.etl.summary(),
     rows: (data) =>
       (data || []).map((p) => ({
@@ -201,6 +322,61 @@ export const SOURCES = {
           { key: 'pollEtl', arg: etlPlatform(p.name), label: 'Poll now' },
         ],
       })),
+  },
+
+  /**
+   * Columns: Job · Platform · Environment · Status · Duration · Records · Last run.
+   *
+   * The ETL page could say which *platforms* were connected and nothing about what they
+   * had actually run — /events, /executions and /incidents were all served by the
+   * backend and called by nobody. This is the run-level table those endpoints exist for.
+   *
+   * Built from /events rather than /executions on purpose: an execution row is only
+   * created for a job this app launched, while an event arrives for every run the
+   * pollers pick up, including the ones scheduled inside Talend or Databricks. Runs
+   * started elsewhere are most of what a monitoring page is for.
+   */
+  etlJobs: {
+    load: (api) => api.etl.events({ limit: 200 }),
+    rows: (data) => {
+      /* One row per execution, not per event. A run emits started → running → succeeded,
+         and /events is newest-first, so the first sighting of an execution id is its
+         current state — keeping all three would trip-count every job and show it as
+         still running long after it finished. */
+      const seen = new Set();
+      return (data || []).filter((e) => {
+        const key = String(e.data?.execution_id ?? e.correlationid ?? e.id);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      }).map((e) => {
+        const d = e.data || {};
+        const status = etlStatus(d, e.type);
+        const failed = status === 'Failed';
+        return {
+          icon: 'fa-diagram-project',
+          iconColor: failed ? 'danger' : status === 'Running' ? 'info' : status === 'Queued' ? 'secondary' : 'success',
+          /* The error is the reason somebody opened this page; it goes under the job
+             name rather than into a column nothing else would fill. */
+          meta: d.error_message || d.state_message || d.message || null,
+          cells: [
+            String(d.job_name ?? d.artifact_name ?? d.process_name ?? d.run_name ?? d.job_id ?? 'unnamed job'),
+            e.source || d.platform || '—',
+            String(d.environment ?? d.environment_id ?? d.atom_name ?? '—'),
+            badge(status),
+            etlDuration(d),
+            d.records_processed != null ? num(d.records_processed) : '—',
+            e.timestamp || '—',
+          ],
+          /* Retry only makes sense on a run that failed, and only this app's executions
+             can be relaunched — a run polled out of Talend has no execution record here
+             to retry against. */
+          actions: failed && d.execution_id
+            ? [{ key: 'retryEtlExecution', arg: String(d.execution_id), label: 'Retry' }]
+            : [],
+        };
+      });
+    },
   },
 
   correlation: {
@@ -373,6 +549,90 @@ export const SOURCES = {
       }),
   },
 
+  /* --- cloud cost --------------------------------------------------------- */
+
+  /**
+   * Columns: Account · Cloud · MTD · Budget · Variance · Status.
+   *
+   * Spend comes from Cost Explorer, the ceiling from /finops/budgets — the same split
+   * as the AI cost table above, and the same reason for it: a tenant with no budgets is
+   * the normal case, so a missing ceiling is a column that says so rather than an error.
+   *
+   * Variance is signed against the budget, which is the number the operator actually
+   * acts on: "+7.6%" means over by that much, and with no budget there is nothing to be
+   * over, so it stays a dash instead of being computed against zero.
+   */
+  cloudCost: {
+    /* The four cards above this table are the same three numbers rolled up, so they are
+       published from here rather than fetched again. `accountsOverBudget` needs the
+       budgets too, which is the other reason the join lives on this side. */
+    stats: ({ cost, budgets }) => {
+      const currency = (cost && cost.currency) || 'USD';
+      const money = (v) => (v == null ? '—' : `${currency} ${num(v, 2)}`);
+      const over = ((cost && cost.accounts) || []).filter((a) => {
+        const budget = (budgets || []).find((b) => b.target === a.account)
+          || (budgets || []).find((b) => b.target === '*');
+        return budget && a.mtd > Number(budget.monthly_limit);
+      }).length;
+      const total = cost && cost.mtd_total;
+      const forecast = cost && cost.forecast_month_end;
+      return {
+        mtdSpend: { value: money(total), delta: cost?.period_start ? `since ${cost.period_start}` : 'no data' },
+        forecastEom: {
+          value: money(forecast),
+          // Cost Explorer declines to forecast a new account or the last day of a
+          // month. That is an answer, and it should not read as $0.
+          delta: forecast == null ? 'not enough history'
+            : total ? `${forecast > total ? '+' : ''}${pct(((forecast - total) / total) * 100, 0)} vs MTD`
+            : 'projected',
+        },
+        accountsOverBudget: {
+          value: num(over),
+          delta: `of ${num(((cost && cost.accounts) || []).length)}`,
+        },
+      };
+    },
+    load: async (api) => ({
+      cost: await api.finops.cloudCost(),
+      budgets: await api.finops.budgets({ scope: 'cloud' }).catch(() => []),
+    }),
+    rows: ({ cost, budgets }) => {
+      /* An account Cost Explorer refused is one row saying why. Returning [] here would
+         render "Nothing here yet", which reads as a $0 bill rather than a missing
+         permission — and `ce:GetCostAndUsage` missing from the role is the single most
+         likely reason this table is empty. */
+      if (cost && cost.error) {
+        return [{
+          icon: 'fa-triangle-exclamation',
+          iconColor: 'danger',
+          meta: cost.error,
+          cells: ['AWS Cost Explorer', 'AWS', '—', '—', '—',
+                  badge('Unavailable')],
+        }];
+      }
+      const currency = (cost && cost.currency) || 'USD';
+      return ((cost && cost.accounts) || []).map((a) => {
+        const budget = (budgets || []).find((b) => b.target === a.account)
+          || (budgets || []).find((b) => b.target === '*');
+        const limit = budget ? Number(budget.monthly_limit) : null;
+        const variance = limit ? ((a.mtd - limit) / limit) * 100 : null;
+        const over = variance != null && variance > 0;
+        return {
+          iconSet: 'fa-brands',
+          icon: 'fa-aws',
+          iconColor: over ? 'danger' : 'warning',
+          meta: a.account,
+          cells: [a.account, a.cloud || 'AWS',
+                  `${currency} ${num(a.mtd, 2)}`,
+                  limit != null ? `${budget.currency || currency} ${num(limit, 2)}/mo` : 'no budget set',
+                  variance != null ? `${variance > 0 ? '+' : ''}${pct(variance, 1)}` : '—',
+                  badge(limit == null ? 'Untracked' : over ? 'Over' : 'On track')],
+          actions: budget ? [{ key: 'deleteBudget', arg: budget.id, label: 'Clear budget' }] : [],
+        };
+      });
+    },
+  },
+
   aiGateway: {
     load: (api) => api.agents.gateway(),
     rows: (data) =>
@@ -452,15 +712,23 @@ export const SOURCES = {
     }),
     rows: ({ lambda, gateway }) => {
       const rows = [];
+      /* An account whose credentials AWS rejected is the case this row kept getting
+         wrong: it counted zero functions and still said Healthy. `error` is why the
+         numbers are zero, and it belongs in front of the operator who just saved the
+         connection — that is the only way "connected but nothing is updating" is
+         distinguishable from "connected and quiet". */
       if (lambda) {
+        const failed = Boolean(lambda.error);
         rows.push({
           icon: 'fa-aws',
           iconSet: 'fa-brands',
-          iconColor: lambda.errorRate > 0.05 ? 'danger' : 'warning',
-          meta: `${lambda.source} · ${num(lambda.invocationsPerMinute)} inv/min`,
+          iconColor: failed || lambda.errorRate > 0.05 ? 'danger' : 'warning',
+          meta: lambda.error
+            || `${lambda.source} · ${num(lambda.invocationsPerMinute)} inv/min`,
           cells: [`AWS Lambda · ${lambda.region}`, 'AWS', 'Serverless',
                   num(lambda.functions), num(lambda.activeAlarms),
                   badge(!lambda.configured ? 'Not connected'
+                    : failed ? 'Auth failed'
                     : lambda.errorRate > 0.05 ? 'Degraded' : 'Healthy')],
         });
       }
@@ -952,6 +1220,13 @@ function clearSamples(root) {
   const tbody = root.querySelector('tbody.list') || root.querySelector('tbody');
   if (!tbody || tbody.dataset.lhbCleared === '1') return;
   tbody.dataset.lhbCleared = '1';
+  showEmpty(root);
+}
+
+/** Replace whatever a table is holding with a single "nothing here" row. */
+function showEmpty(root) {
+  const tbody = root.querySelector('tbody.list') || root.querySelector('tbody');
+  if (!tbody) return;
   tbody.removeAttribute('data-sample-rows');
   const columns = root.querySelectorAll('thead th').length || 1;
   const cell = document.createElement('td');
@@ -961,6 +1236,40 @@ function clearSamples(root) {
   const row = document.createElement('tr');
   row.appendChild(cell);
   tbody.replaceChildren(row);
+}
+
+/**
+ * Is somebody mid-way through reading this table?
+ *
+ * Either they have typed into its search box, or the focus is inside it — sorting,
+ * paging, or about to press a row action. Both are reasons a background refresh should
+ * wait for the next tick rather than pulling the rows out from under them.
+ */
+function isFiltering(root) {
+  /* Checked by element rather than by one comma-joined selector: querySelector returns
+     whichever matches first in document order, so a single query would answer for the
+     search box on one table and the category select on the next. */
+  const search = root.querySelector('input[type="search"]');
+  if (search && search.value.trim()) return true;
+  const filter = root.querySelector('[data-list-filter]');
+  if (filter && filter.value) return true;
+  return Boolean(document.activeElement) && root.contains(document.activeElement);
+}
+
+/**
+ * Fill the stat cards a live source measured, by key.
+ *
+ * The blanking pass above has already set every card to "—", so this only ever writes
+ * over a dash: a card whose key nothing publishes stays blank rather than keeping the
+ * number that was typed into the template.
+ */
+function publishStats(stats) {
+  for (const [key, stat] of Object.entries(stats || {})) {
+    const value = document.querySelector(`[data-obs-stat-key="${key}"]`);
+    if (value) value.textContent = stat.value;
+    const delta = document.querySelector(`[data-obs-stat-delta-key="${key}"]`);
+    if (delta && stat.delta != null) delta.textContent = stat.delta;
+  }
 }
 
 /** A small badge on the card header saying where the numbers came from. */
@@ -980,17 +1289,66 @@ function mark(root, text, tone) {
   el.textContent = text;
 }
 
+/** How often a page re-reads every live table. */
+const POLL_MS = 10_000;
+
+let pollTimer = null;
+let sweeping = false;
+/* The one-time DOM work — blanking stat cards, dropping mock blocks, wiping sample
+   rows — is done after the first sweep. Repeating it every ten seconds would be pure
+   waste, and re-blanking a stat card the previous sweep had just measured would make
+   every published number flash back to a dash. */
+let primed = false;
+
 /**
- * Hydrate every opted-in table on the page.
+ * Re-read every live table on a fixed interval.
+ *
+ * Started by the first hydrate and never started twice: hydrate is also what a form
+ * submit and the Refresh button call, and each of those spawning its own timer is how
+ * a page ends up making six requests per tick by mid-session.
+ */
+function startPolling(api) {
+  if (pollTimer || typeof window === 'undefined') return;
+  pollTimer = window.setInterval(() => {
+    /* A hidden tab is not being read, and every tick still costs the tenant a request
+       per table. Browsers throttle background timers but do not stop them. */
+    if (document.hidden || sweeping) return;
+    sweep(api, true);
+  }, POLL_MS);
+}
+
+/**
+ * Hydrate every opted-in table on the page, and keep them hydrated.
  *
  * Failure is reported, never silent: an unreachable API or an expired session leaves
  * the sample rows visible and labels them, so nobody mistakes placeholder numbers for
  * live ones — which is the whole reason this badge exists.
  */
 export async function hydrate(api) {
+  startPolling(api);
+  return sweep(api, false);
+}
+
+/**
+ * One pass over every live table.
+ *
+ * `polled` separates the timer's pass from one somebody asked for: a poll leaves a
+ * table the operator is filtering alone and does not flash "Loading…" over numbers that
+ * are already on screen, where an explicit Refresh does both.
+ */
+async function sweep(api, polled) {
+  sweeping = true;
+  try {
+    await sweepTables(api, polled);
+  } finally {
+    sweeping = false;
+  }
+}
+
+async function sweepTables(api, polled) {
   /* Stat cards are markup, not measurements — nothing loads them. With mock data off
      they would be the last fabricated numbers left on the page, so blank them. */
-  if (!MOCK_DATA) {
+  if (!MOCK_DATA && !primed) {
     /* Blank, then drop the attribute: the same attribute is what the stylesheet in
        <head> hides on, so removing it is what makes the dash visible. Without that the
        invented number is painted for one frame before this runs — which is exactly the
@@ -1011,21 +1369,42 @@ export async function hydrate(api) {
        it, an emptied row goes too, and a lone survivor widens to fill the row. */
     for (const el of document.querySelectorAll('[data-mock-block]')) dropWithLayout(el);
   }
+  /* Every sample table goes, not just the ones with a live source behind them. Two
+     tables — "Spend by account" and "Orchestration platforms" — were never wired to an
+     endpoint, so nothing ever cleared their invented rows and they read as real. */
+  if (!MOCK_DATA && !primed) {
+    for (const tbody of document.querySelectorAll('tbody[data-sample-rows]')) {
+      const root = tbody.closest('.obs-list-root') || tbody.closest('.card') || tbody;
+      clearSamples(root === tbody ? tbody.parentElement : root);
+    }
+  }
   const roots = document.querySelectorAll('[data-live-table]');
+  primed = true;
   await Promise.all(Array.from(roots).map(async (root) => {
     const source = SOURCES[root.dataset.liveTable];
     if (!source) return;
+    /* Re-rendering the tbody underneath somebody who has typed a filter throws away
+       what they were looking at. A poll skips those tables; an explicit Refresh is a
+       request to redraw and does not. */
+    if (polled && isFiltering(root)) return;
     if (!MOCK_DATA) clearSamples(root);
-    mark(root, 'Loading…', 'info');
+    // Only an asked-for pass says "Loading…": a badge blinking every ten seconds reads
+    // as instability, and the numbers beside it have not gone anywhere.
+    if (!polled) mark(root, 'Loading…', 'info');
     try {
-      const rows = source.rows(await source.load(api));
+      const payload = await source.load(api);
+      const rows = source.rows(payload);
       if (!rows.length) {
-        // The call succeeded and the tenant genuinely has nothing registered yet.
+        // The call succeeded and the tenant genuinely has nothing registered yet. On a
+        // repeat pass the table may still be holding the previous rows, so it is
+        // emptied rather than left showing data the API no longer reports.
+        if (!MOCK_DATA) showEmpty(root);
         mark(root, MOCK_DATA ? 'Sample data — none registered yet' : 'No data yet',
              MOCK_DATA ? 'warning' : 'secondary');
         return;
       }
       render(root, rows, source.plain);
+      if (source.stats) publishStats(source.stats(payload));
       mark(root, 'Live', 'success');
     } catch (err) {
       const status = /API (\d{3})/.exec(err.message)?.[1];

@@ -332,7 +332,10 @@ mixin NavbarIconsSlim
       +NineDotsDropdown
 
     li.nav-item.dropdown
-      a#navbarDropdownUser.nav-link.lh-1.pe-0.white-space-nowrap(href='#!' role='button' data-bs-toggle='dropdown' aria-haspopup='true' data-bs-auto-close="outside" aria-expanded='false') Olivia 
+      //- The theme's "Olivia" sat next to live tenant data and read as the signed-in
+      //- user. auth.js fills it from the cached session.
+      a#navbarDropdownUser.nav-link.lh-1.pe-0.white-space-nowrap(href='#!' role='button' data-bs-toggle='dropdown' aria-haspopup='true' data-bs-auto-close="outside" aria-expanded='false')
+        span.me-1(data-lhb-user) Not signed in
         span.d-inline-block(style="height:10.2px;width:10.2px;")
           span.fa-solid.fa-chevron-down.fs-10
       +ProfileDropdown

@@ -161,27 +161,14 @@ export default function Page() {
               </div>
               <ul className="mb-0">
                 <li>
-                  <code>
-                    rootvyana.loveheartbeat.com
+                  <code data-lhb-account="orgHost">
+                    —
                   </code>
                   <span className="text-body-tertiary">
-                    — RootVyana
-                  </span>
-                </li>
-                <li>
-                  <code>
-                    acme.loveheartbeat.com
-                  </code>
-                  <span className="text-body-tertiary">
-                    — Acme Corp
-                  </span>
-                </li>
-                <li>
-                  <code>
-                    contoso.loveheartbeat.com
-                  </code>
-                  <span className="text-body-tertiary">
-                    — Contoso
+                    —
+                    <span data-lhb-account="orgName">
+                      your organization
+                    </span>
                   </span>
                 </li>
               </ul>

@@ -60,10 +60,6 @@ const NAV_GROUPS: Record<string, string[]> = {
     "/apps/organization/onboarding/",
     "/apps/organization/members/",
     "/apps/organization/authentication/"
-  ],
-  "nv-FAQ": [
-    "/pages/faq/faq-accordion/",
-    "/pages/faq/faq-tab/"
   ]
 }
 
@@ -405,7 +401,7 @@ export default function AppLayout({
                             {/* more inner pages */}
                           </li>
                           <li className="nav-item">
-                            <a className={'nav-link' + (path === '/apps/platform/admin/' ? ' active' : '')} href="/apps/platform/admin/">
+                            <a className={'nav-link' + (path === '/apps/platform/admin/' ? ' active' : '')} href="/apps/platform/admin/" data-lhb-requires-role="platform_admin">
                               <div className="d-flex align-items-center">
                                 <span className="nav-link-text">
                                   Administration
@@ -555,7 +551,7 @@ export default function AppLayout({
                             {/* more inner pages */}
                           </li>
                           <li className="nav-item">
-                            <a className={'nav-link' + (path === '/apps/organization/onboarding/' ? ' active' : '')} href="/apps/organization/onboarding/">
+                            <a className={'nav-link' + (path === '/apps/organization/onboarding/' ? ' active' : '')} href="/apps/organization/onboarding/" data-lhb-requires-role="platform_admin">
                               <div className="d-flex align-items-center">
                                 <span className="nav-link-text">
                                   Onboarding
@@ -602,56 +598,6 @@ export default function AppLayout({
                         </div>
                       </a>
                     </div>
-                  </li>
-                  <li className="nav-item">
-                    {/* label */}
-                    <p className="navbar-vertical-label">
-                      Pages
-                    </p>
-                    <hr className="navbar-vertical-line" />
-                    {/* parent pages */}
-                    <div className="nav-item-wrapper">
-                      <a className={'nav-link dropdown-indicator label-1'} href="#nv-FAQ" role="button" data-bs-toggle="collapse" aria-expanded={open('nv-FAQ')} aria-controls="nv-FAQ">
-                        <div className="d-flex align-items-center">
-                          <div className="dropdown-indicator-icon-wrapper">
-                            <span className="fas fa-caret-right dropdown-indicator-icon"></span>
-                          </div>
-                          <span className="nav-link-icon">
-                            <span data-feather="help-circle"></span>
-                          </span>
-                          <span className="nav-link-text">
-                            FAQ
-                          </span>
-                        </div>
-                      </a>
-                      <div className="parent-wrapper label-1">
-                        <ul className={'nav collapse parent' + (open('nv-FAQ') ? ' show' : '')} data-bs-parent="#navbarVerticalCollapse" id="nv-FAQ">
-                          <li className="collapsed-nav-item-title d-none">
-                            FAQ
-                          </li>
-                          <li className="nav-item">
-                            <a className={'nav-link' + (path === '/pages/faq/faq-accordion/' ? ' active' : '')} href="/pages/faq/faq-accordion/">
-                              <div className="d-flex align-items-center">
-                                <span className="nav-link-text">
-                                  FAQ accordion
-                                </span>
-                              </div>
-                            </a>
-                            {/* more inner pages */}
-                          </li>
-                          <li className="nav-item">
-                            <a className={'nav-link' + (path === '/pages/faq/faq-tab/' ? ' active' : '')} href="/pages/faq/faq-tab/">
-                              <div className="d-flex align-items-center">
-                                <span className="nav-link-text">
-                                  FAQ tab
-                                </span>
-                              </div>
-                            </a>
-                            {/* more inner pages */}
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
                     {/* parent pages */}
                     <div className="nav-item-wrapper">
                       <a className={'nav-link label-1' + (path === '/apps/social/settings/' ? ' active' : '')} href="/apps/social/settings/" role="button" data-bs-toggle="" aria-expanded={false}>
@@ -661,37 +607,7 @@ export default function AppLayout({
                           </span>
                           <span className="nav-link-text-wrapper">
                             <span className="nav-link-text">
-                              Settings
-                            </span>
-                          </span>
-                        </div>
-                      </a>
-                    </div>
-                    {/* parent pages */}
-                    <div className="nav-item-wrapper">
-                      <a className={'nav-link label-1' + (path === '/pages/timeline/' ? ' active' : '')} href="/pages/timeline/" role="button" data-bs-toggle="" aria-expanded={false}>
-                        <div className="d-flex align-items-center">
-                          <span className="nav-link-icon">
-                            <span data-feather="clock"></span>
-                          </span>
-                          <span className="nav-link-text-wrapper">
-                            <span className="nav-link-text">
-                              Timeline
-                            </span>
-                          </span>
-                        </div>
-                      </a>
-                    </div>
-                    {/* parent pages */}
-                    <div className="nav-item-wrapper">
-                      <a className={'nav-link label-1' + (path === '/pages/notifications/' ? ' active' : '')} href="/pages/notifications/" role="button" data-bs-toggle="" aria-expanded={false}>
-                        <div className="d-flex align-items-center">
-                          <span className="nav-link-icon">
-                            <span data-feather="bell"></span>
-                          </span>
-                          <span className="nav-link-text-wrapper">
-                            <span className="nav-link-text">
-                              Notifications
+                              Account settings
                             </span>
                           </span>
                         </div>
@@ -733,13 +649,13 @@ export default function AppLayout({
                 <span className="fa-solid fa-building text-primary me-2 fs-10"></span>
                 <div>
                   <p className="mb-0 fs-10 text-body-tertiary lh-1">
-                    Tenant
+                    Organization
                   </p>
                   <a className="fw-semibold fs-9 text-body-emphasis text-decoration-none" href="/apps/organization/organizations/">
-                    RootVyana
-                    <span className="text-body-tertiary fw-normal ms-1">
-                      rootvyana.loveheartbeat.com
+                    <span data-lhb-account="orgName">
+                      —
                     </span>
+                    <span className="text-body-tertiary fw-normal ms-1" data-lhb-account="orgHost"></span>
                   </a>
                 </div>
               </div>
@@ -937,48 +853,28 @@ export default function AppLayout({
                 <li className="nav-item dropdown">
                   <a className={'nav-link dropdown-toggle lh-1 pe-0'} href="#!" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded={false}>
                     <span className="fa-solid fa-building me-1"></span>
-                    <span className="d-none d-sm-inline">
-                      RootVyana
+                    <span className="d-none d-sm-inline" data-lhb-account="orgName">
+                      —
                     </span>
                   </a>
                   <div className="dropdown-menu dropdown-menu-end shadow border py-2" style={{ minWidth: "18rem" }}>
                     <h6 className="dropdown-header">
-                      Multi-tenant organizations
+                      Your organization
                     </h6>
-                    <a className="dropdown-item" href="https://rootvyana.loveheartbeat.com" target="_blank" rel="noopener">
+                    <a className="dropdown-item" href="#!" target="_blank" rel="noopener" data-lhb-org-url="data-lhb-org-url">
                       <div className="d-flex justify-content-between align-items-center">
-                        <span>
-                          RootVyana
+                        <span data-lhb-account="orgName">
+                          —
                         </span>
-                        <span className="badge badge-phoenix badge-phoenix-success">
-                          Active
-                        </span>
+                        <span className="badge badge-phoenix badge-phoenix-success" data-lhb-account="orgPlan"></span>
                       </div>
-                      <div className="fs-10 text-body-tertiary">
-                        rootvyana.loveheartbeat.com
-                      </div>
-                    </a>
-                    <a className="dropdown-item" href="https://acme.loveheartbeat.com" target="_blank" rel="noopener">
-                      <span>
-                        Acme Corp
-                      </span>
-                      <div className="fs-10 text-body-tertiary">
-                        acme.loveheartbeat.com
-                      </div>
-                    </a>
-                    <a className="dropdown-item" href="https://contoso.loveheartbeat.com" target="_blank" rel="noopener">
-                      <span>
-                        Contoso
-                      </span>
-                      <div className="fs-10 text-body-tertiary">
-                        contoso.loveheartbeat.com
-                      </div>
+                      <div className="fs-10 text-body-tertiary" data-lhb-account="orgHost"></div>
                     </a>
                     <div className="dropdown-divider"></div>
                     <a className="dropdown-item" href="/apps/organization/organizations/">
                       Manage organizations
                     </a>
-                    <a className="dropdown-item" href="/apps/organization/onboarding/">
+                    <a className="dropdown-item" href="/apps/organization/onboarding/" data-lhb-requires-role="platform_admin">
                       Onboard new organization
                     </a>
                   </div>

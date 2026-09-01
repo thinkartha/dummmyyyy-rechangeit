@@ -70,7 +70,7 @@ export default function Page() {
             </h5>
           </div>
           <div className="col-auto">
-            <button className="btn btn-primary" type="button" data-lhb-action="createOrganization">
+            <button className="btn btn-primary" type="button" data-lhb-action="createOrganization" data-lhb-requires-role="platform_admin">
               Create organization
             </button>
           </div>

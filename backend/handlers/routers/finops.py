@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
+from shared.aws.cost import CloudCostReport, cloud_cost
 from shared.core import budgets as budget_store
 from shared.core.auth import ROLE_ORG_ADMIN, ROLE_PLATFORM_ADMIN, Principal, get_current_principal
+from shared.core import mock_data
 from shared.core.tenancy import get_tenant_id
 from shared.finops.cost import recommend, Recommendation
 from shared.finops.seed import demo_usages
@@ -18,8 +20,22 @@ class FinopsResponse(BaseModel):
 
 @router.get("/finops/recommendations", response_model=FinopsResponse)
 def finops_recommendations(tenant_id: str = Depends(get_tenant_id)) -> FinopsResponse:
-    recs, total = recommend(demo_usages())
+    # Recommendations need real usage, and nothing collects it per tenant yet. With mock
+    # data off that is an empty list, not savings figures invented from demo usage.
+    usages = demo_usages() if mock_data.enabled() else []
+    recs, total = recommend(usages)
     return FinopsResponse(tenantId=tenant_id, recommendations=recs, total_monthly_savings=total)
+
+
+@router.get("/finops/cloud-cost", response_model=CloudCostReport)
+def finops_cloud_cost(tenant_id: str = Depends(get_tenant_id)) -> CloudCostReport:
+    """Month-to-date AWS spend per linked account, from Cost Explorer.
+
+    The spend half of the Cloud Cost page. Budgets are fetched separately and joined in
+    the browser, the same way the AI cost table does it — the ceiling and the spend come
+    from different places and a tenant with no budgets is the normal case, not an error.
+    """
+    return cloud_cost(tenant_id)
 
 
 # --- budgets ----------------------------------------------------------------
