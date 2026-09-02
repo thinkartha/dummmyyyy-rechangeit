@@ -759,14 +759,35 @@ const DATABRICKS_ETL_ENTRY = {
   save: (api, body) => api.databricks.saveConfig(body),
 };
 
+/** "Fivetran Prod" -> "custom-fivetran-prod", matching shared/etl/catalog.py's CUSTOM_PREFIX. */
+function slugifyConnectorId(name) {
+  const slug = String(name || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  return `custom-${slug || 'connector'}`;
+}
+
 /**
  * Connector config form for ETL tools, sourced from the backend catalog — the same idea
- * as connectGateway for API gateways. Adding a connector is a catalog entry on the
- * backend (see shared/etl/catalog.py), not a new form here.
+ * as connectGateway for API gateways. Adding a *named* connector is a catalog entry on
+ * the backend (see shared/etl/catalog.py), not a new form here.
+ *
+ * The catalog also always carries a "custom" template: any other ETL/ELT tool, connected
+ * by picking an auth style (API key, bearer token, basic auth, access key + secret) and
+ * saying how to read a run's id/name/status out of its JSON. Picking it and saving
+ * creates a new "custom-<name>" connector; already-created ones (found via api.etl.health,
+ * since the catalog only lists connector *types*) are listed too, for re-editing.
  */
 async function runEtlConnectorForm(api, presetPlatform) {
-  const catalog = await api.etl.catalog();
-  const providers = [...(Array.isArray(catalog) ? catalog : []), DATABRICKS_ETL_ENTRY];
+  const [catalog, health] = await Promise.all([api.etl.catalog(), api.etl.health().catch(() => [])]);
+  const template = (catalog || []).find((p) => p.template);
+  const existingCustom = (health || [])
+    .filter((h) => h.id.startsWith('custom-'))
+    .map((h) => ({ id: h.id, label: h.name || h.id, fields: template && template.fields }));
+  const providers = [
+    ...(catalog || []).filter((p) => !p.template),
+    ...existingCustom,
+    DATABRICKS_ETL_ENTRY,
+    ...(template ? [{ ...template, label: '+ Add a custom connector' }] : []),
+  ];
 
   const body = document.createElement('div');
   const picker = document.createElement('div');
@@ -788,14 +809,19 @@ async function runEtlConnectorForm(api, presetPlatform) {
     const chosen = providers.find((p) => p.id === select.value) || providers[0];
     /* Reopening a saved connector's form shows what's already set. GET returns the
        non-secret fields only, so the token box stays empty and an unchanged save does
-       not overwrite a server-held credential with a blank. */
-    const current = chosen.save
+       not overwrite a server-held credential with a blank. The "add a custom connector"
+       template has nothing saved yet — nothing to fetch. */
+    const current = (chosen.save || chosen.template)
       ? {}
       : await api.etl.config(chosen.id).then((s) => (s && s.fields) || {}).catch(() => ({}));
+    /* ponytail: every field the chosen auth type doesn't use just sits there blank
+       rather than hiding/showing per auth_type — none of them are required, so an
+       unused field costs nothing but screen space. Wire that up if it gets confusing. */
     specs = (chosen.fields || []).map((f) => ({
       name: f.name,
       label: f.label || f.name,
-      type: f.secret ? 'password' : (f.type === 'number' ? 'number' : 'text'),
+      type: f.secret ? 'password' : (f.type === 'select' ? 'select' : (f.type === 'number' ? 'number' : 'text')),
+      options: f.options,
       placeholder: f.placeholder,
       required: f.required === true,
       help: f.help,
@@ -827,10 +853,11 @@ async function runEtlConnectorForm(api, presetPlatform) {
     try {
       const chosen = providers.find((p) => p.id === select.value) || providers[0];
       const payload = values(fieldsWrap, specs);
+      const label = chosen.template ? (payload.name || 'Custom connector') : (chosen.label || chosen.id);
       if (chosen.save) await chosen.save(api, payload);
-      else await api.etl.saveConfig(chosen.id, payload);
+      else await api.etl.saveConfig(chosen.template ? slugifyConnectorId(payload.name) : chosen.id, payload);
       close();
-      toast(`${chosen.label} configured — monitoring started.`);
+      toast(`${label} configured — monitoring started.`);
       hydrate(api);
     } catch (err) {
       error.textContent = explain(err);

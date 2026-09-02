@@ -23,18 +23,21 @@ from shared.etl.dto import (
     TalendRunEvent,
 )
 from shared.etl.mappers import incident_from_event, map_boomi_execution, map_databricks_run, map_talend_run
-from shared.etl.client import BoomiClient, DatabricksJobsClient, TalendClient
-from shared.etl.pollers import boomi, databricks, talend
+from shared.etl.client import BoomiClient, DatabricksJobsClient, GenericRestClient, TalendClient
+from shared.etl.dto import CustomConnectorConfig
+from shared.etl.pollers import boomi, custom as custom_poller, databricks, talend
 from shared.etl.store import events as stored_events
-from shared.etl.store import get_boomi_config, get_talend_config
+from shared.etl.store import get_boomi_config, get_platform_config, get_talend_config
 from shared.etl.store import health as stored_health
 from shared.etl.store import incidents as stored_incidents
 from shared.etl.store import execution_requests, find_execution, now_iso, record_event, record_execution, record_incident, set_connector_error, set_health
 from shared.etl.store import summary as stored_summary
 
-# Connectors that need to start polling right after the UI saves their config, rather
-# than waiting for the next deploy/restart. Only Talend polls on an interval today.
-_START_ON_SAVE = {"talend": talend.start}
+# Start polling right after the UI saves a config, rather than waiting for the next
+# deploy/restart. Boomi and Databricks are recovered at boot instead (see
+# pollers.start_configured()); custom connectors have no boot-time recovery (their ids
+# aren't in a static registry), so this is the only place they ever start.
+_START_ON_SAVE: dict[str, Any] = {"talend": talend.start}
 
 router = APIRouter(prefix="/api/v1/integrations/etl", tags=["etl"])
 
@@ -212,7 +215,10 @@ def configure_etl(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     # Start monitoring immediately after a successful UI configuration instead of
     # waiting for an application restart.
-    _START_ON_SAVE.get(platform, lambda _tid: None)(tenant_id)
+    if platform.startswith("custom-"):
+        custom_poller.start(tenant_id, platform)
+    else:
+        _START_ON_SAVE.get(platform, lambda _tid: None)(tenant_id)
     return status
 
 
@@ -299,6 +305,24 @@ def test_databricks_config(tenant_id: str = Depends(get_tenant_id)) -> dict[str,
     }
 
 
+# Registered after the three literal /config/test routes above, so this only ever
+# handles a "custom-<name>" connector — talend/boomi/databricks keep their bespoke checks.
+@router.post("/{platform}/config/test")
+def test_custom_config(
+    platform: str, body: dict | None = None, tenant_id: str = Depends(get_tenant_id)
+) -> dict[str, str | bool]:
+    if not platform.startswith("custom-"):
+        raise HTTPException(status_code=404, detail=f"No connector '{platform}'")
+    client = GenericRestClient(_supplied(CustomConnectorConfig, body) or get_platform_config(tenant_id, platform, CustomConnectorConfig))
+    if not client.configured:
+        raise HTTPException(status_code=422, detail="This connector needs a runs API URL and the credentials for its auth type")
+    try:
+        client.verify_connection()
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Connection failed: {exc}") from exc
+    return {"id": platform, "configured": True, "endpoint": client.base_url, "message": "Connection verified"}
+
+
 @router.post("/talend/poll")
 def poll_talend(tenant_id: str = Depends(get_tenant_id)) -> dict[str, int]:
     return {"ingested": talend.poll_once(tenant_id)}
@@ -312,6 +336,15 @@ def poll_boomi(tenant_id: str = Depends(get_tenant_id)) -> dict[str, int]:
 @router.post("/databricks/poll")
 def poll_databricks(tenant_id: str = Depends(get_tenant_id)) -> dict[str, int]:
     return {"ingested": databricks.poll_once(tenant_id)}
+
+
+# Registered after the three literal /poll routes above, for the same reason as
+# test_custom_config.
+@router.post("/{platform}/poll")
+def poll_custom(platform: str, tenant_id: str = Depends(get_tenant_id)) -> dict[str, int]:
+    if not platform.startswith("custom-"):
+        raise HTTPException(status_code=404, detail=f"No connector '{platform}'")
+    return {"ingested": custom_poller.poll_once(tenant_id, platform)}
 
 
 def _demo_talend(success: bool, tenant_id: str) -> CloudEvent:

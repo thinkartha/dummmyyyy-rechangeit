@@ -270,10 +270,15 @@ def _summary_for_platform(tenant_id: str, platform: str, display_name: str) -> E
     )
 
 
+_KNOWN_PLATFORMS = [("talend", "Talend"), ("boomi", "Dell Boomi"), ("databricks", "Databricks")]
+
+
 def summary(tenant_id: str) -> list[EtlSummaryItem]:
     _hydrate_health(tenant_id)
-    return [
-        _summary_for_platform(tenant_id, "talend", "Talend"),
-        _summary_for_platform(tenant_id, "boomi", "Dell Boomi"),
-        _summary_for_platform(tenant_id, "databricks", "Databricks"),
-    ]
+    # The three known platforms always show up, configured or not — that's the existing
+    # "connect a tool" prompt on a fresh tenant. Anything else (a generic/custom
+    # connector) only shows up once it has been configured, since there's no fixed list
+    # of those to prompt for.
+    known_ids = {platform for platform, _ in _KNOWN_PLATFORMS}
+    extra = [(h.id, h.name) for h in _health.get(tenant_id, {}).values() if h.id not in known_ids]
+    return [_summary_for_platform(tenant_id, platform, name) for platform, name in _KNOWN_PLATFORMS + extra]

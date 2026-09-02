@@ -140,6 +140,34 @@ class BoomiConfig(CommandCenterConfigMixin):
     hours_back: int = 24
 
 
+class CustomConnectorConfig(BaseModel):
+    """Any ETL/ELT tool that isn't Talend, Boomi or Databricks: point this at a REST
+    endpoint that returns job runs and say how to read each run's id/name/status out of
+    the response. See shared/etl/client.py's GenericRestClient and
+    shared/etl/pollers/custom.py for how this gets polled."""
+
+    name: str
+    base_url: str
+    auth_type: str = "none"  # none | api_key | bearer | basic | access_key
+    api_key: str | None = Field(default=None, repr=False)
+    api_key_header: str = "X-API-Key"
+    bearer_token: str | None = Field(default=None, repr=False)
+    username: str | None = None
+    password: str | None = Field(default=None, repr=False)
+    access_key_id: str | None = None
+    secret_access_key: str | None = Field(default=None, repr=False)
+    # Dotted path to the run list in the response; blank means the response either *is*
+    # the list or has a top-level items/data/results/runs/executions field.
+    list_path: str | None = None
+    id_field: str = "id"
+    name_field: str = "name"
+    status_field: str = "status"
+    error_field: str | None = None
+    records_field: str | None = None
+    success_values: str = "success,succeeded,complete,completed,ok"
+    failure_values: str = "failed,error,failure"
+
+
 class IntegrationConfigStatus(BaseModel):
     id: str
     configured: bool

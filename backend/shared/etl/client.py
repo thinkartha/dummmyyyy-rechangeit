@@ -10,7 +10,7 @@ import urllib.request
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from .dto import BoomiConfig, TalendConfig
+from .dto import BoomiConfig, CustomConnectorConfig, TalendConfig
 from shared.core import databricks as databricks_config
 
 log = logging.getLogger("pinghold.etl.client")
@@ -52,6 +52,18 @@ def _format_endpoint(template: str, values: dict[str, Any]) -> str:
         return template.format(**{k: v or "" for k, v in values.items()})
     except KeyError as exc:
         raise RuntimeError(f"Execution endpoint template references unknown field {exc}") from exc
+
+
+def dig(obj: Any, path: str | None) -> Any:
+    """Read a dotted path ("data.runs") out of nested dicts. Missing at any level -> None."""
+    if not path:
+        return obj
+    cur = obj
+    for part in path.split("."):
+        if not isinstance(cur, dict):
+            return None
+        cur = cur.get(part)
+    return cur
 
 
 def _execution_id(data: dict[str, Any], fallback: str) -> str:
@@ -390,3 +402,61 @@ class DatabricksJobsClient:
             "status": str(data.get("state") or data.get("status") or "submitted"),
             "raw": data,
         }
+
+
+class GenericRestClient:
+    """Reads job/run executions from any REST API a tenant points this at, using the
+    auth scheme and field mapping they configured (see CustomConnectorConfig). This is
+    what lets a new ETL tool be "added" without writing a new client class: fill in the
+    form once, and this client is what runs against it."""
+
+    def __init__(self, config: CustomConnectorConfig) -> None:
+        self.config = config
+        self.base_url = (config.base_url or "").rstrip("/")
+
+    @property
+    def configured(self) -> bool:
+        c = self.config
+        if not self.base_url:
+            return False
+        if c.auth_type == "api_key":
+            return bool(c.api_key)
+        if c.auth_type == "bearer":
+            return bool(c.bearer_token)
+        if c.auth_type == "basic":
+            return bool(c.username and c.password)
+        if c.auth_type == "access_key":
+            return bool(c.access_key_id and c.secret_access_key)
+        return True  # auth_type == "none"
+
+    def _headers(self) -> dict[str, str]:
+        c = self.config
+        if c.auth_type == "api_key":
+            return {(c.api_key_header or "X-API-Key"): c.api_key or ""}
+        if c.auth_type == "bearer":
+            return {"Authorization": f"Bearer {c.bearer_token}"}
+        if c.auth_type == "basic":
+            auth = base64.b64encode(f"{c.username}:{c.password}".encode("utf-8")).decode("ascii")
+            return {"Authorization": f"Basic {auth}"}
+        if c.auth_type == "access_key":
+            # ponytail: header pair, not a signed request — a vendor-agnostic client has
+            # no way to know a specific vendor's signing scheme (e.g. AWS SigV4). Fine
+            # for the REST APIs that just want the pair in headers; add a real signer if
+            # a connector needs one.
+            return {"X-Access-Key-Id": c.access_key_id or "", "X-Secret-Access-Key": c.secret_access_key or ""}
+        return {}
+
+    def executions(self) -> list[dict[str, Any]]:
+        data = _json_request("GET", self.base_url, headers=self._headers())
+        items = dig(data, self.config.list_path)
+        if isinstance(items, dict):
+            for key in ("items", "data", "results", "runs", "executions", "content"):
+                if isinstance(items.get(key), list):
+                    return items[key]
+            return []
+        return items if isinstance(items, list) else []
+
+    def verify_connection(self) -> None:
+        if not self.configured:
+            raise RuntimeError("Connector is not configured")
+        self.executions()

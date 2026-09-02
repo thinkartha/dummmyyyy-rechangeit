@@ -158,15 +158,19 @@ def incident_from_event(ce: CloudEvent) -> EtlIncident | None:
     job_name = str(ce.data.get("job_name") or "ETL job")
     error = str(ce.data.get("error_message") or "Execution reported an unsuccessful status")
     severity = str(ce.data.get("severity") or "critical")
+    # Named platforms title-case cleanly ("talend" -> "Talend"); a custom connector's
+    # platform is a generated slug ("custom-fivetran-prod"), so its poller passes the
+    # name the user actually typed instead.
+    label = str(ce.data.get("platform_label") or platform.title())
     return EtlIncident(
         id=f"INC-{_slug(platform)}-{_slug(execution_id)}",
         tenant_id=ce.tenant_id or "default",
         platform=platform,
         execution_id=execution_id,
-        title=f"{platform.title()} job issue: {job_name}",
+        title=f"{label} job issue: {job_name}",
         severity=severity,
         root_cause=error,
-        recommended_action=f"Review {platform.title()} execution logs, validate upstream dependencies, and rerun {job_name}.",
+        recommended_action=f"Review {label} execution logs, validate upstream dependencies, and rerun {job_name}.",
         source_system=ce.data.get("source_system"),
         target_system=ce.data.get("target_system"),
         created_at=now_iso(),
