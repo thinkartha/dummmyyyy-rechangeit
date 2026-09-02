@@ -356,6 +356,9 @@ export const api = {
 
   /* ETL / ELT monitoring */
   etl: {
+    /* Connectors and the connection form each needs — adding one to the backend
+       catalog is enough for it to show up here, no new frontend code required. */
+    catalog: () => get('/integrations/etl/catalog'),
     summary: () => get('/integrations/etl/summary'),
     health: () => get('/integrations/etl/health'),
     events: (params) => get('/integrations/etl/events', params),

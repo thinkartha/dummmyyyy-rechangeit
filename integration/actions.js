@@ -739,6 +739,108 @@ function runChoice(api, entry) {
   cancel.addEventListener('click', () => hide());
 }
 
+/**
+ * Databricks is the one ETL connector not sourced from api.etl.catalog(): its config is
+ * shared with Data Observability and already lives under api.databricks.*, with its own
+ * field set and save endpoint. It is appended to the picker client-side so "Connect ETL
+ * tool" still offers it alongside whatever the backend catalog lists.
+ */
+const DATABRICKS_ETL_ENTRY = {
+  id: 'databricks',
+  label: 'Databricks',
+  help: 'Shared with Data Observability.',
+  fields: [
+    { name: 'host', label: 'Workspace host', required: true,
+      placeholder: 'https://dbc-1234.cloud.databricks.com' },
+    { name: 'warehouse_id', label: 'SQL warehouse ID', required: true },
+    { name: 'token', label: 'Personal access token', secret: true,
+      help: 'Optional — the backend can read it from Secrets Manager instead.' },
+  ],
+  save: (api, body) => api.databricks.saveConfig(body),
+};
+
+/**
+ * Connector config form for ETL tools, sourced from the backend catalog — the same idea
+ * as connectGateway for API gateways. Adding a connector is a catalog entry on the
+ * backend (see shared/etl/catalog.py), not a new form here.
+ */
+async function runEtlConnectorForm(api, presetPlatform) {
+  const catalog = await api.etl.catalog();
+  const providers = [...(Array.isArray(catalog) ? catalog : []), DATABRICKS_ETL_ENTRY];
+
+  const body = document.createElement('div');
+  const picker = document.createElement('div');
+  picker.className = 'row g-3 mb-3';
+  picker.appendChild(field({
+    name: 'provider', label: 'Connector', type: 'select', value: presetPlatform,
+    options: providers.map((p) => ({ value: p.id, label: p.label || p.id })),
+  }));
+  const fieldsWrap = document.createElement('form');
+  fieldsWrap.className = 'row g-3';
+  fieldsWrap.noValidate = true;
+  const error = document.createElement('div');
+  error.className = 'alert alert-danger mt-3 mb-0 d-none fs-9';
+  body.append(picker, fieldsWrap, error);
+
+  const select = picker.querySelector('select');
+  let specs = [];
+  const draw = async () => {
+    const chosen = providers.find((p) => p.id === select.value) || providers[0];
+    /* Reopening a saved connector's form shows what's already set. GET returns the
+       non-secret fields only, so the token box stays empty and an unchanged save does
+       not overwrite a server-held credential with a blank. */
+    const current = chosen.save
+      ? {}
+      : await api.etl.config(chosen.id).then((s) => (s && s.fields) || {}).catch(() => ({}));
+    specs = (chosen.fields || []).map((f) => ({
+      name: f.name,
+      label: f.label || f.name,
+      type: f.secret ? 'password' : (f.type === 'number' ? 'number' : 'text'),
+      placeholder: f.placeholder,
+      required: f.required === true,
+      help: f.help,
+      value: f.secret ? undefined : (current[f.name] ?? f.value),
+    }));
+    fieldsWrap.replaceChildren(...specs.map(field));
+  };
+  select.addEventListener('change', draw);
+  await draw();
+
+  const cancel = document.createElement('button');
+  cancel.type = 'button';
+  cancel.className = 'btn btn-phoenix-secondary btn-sm';
+  cancel.textContent = 'Cancel';
+  const submit = document.createElement('button');
+  submit.type = 'button';
+  submit.className = 'btn btn-primary btn-sm';
+  submit.textContent = 'Save configuration';
+  const footer = document.createElement('div');
+  footer.className = 'd-flex gap-2';
+  footer.append(cancel, submit);
+
+  const close = open('Connect ETL tool', body, footer);
+  cancel.addEventListener('click', close);
+  submit.addEventListener('click', async () => {
+    if (!fieldsWrap.reportValidity()) return;
+    submit.disabled = true;
+    error.classList.add('d-none');
+    try {
+      const chosen = providers.find((p) => p.id === select.value) || providers[0];
+      const payload = values(fieldsWrap, specs);
+      if (chosen.save) await chosen.save(api, payload);
+      else await api.etl.saveConfig(chosen.id, payload);
+      close();
+      toast(`${chosen.label} configured — monitoring started.`);
+      hydrate(api);
+    } catch (err) {
+      error.textContent = explain(err);
+      error.classList.remove('d-none');
+    } finally {
+      submit.disabled = false;
+    }
+  });
+}
+
 /* ------------------------------------------------------------------ registry */
 
 /**
@@ -1142,48 +1244,17 @@ export const ACTIONS = {
     run: (api, body) => api.databases.add(body),
   },
 
+  /* Talend and Boomi's forms come from the backend catalog (shared/etl/catalog.py) via
+     runEtlConnectorForm — see the comment above that function. Adding a connector there
+     needs no new entry here. */
   connectTalend: {
     title: 'Connect Talend',
-    submit: 'Save configuration',
-    success: 'Talend configured — monitoring started.',
-    /* Reopening the form shows what is already saved. GET returns the non-secret
-       fields only, so the token box stays empty and an unchanged save does not
-       overwrite a server-held credential with a blank. */
-    prefill: (api) => api.etl.config('talend').then((s) => (s && s.fields) || {}).catch(() => ({})),
-    fields: (current = {}) => [
-      { name: 'base_url', label: 'API base URL', width: 'half',
-        value: current.base_url || 'https://api.us.cloud.talend.com' },
-      { name: 'environment_id', label: 'Environment ID', width: 'half',
-        value: current.environment_id },
-      { name: 'workspace_id', label: 'Workspace ID', width: 'half',
-        value: current.workspace_id },
-      { name: 'last_days', label: 'Look back (days)', value: current.last_days || '1', width: 'half' },
-      { name: 'bearer_token', label: 'Bearer token', type: 'password',
-        help: 'Optional here — the backend can supply it from its secret store instead.' },
-    ],
-    run: (api, body) => api.etl.saveConfig('talend', body),
+    custom: (api) => runEtlConnectorForm(api, 'talend'),
   },
 
   connectBoomi: {
     title: 'Connect Boomi',
-    submit: 'Save configuration',
-    success: 'Boomi configured — monitoring started.',
-    prefill: (api) => api.etl.config('boomi').then((s) => (s && s.fields) || {}).catch(() => ({})),
-    fields: (current = {}) => [
-      { name: 'account_id', label: 'Account ID', required: true, width: 'half',
-        value: current.account_id },
-      { name: 'username', label: 'Username', required: true, width: 'half',
-        value: current.username },
-      { name: 'token', label: 'API token', type: 'password', required: true },
-      { name: 'base_url', label: 'API base URL',
-        value: current.base_url || 'https://api.boomi.com/api/rest/v1' },
-      { name: 'atom_id', label: 'Atom ID', width: 'half', value: current.atom_id },
-      { name: 'environment_id', label: 'Environment ID', width: 'half',
-        value: current.environment_id },
-      { name: 'hours_back', label: 'Look back (hours)', type: 'number',
-        value: current.hours_back || 24, width: 'half' },
-    ],
-    run: (api, body) => api.etl.saveConfig('boomi', body),
+    custom: (api) => runEtlConnectorForm(api, 'boomi'),
   },
 
   /**
@@ -1268,25 +1339,12 @@ export const ACTIONS = {
 
   connectEtl: {
     title: 'Connect ETL tool',
-    choices: [
-      { label: 'Talend', action: 'connectTalend', help: 'Talend Cloud — environment or workspace scope.' },
-      { label: 'Boomi', action: 'connectBoomi', help: 'AtomSphere account, username and API token.' },
-      { label: 'Databricks', action: 'connectDatabricks', help: 'Shared with Data Observability.' },
-    ],
+    custom: (api) => runEtlConnectorForm(api),
   },
 
   connectDatabricks: {
     title: 'Connect Databricks',
-    submit: 'Save configuration',
-    success: 'Databricks configured.',
-    fields: [
-      { name: 'host', label: 'Workspace host', required: true,
-        placeholder: 'https://dbc-1234.cloud.databricks.com' },
-      { name: 'warehouse_id', label: 'SQL warehouse ID', required: true, width: 'half' },
-      { name: 'token', label: 'Personal access token', type: 'password', width: 'half',
-        help: 'Optional — the backend can read it from Secrets Manager instead.' },
-    ],
-    run: (api, body) => api.databricks.saveConfig(body),
+    custom: (api) => runEtlConnectorForm(api, 'databricks'),
   },
 
   /**

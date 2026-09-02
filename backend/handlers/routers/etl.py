@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import uuid
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from shared.collector import ingest as collector
 from shared.collector.cloudevents import CloudEvent, make_event
 from shared.core.tenancy import get_tenant_id
+from shared.etl import catalog as etl_catalog
 from shared.etl.dto import (
     BoomiConfig,
     BoomiExecutionEvent,
@@ -24,11 +26,15 @@ from shared.etl.mappers import incident_from_event, map_boomi_execution, map_dat
 from shared.etl.client import BoomiClient, DatabricksJobsClient, TalendClient
 from shared.etl.pollers import boomi, databricks, talend
 from shared.etl.store import events as stored_events
-from shared.etl.store import boomi_config_status, get_boomi_config, get_talend_config, save_boomi_config, save_talend_config, talend_config_status
+from shared.etl.store import get_boomi_config, get_talend_config
 from shared.etl.store import health as stored_health
 from shared.etl.store import incidents as stored_incidents
 from shared.etl.store import execution_requests, find_execution, now_iso, record_event, record_execution, record_incident, set_connector_error, set_health
 from shared.etl.store import summary as stored_summary
+
+# Connectors that need to start polling right after the UI saves their config, rather
+# than waiting for the next deploy/restart. Only Talend polls on an interval today.
+_START_ON_SAVE = {"talend": talend.start}
 
 router = APIRouter(prefix="/api/v1/integrations/etl", tags=["etl"])
 
@@ -188,18 +194,34 @@ def retry_execution(
     return _execute(prior.platform, display, body, tenant_id)
 
 
-@router.put("/talend/config", response_model=IntegrationConfigStatus)
-def configure_talend(body: TalendConfig, tenant_id: str = Depends(get_tenant_id)) -> IntegrationConfigStatus:
-    status = save_talend_config(tenant_id, body)
-    # Start monitoring immediately after a successful UI configuration instead
-    # of waiting for an application restart.
-    talend.start(tenant_id)
+@router.get("/catalog")
+def get_etl_catalog() -> list[dict]:
+    """Supported ETL connectors and the connection form each needs."""
+    return etl_catalog.catalog()
+
+
+@router.put("/{platform}/config", response_model=IntegrationConfigStatus)
+def configure_etl(
+    platform: str, body: dict[str, Any], tenant_id: str = Depends(get_tenant_id)
+) -> IntegrationConfigStatus:
+    """Save any cataloged connector's config — the field set is validated against
+    etl_catalog.CATALOG rather than a route hand-written per platform."""
+    try:
+        status = etl_catalog.save_config(tenant_id, platform, body)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    # Start monitoring immediately after a successful UI configuration instead of
+    # waiting for an application restart.
+    _START_ON_SAVE.get(platform, lambda _tid: None)(tenant_id)
     return status
 
 
-@router.get("/talend/config", response_model=IntegrationConfigStatus)
-def get_talend_config_status(tenant_id: str = Depends(get_tenant_id)) -> IntegrationConfigStatus:
-    return talend_config_status(tenant_id)
+@router.get("/{platform}/config", response_model=IntegrationConfigStatus)
+def get_etl_config_status(platform: str, tenant_id: str = Depends(get_tenant_id)) -> IntegrationConfigStatus:
+    try:
+        return etl_catalog.config_status(tenant_id, platform)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 def _supplied(model, body):
@@ -243,16 +265,6 @@ def test_talend_config(
         "endpoint": client.base_url,
         "message": "Talend credentials and observability access verified",
     }
-
-
-@router.put("/boomi/config", response_model=IntegrationConfigStatus)
-def configure_boomi(body: BoomiConfig, tenant_id: str = Depends(get_tenant_id)) -> IntegrationConfigStatus:
-    return save_boomi_config(tenant_id, body)
-
-
-@router.get("/boomi/config", response_model=IntegrationConfigStatus)
-def get_boomi_config_status(tenant_id: str = Depends(get_tenant_id)) -> IntegrationConfigStatus:
-    return boomi_config_status(tenant_id)
 
 
 @router.post("/boomi/config/test")

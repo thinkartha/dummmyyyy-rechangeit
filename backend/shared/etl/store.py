@@ -4,6 +4,8 @@ from collections import defaultdict, deque
 from datetime import datetime, timezone
 from typing import Deque
 
+from pydantic import BaseModel
+
 from shared.collector.cloudevents import CloudEvent
 from shared.core import config_store, databricks as databricks_config, record_store, state_store
 from .dto import (
@@ -24,8 +26,7 @@ _incidents: dict[str, Deque[EtlIncident]] = defaultdict(lambda: deque(maxlen=_MA
 _health: dict[str, dict[str, EtlIntegrationHealth]] = defaultdict(dict)
 _executions: dict[str, Deque[EtlExecutionResponse]] = defaultdict(lambda: deque(maxlen=_MAX_EVENTS))
 _seen_executions: dict[str, set[str]] = defaultdict(set)
-_talend_configs: dict[str, TalendConfig] = {}
-_boomi_configs: dict[str, BoomiConfig] = {}
+_configs: dict[tuple[str, str], BaseModel] = {}
 _health_hydrated: set[str] = set()
 _exec_hydrated: set[str] = set()
 
@@ -56,96 +57,59 @@ def _mask(value: str | None) -> str | None:
     return f"{value[:3]}...{value[-3:]}"
 
 
-def save_talend_config(tenant_id: str, config: TalendConfig) -> IntegrationConfigStatus:
-    _talend_configs[tenant_id] = config
-    config_store.save_config(tenant_id, "talend", config.model_dump_json())
+def save_platform_config(
+    tenant_id: str,
+    platform: str,
+    display_name: str,
+    config: BaseModel,
+    secret_fields: frozenset[str] = frozenset(),
+) -> IntegrationConfigStatus:
+    """Generic persist for any ETL connector's config. See catalog.py for the field
+    spec each platform is validated against before this is called."""
+    _configs[(tenant_id, platform)] = config
+    config_store.save_config(tenant_id, platform, config.model_dump_json())
     set_health(tenant_id, EtlIntegrationHealth(
-        id="talend", name="Talend", status="ok", mode="live", configured=True
+        id=platform, name=display_name, status="ok", mode="live", configured=True
     ))
-    return talend_config_status(tenant_id)
+    return platform_config_status(tenant_id, platform, secret_fields)
 
 
-def save_boomi_config(tenant_id: str, config: BoomiConfig) -> IntegrationConfigStatus:
-    _boomi_configs[tenant_id] = config
-    config_store.save_config(tenant_id, "boomi", config.model_dump_json())
-    set_health(tenant_id, EtlIntegrationHealth(
-        id="boomi", name="Dell Boomi", status="ok", mode="live", configured=True
-    ))
-    return boomi_config_status(tenant_id)
-
-
-def get_talend_config(tenant_id: str) -> TalendConfig | None:
-    cfg = _talend_configs.get(tenant_id)
+def get_platform_config(tenant_id: str, platform: str, model_cls: type[BaseModel]) -> BaseModel | None:
+    cfg = _configs.get((tenant_id, platform))
     if cfg is None:  # not in memory — try the persisted store (e.g. after a restart)
-        raw = config_store.get_config(tenant_id, "talend")
+        raw = config_store.get_config(tenant_id, platform)
         if raw:
-            cfg = _talend_configs[tenant_id] = TalendConfig.model_validate_json(raw)
+            cfg = _configs[(tenant_id, platform)] = model_cls.model_validate_json(raw)
     return cfg
+
+
+def platform_config_status(
+    tenant_id: str, platform: str, secret_fields: frozenset[str] = frozenset()
+) -> IntegrationConfigStatus:
+    cfg = _configs.get((tenant_id, platform))
+    fields: dict[str, str | None] = {}
+    if cfg:
+        for key, value in cfg.model_dump().items():
+            if value in (None, ""):
+                fields[key] = None
+            elif key in secret_fields:
+                fields[key] = _mask(str(value)) or "***"
+            else:
+                fields[key] = str(value)
+    return IntegrationConfigStatus(
+        id=platform, configured=cfg is not None,
+        source="frontend" if cfg else "unset", fields=fields,
+    )
+
+
+# Back-compat accessors — client.py and _summary_for_platform below only ever need the
+# typed config, not the generic save/status path.
+def get_talend_config(tenant_id: str) -> TalendConfig | None:
+    return get_platform_config(tenant_id, "talend", TalendConfig)
 
 
 def get_boomi_config(tenant_id: str) -> BoomiConfig | None:
-    cfg = _boomi_configs.get(tenant_id)
-    if cfg is None:
-        raw = config_store.get_config(tenant_id, "boomi")
-        if raw:
-            cfg = _boomi_configs[tenant_id] = BoomiConfig.model_validate_json(raw)
-    return cfg
-
-
-def talend_config_status(tenant_id: str) -> IntegrationConfigStatus:
-    cfg = _talend_configs.get(tenant_id)
-    return IntegrationConfigStatus(
-        id="talend",
-        configured=cfg is not None,
-        source="frontend" if cfg else "unset",
-        fields={
-            "selected_env": cfg.selected_env if cfg else None,
-            "auth_method": cfg.auth_method if cfg else None,
-            "endpoint": cfg.endpoint if cfg else None,
-            "base_url": cfg.base_url if cfg else None,
-            "bearer_token": "***" if cfg and cfg.bearer_token else None,
-            "client_id": _mask(cfg.client_id) if cfg else None,
-            "client_secret": "***" if cfg else None,
-            "environment_id": cfg.environment_id if cfg else None,
-            "workspace_id": cfg.workspace_id if cfg else None,
-            "execution_endpoint_template": cfg.execution_endpoint_template if cfg else None,
-            "metadata_repository_url": cfg.metadata_repository_url if cfg else None,
-            "project_workspace": cfg.project_workspace if cfg else None,
-            "version": cfg.version if cfg else None,
-            "connection_timeout_seconds": str(cfg.connection_timeout_seconds) if cfg else None,
-            "retry_attempts": str(cfg.retry_attempts) if cfg else None,
-            "rate_limit_per_minute": str(cfg.rate_limit_per_minute) if cfg else None,
-            "batch_size": str(cfg.batch_size) if cfg else None,
-        },
-    )
-
-
-def boomi_config_status(tenant_id: str) -> IntegrationConfigStatus:
-    cfg = _boomi_configs.get(tenant_id)
-    return IntegrationConfigStatus(
-        id="boomi",
-        configured=cfg is not None,
-        source="frontend" if cfg else "unset",
-        fields={
-            "selected_env": cfg.selected_env if cfg else None,
-            "auth_method": cfg.auth_method if cfg else None,
-            "account_id": _mask(cfg.account_id) if cfg else None,
-            "endpoint": cfg.endpoint if cfg else None,
-            "base_url": cfg.base_url if cfg else None,
-            "username": _mask(cfg.username) if cfg else None,
-            "token": "***" if cfg else None,
-            "atom_id": cfg.atom_id if cfg else None,
-            "environment_id": cfg.environment_id if cfg else None,
-            "execution_endpoint_template": cfg.execution_endpoint_template if cfg else None,
-            "metadata_repository_url": cfg.metadata_repository_url if cfg else None,
-            "project_workspace": cfg.project_workspace if cfg else None,
-            "version": cfg.version if cfg else None,
-            "connection_timeout_seconds": str(cfg.connection_timeout_seconds) if cfg else None,
-            "retry_attempts": str(cfg.retry_attempts) if cfg else None,
-            "rate_limit_per_minute": str(cfg.rate_limit_per_minute) if cfg else None,
-            "batch_size": str(cfg.batch_size) if cfg else None,
-        },
-    )
+    return get_platform_config(tenant_id, "boomi", BoomiConfig)
 
 
 def execution_seen(tenant_id: str, platform: str, execution_id: str) -> bool:
