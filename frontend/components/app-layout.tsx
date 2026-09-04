@@ -541,7 +541,7 @@ export default function AppLayout({
                             {/* more inner pages */}
                           </li>
                           <li className="nav-item">
-                            <a className={'nav-link' + (path === '/apps/organization/multi-tenant/' ? ' active' : '')} href="/apps/organization/multi-tenant/">
+                            <a className={'nav-link' + (path === '/apps/organization/multi-tenant/' ? ' active' : '')} href="/apps/organization/multi-tenant/" data-lhb-requires-role="platform_admin">
                               <div className="d-flex align-items-center">
                                 <span className="nav-link-text">
                                   Multi tenant
@@ -561,7 +561,7 @@ export default function AppLayout({
                             {/* more inner pages */}
                           </li>
                           <li className="nav-item">
-                            <a className={'nav-link' + (path === '/apps/organization/members/' ? ' active' : '')} href="/apps/organization/members/">
+                            <a className={'nav-link' + (path === '/apps/organization/members/' ? ' active' : '')} href="/apps/organization/members/" data-lhb-requires-role="org_admin,platform_admin">
                               <div className="d-flex align-items-center">
                                 <span className="nav-link-text">
                                   Members
@@ -571,7 +571,7 @@ export default function AppLayout({
                             {/* more inner pages */}
                           </li>
                           <li className="nav-item">
-                            <a className={'nav-link' + (path === '/apps/organization/authentication/' ? ' active' : '')} href="/apps/organization/authentication/">
+                            <a className={'nav-link' + (path === '/apps/organization/authentication/' ? ' active' : '')} href="/apps/organization/authentication/" data-lhb-requires-role="org_admin,platform_admin">
                               <div className="d-flex align-items-center">
                                 <span className="nav-link-text">
                                   Authentication SSO

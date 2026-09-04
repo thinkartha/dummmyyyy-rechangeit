@@ -34,9 +34,9 @@ JWT_TTL_SECONDS = 3600
 # the password is required again.
 REFRESH_TTL_SECONDS = 30 * 24 * 3600
 
-# The only two roles in the platform: one superuser role, everyone else is a plain user.
-# ponytail: two string constants, not an enum/RBAC table — add granularity only if a real
-# permission boundary beyond "admin vs not" shows up.
+# Three roles: a platform-wide superuser, an admin scoped to their own org, and a plain
+# user. ponytail: three string constants, not an enum/RBAC table — add granularity only
+# if a real permission boundary beyond these shows up.
 ROLE_PLATFORM_ADMIN = "platform_admin"
 ROLE_ORG_ADMIN = "org_admin"
 ROLE_USER = "user"

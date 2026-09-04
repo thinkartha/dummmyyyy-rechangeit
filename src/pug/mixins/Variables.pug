@@ -287,6 +287,9 @@ append variables
                 name: 'multi-tenant',
                 path: 'apps/organization/multi-tenant',
                 pathName: 'org-multi-tenant',
+                // Platform-wide tenancy architecture (slug model, isolation, capacity
+                // target) — not a tenant's own page, same tier as 'administration'.
+                role: 'platform_admin',
               },
               {
                 name: 'onboarding',
@@ -298,11 +301,18 @@ append variables
                 name: 'members',
                 path: 'apps/organization/members',
                 pathName: 'org-members',
+                // The list/invite/edit/remove endpoints behind this page are already
+                // org_admin/platform_admin-only server-side (handlers/routers/admin.py)
+                // — a plain member hitting them gets a 403. Hide the page to match.
+                role: 'org_admin,platform_admin',
               },
               {
                 name: 'authentication-SSO',
                 path: 'apps/organization/authentication',
                 pathName: 'org-authentication',
+                // Sign-in mode/IdP config for the active org — an org admin's call to
+                // make, not a member's.
+                role: 'org_admin,platform_admin',
               },
             ]
           },
