@@ -866,6 +866,27 @@ export default function Page() {
               </a>
             </div>
             <div className="col-12 col-md-6 col-xl-4">
+              <a className="text-decoration-none text-body-emphasis" href="/apps/platform/integrations/opentelemetry/">
+                <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
+                  <div className="d-flex align-items-center mb-2">
+                    <span className="fa-solid me-2 fa-satellite-dish text-primary"></span>
+                    <h6 className="mb-0">
+                      OpenTelemetry
+                    </h6>
+                  </div>
+                  <p className="text-body-tertiary fs-9 mb-2">
+                    Already on OTel? Point your collector at the OTLP endpoint — traces, metrics and logs, no agent to install.
+                  </p>
+                  <div className="mt-auto d-flex align-items-center justify-content-between">
+                    <span className="text-body-tertiary fs-10">
+                      Traces · Logs · Metrics
+                    </span>
+                    <span className="fa-solid fa-arrow-right text-body-quaternary"></span>
+                  </div>
+                </div>
+              </a>
+            </div>
+            <div className="col-12 col-md-6 col-xl-4">
               <a className="text-decoration-none text-body-emphasis" href="/apps/platform/integrations/databases/">
                 <div className="border border-translucent rounded-3 p-3 h-100 d-flex flex-column">
                   <div className="d-flex align-items-center mb-2">

@@ -40,6 +40,7 @@ const NAV_GROUPS: Record<string, string[]> = {
     "/apps/platform/integrations/api-gateway/",
     "/apps/platform/integrations/cloud/",
     "/apps/platform/integrations/etl/",
+    "/apps/platform/integrations/opentelemetry/",
     "/apps/platform/integrations/databases/",
     "/apps/platform/integrations/ai-tools/",
     "/apps/platform/databricks/",
@@ -50,6 +51,7 @@ const NAV_GROUPS: Record<string, string[]> = {
     "/apps/platform/integrations/api-gateway/",
     "/apps/platform/integrations/cloud/",
     "/apps/platform/integrations/etl/",
+    "/apps/platform/integrations/opentelemetry/",
     "/apps/platform/integrations/databases/",
     "/apps/platform/integrations/ai-tools/",
     "/apps/platform/databricks/"
@@ -465,6 +467,16 @@ export default function AppLayout({
                                   {/* more inner pages */}
                                 </li>
                                 <li className="nav-item">
+                                  <a className={'nav-link' + (path === '/apps/platform/integrations/opentelemetry/' ? ' active' : '')} href="/apps/platform/integrations/opentelemetry/">
+                                    <div className="d-flex align-items-center">
+                                      <span className="nav-link-text">
+                                        OpenTelemetry
+                                      </span>
+                                    </div>
+                                  </a>
+                                  {/* more inner pages */}
+                                </li>
+                                <li className="nav-item">
                                   <a className={'nav-link' + (path === '/apps/platform/integrations/databases/' ? ' active' : '')} href="/apps/platform/integrations/databases/">
                                     <div className="d-flex align-items-center">
                                       <span className="nav-link-text">
@@ -582,21 +594,6 @@ export default function AppLayout({
                           </li>
                         </ul>
                       </div>
-                    </div>
-                    {/* parent pages */}
-                    <div className="nav-item-wrapper">
-                      <a className={'nav-link label-1' + (path === '/apps/chat/' ? ' active' : '')} href="/apps/chat/" role="button" data-bs-toggle="" aria-expanded={false}>
-                        <div className="d-flex align-items-center">
-                          <span className="nav-link-icon">
-                            <span data-feather="message-square"></span>
-                          </span>
-                          <span className="nav-link-text-wrapper">
-                            <span className="nav-link-text">
-                              Chat
-                            </span>
-                          </span>
-                        </div>
-                      </a>
                     </div>
                     {/* parent pages */}
                     <div className="nav-item-wrapper">
@@ -1622,108 +1619,6 @@ export default function AppLayout({
                 </div>
               </div>
             </div>
-          </div>
-          <div className="support-chat-container">
-            <div className="container-fluid support-chat">
-              <div className="card bg-body-emphasis">
-                <div className="card-header d-flex flex-between-center px-4 py-3 border-bottom border-translucent">
-                  <h5 className="mb-0 d-flex align-items-center gap-2">
-                    Demo widget
-                    <span className="fa-solid fa-circle text-success fs-11"></span>
-                  </h5>
-                  <div className="btn-reveal-trigger">
-                    <button className="btn btn-link p-0 dropdown-toggle dropdown-caret-none transition-none d-flex" type="button" id="support-chat-dropdown" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup={true} aria-expanded={false} data-bs-reference="parent">
-                      <span className="fas fa-ellipsis-h text-body"></span>
-                    </button>
-                    <div className="dropdown-menu dropdown-menu-end py-2" aria-labelledby="support-chat-dropdown">
-                      <a className="dropdown-item" href="#!">
-                        Request a callback
-                      </a>
-                      <a className="dropdown-item" href="#!">
-                        Search in chat
-                      </a>
-                      <a className="dropdown-item" href="#!">
-                        Show history
-                      </a>
-                      <a className="dropdown-item" href="#!">
-                        Report to Admin
-                      </a>
-                      <a className="dropdown-item btn-support-chat" href="#!">
-                        Close Support
-                      </a>
-                    </div>
-                  </div>
-                </div>
-                <div className="card-body chat p-0">
-                  <div className="d-flex flex-column-reverse scrollbar h-100 p-3">
-                    <div className="text-end mt-6">
-                      <a className="mb-2 d-inline-flex align-items-center text-decoration-none text-body-emphasis bg-body-hover rounded-pill border border-primary py-2 ps-4 pe-3" href="#!">
-                        <p className="mb-0 fw-semibold fs-9">
-                          I need help with something
-                        </p>
-                        <span className="fa-solid fa-paper-plane text-primary fs-9 ms-3"></span>
-                      </a>
-                      <a className="mb-2 d-inline-flex align-items-center text-decoration-none text-body-emphasis bg-body-hover rounded-pill border border-primary py-2 ps-4 pe-3" href="#!">
-                        <p className="mb-0 fw-semibold fs-9">
-                          I can’t reorder a product I previously ordered
-                        </p>
-                        <span className="fa-solid fa-paper-plane text-primary fs-9 ms-3"></span>
-                      </a>
-                      <a className="mb-2 d-inline-flex align-items-center text-decoration-none text-body-emphasis bg-body-hover rounded-pill border border-primary py-2 ps-4 pe-3" href="#!">
-                        <p className="mb-0 fw-semibold fs-9">
-                          How do I place an order?
-                        </p>
-                        <span className="fa-solid fa-paper-plane text-primary fs-9 ms-3"></span>
-                      </a>
-                      <a className="false d-inline-flex align-items-center text-decoration-none text-body-emphasis bg-body-hover rounded-pill border border-primary py-2 ps-4 pe-3" href="#!">
-                        <p className="mb-0 fw-semibold fs-9">
-                          My payment method not working
-                        </p>
-                        <span className="fa-solid fa-paper-plane text-primary fs-9 ms-3"></span>
-                      </a>
-                    </div>
-                    <div className="text-center mt-auto">
-                      <div className="avatar avatar-3xl status-online">
-                        <img className="rounded-circle border border-3 border-light-subtle" src="/assets/img/team/30.webp" alt="" />
-                      </div>
-                      <h5 className="mt-2 mb-3">
-                        Eric
-                      </h5>
-                      <p className="text-center text-body-emphasis mb-0">
-                        Ask us anything – we’ll get back to you here or by email within 24 hours.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="card-footer d-flex align-items-center gap-2 border-top border-translucent ps-3 pe-4 py-3">
-                  <div className="d-flex align-items-center flex-1 gap-3 border border-translucent rounded-pill px-4">
-                    <input className="form-control outline-none border-0 flex-1 fs-9 px-0" type="text" placeholder="Write message" />
-                    <label className="btn btn-link d-flex p-0 text-body-quaternary fs-9 border-0" htmlFor="supportChatPhotos">
-                      <span className="fa-solid fa-image"></span>
-                    </label>
-                    <input className="d-none" type="file" accept="image/*" id="supportChatPhotos" />
-                    <label className="btn btn-link d-flex p-0 text-body-quaternary fs-9 border-0" htmlFor="supportChatAttachment">
-                      <span className="fa-solid fa-paperclip"></span>
-                    </label>
-                    <input className="d-none" type="file" id="supportChatAttachment" />
-                  </div>
-                  <button className="btn p-0 border-0 send-btn">
-                    <span className="fa-solid fa-paper-plane fs-9"></span>
-                  </button>
-                </div>
-              </div>
-            </div>
-            <button className="btn btn-support-chat p-0 border border-translucent">
-              <span className="fs-8 btn-text text-primary text-nowrap">
-                Chat demo
-              </span>
-              <span className="ping-icon-wrapper mt-n4 ms-n6 mt-sm-0 ms-sm-2 position-absolute position-sm-relative">
-                <span className="ping-icon-bg"></span>
-                <span className="fa-solid fa-circle ping-icon"></span>
-              </span>
-              <span className="fa-solid fa-headset text-primary fs-8 d-sm-none"></span>
-              <span className="fa-solid fa-chevron-down text-primary fs-7"></span>
-            </button>
           </div>
         </main>
         {/* =============================================== */}

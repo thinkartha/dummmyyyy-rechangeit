@@ -35,11 +35,10 @@ const PAGES = [
     .map(p => `apps/platform/${p}.html`),
   // Each integration that needs credentials or an install has its own page under
   // Integrations; the monitoring pages link here rather than carrying the form.
-  ...['api-gateway', 'cloud', 'etl', 'databases', 'ai-tools']
+  ...['api-gateway', 'cloud', 'etl', 'databases', 'ai-tools', 'opentelemetry']
     .map(p => `apps/platform/integrations/${p}.html`),
   ...['authentication', 'members', 'multi-tenant', 'onboarding', 'organizations']
     .map(p => `apps/organization/${p}.html`),
-  'apps/chat.html',
   // Email and Events are commented out of the nav (src/pug/mixins/Variables.pug), so
   // they are not ported either — a route nothing links to is dead weight in the export.
   // 'apps/email/compose.html',

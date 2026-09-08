@@ -1,0 +1,62 @@
+extends ../../../layouts/LayoutTheme
+include ../../../mixins/dashboard/common
+include ../../../mixins/observability/Common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Platform', href: '#!' },
+      { label: 'Integrations', href: `${CWD}${paths['platform-integrations']}` },
+      { label: 'OpenTelemetry', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'OpenTelemetry',
+    subtitle: 'Already instrumented with OTel? Point your collector at the OTLP endpoint — traces, metrics and logs land in the same places the native collectors write to'
+  })
+
+  .card.mb-4
+    .card-body
+      h4.mb-2 Collector configuration
+      p.text-body-tertiary.fs-9 Add this exporter to your OTel Collector and send every pipeline to it. The endpoint and the key are shown in the table below; the key is one of this organization's API keys.
+      pre.bg-body-highlight.rounded-3.p-3.fs-9.mb-3.overflow-auto.
+        exporters:
+          otlphttp:
+            endpoint: &lt;OTLP endpoint below&gt;
+            encoding: json          # JSON only — protobuf is not accepted yet
+            headers:
+              X-API-Key: &lt;your ingest key&gt;
+
+        service:
+          pipelines:
+            traces:  { exporters: [otlphttp] }
+            metrics: { exporters: [otlphttp] }
+            logs:    { exporters: [otlphttp] }
+      p.text-body-tertiary.fs-9.mb-0
+        | An SDK exporter works too — set
+        code.mx-1 OTEL_EXPORTER_OTLP_ENDPOINT
+        | to the same URL,
+        code.mx-1 OTEL_EXPORTER_OTLP_PROTOCOL=http/json
+        | and
+        code.mx-1 OTEL_EXPORTER_OTLP_HEADERS=X-API-Key=…
+        | . Set
+        code.mx-1 service.name
+        | on your resource — it is what every page groups telemetry by.
+
+  +ObsToolTable({
+    title: 'OTLP ingest',
+    live: 'otlp',
+    subtitle: 'What this organization’s collector has actually delivered, per signal — the onboarding check',
+    searchPlaceholder: 'Search signals',
+    columns: [
+      { label: 'Signal', className: 'ps-3' },
+      { label: 'Endpoint' },
+      { label: 'Last received' },
+      { label: 'Records' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-satellite-dish', iconColor: 'secondary', meta: 'nothing received yet', cells: ['—', '—', '—', '0', { text: 'Not connected', badge: 'secondary' }] }
+    ]
+  })

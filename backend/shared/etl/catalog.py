@@ -12,6 +12,11 @@ see CustomConnectorConfig in dto.py). Saving it under an id of the form "custom-
 registers a brand new connector; any such id polls through GenericRestClient
 (client.py) / shared/etl/pollers/custom.py instead of a hand-written client.
 
+A field may carry "show_if": {"<other field>": [values]} — the form shows it only while
+that field holds one of those values, which is how the custom connector asks for the
+credentials of the chosen auth type and nothing else. Purely presentational; the backend
+validates whatever it is sent.
+
 Launching a job stays platform-specific (see client.py's launch_* methods) — that part
 genuinely differs per vendor API and generic connectors are monitor-only.
 """
@@ -75,13 +80,14 @@ CATALOG: dict[str, dict[str, Any]] = {
                  {"value": "basic", "label": "Basic auth (username + password)"},
                  {"value": "access_key", "label": "Access key + secret"},
              ]},
-            {"name": "api_key", "label": "API key", "secret": True},
-            {"name": "api_key_header", "label": "API key header name", "value": "X-API-Key"},
-            {"name": "bearer_token", "label": "Bearer token", "secret": True},
-            {"name": "username", "label": "Username"},
-            {"name": "password", "label": "Password", "secret": True},
-            {"name": "access_key_id", "label": "Access key ID"},
-            {"name": "secret_access_key", "label": "Secret access key", "secret": True},
+            {"name": "api_key", "label": "API key", "secret": True, "show_if": {"auth_type": ["api_key"]}},
+            {"name": "api_key_header", "label": "API key header name", "value": "X-API-Key",
+             "show_if": {"auth_type": ["api_key"]}},
+            {"name": "bearer_token", "label": "Bearer token", "secret": True, "show_if": {"auth_type": ["bearer"]}},
+            {"name": "username", "label": "Username", "show_if": {"auth_type": ["basic"]}},
+            {"name": "password", "label": "Password", "secret": True, "show_if": {"auth_type": ["basic"]}},
+            {"name": "access_key_id", "label": "Access key ID", "show_if": {"auth_type": ["access_key"]}},
+            {"name": "secret_access_key", "label": "Secret access key", "secret": True, "show_if": {"auth_type": ["access_key"]}},
             {"name": "list_path", "label": "List path (optional)",
              "help": 'Dotted path to the run list, e.g. "data.runs". Blank works if the '
                      'response is the list itself, or has a top-level items/data/results/'
