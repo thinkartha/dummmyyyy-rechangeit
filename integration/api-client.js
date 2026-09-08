@@ -355,6 +355,13 @@ export const api = {
   },
 
   /* ETL / ELT monitoring */
+  /* OpenTelemetry: the collector posts straight to /otlp/v1/{traces,metrics,logs}
+     (standard OTLP/HTTP paths, so an unmodified exporter finds them). This is only the
+     onboarding view — which endpoint to configure, and what has arrived so far. */
+  otlp: {
+    status: () => get('/otlp/status')
+  },
+
   etl: {
     /* Connectors and the connection form each needs — adding one to the backend
        catalog is enough for it to show up here, no new frontend code required. */

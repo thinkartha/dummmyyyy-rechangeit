@@ -282,6 +282,31 @@ export const SOURCES = {
       }),
   },
 
+  /* OpenTelemetry onboarding: one row per signal, so "did my collector reach you?" is
+     answered per pipeline rather than as a single yes/no. /otlp/status also carries the
+     endpoint to configure, which is why it is repeated on every row. */
+  otlp: {
+    load: (api) => api.otlp.status(),
+    rows: (data) => {
+      const endpoint = data?.endpoint || '—';
+      return ['traces', 'metrics', 'logs'].map((signal) => {
+        const seen = (data?.signals || {})[signal];
+        return {
+          icon: 'fa-satellite-dish',
+          iconColor: seen ? 'success' : 'secondary',
+          meta: seen ? 'receiving' : 'nothing received yet',
+          cells: [
+            signal.charAt(0).toUpperCase() + signal.slice(1),
+            endpoint,
+            seen ? new Date(seen.at).toLocaleString() : '—',
+            num(seen?.count),
+            badge(seen ? 'Connected' : 'Not connected'),
+          ],
+        };
+      });
+    },
+  },
+
   etl: {
     /* The cards above the table, from the same /summary response. Success rate is
        weighted by job count rather than averaged across platforms: three platforms at

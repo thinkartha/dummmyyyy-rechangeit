@@ -759,6 +759,17 @@ const DATABRICKS_ETL_ENTRY = {
   save: (api, body) => api.databricks.saveConfig(body),
 };
 
+/**
+ * Is this field relevant to what has been filled in so far?
+ *
+ * A spec's `showIf` is {otherField: [values it must hold]} — see show_if in
+ * shared/etl/catalog.py. No showIf means always shown.
+ */
+function fieldVisible(spec, current) {
+  if (!spec.showIf) return true;
+  return Object.entries(spec.showIf).every(([name, allowed]) => [].concat(allowed).includes(current[name]));
+}
+
 /** "Fivetran Prod" -> "custom-fivetran-prod", matching shared/etl/catalog.py's CUSTOM_PREFIX. */
 function slugifyConnectorId(name) {
   const slug = String(name || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -805,6 +816,10 @@ async function runEtlConnectorForm(api, presetPlatform) {
 
   const select = picker.querySelector('select');
   let specs = [];
+  /* Reassigned by each draw(), so the one listener below always toggles the fields
+     currently on screen rather than a previous connector's detached ones. */
+  let applyVisibility = () => {};
+  fieldsWrap.addEventListener('change', () => applyVisibility());
   const draw = async () => {
     const chosen = providers.find((p) => p.id === select.value) || providers[0];
     /* Reopening a saved connector's form shows what's already set. GET returns the
@@ -814,9 +829,6 @@ async function runEtlConnectorForm(api, presetPlatform) {
     const current = (chosen.save || chosen.template)
       ? {}
       : await api.etl.config(chosen.id).then((s) => (s && s.fields) || {}).catch(() => ({}));
-    /* ponytail: every field the chosen auth type doesn't use just sits there blank
-       rather than hiding/showing per auth_type — none of them are required, so an
-       unused field costs nothing but screen space. Wire that up if it gets confusing. */
     specs = (chosen.fields || []).map((f) => ({
       name: f.name,
       label: f.label || f.name,
@@ -825,9 +837,19 @@ async function runEtlConnectorForm(api, presetPlatform) {
       placeholder: f.placeholder,
       required: f.required === true,
       help: f.help,
+      showIf: f.show_if,
       value: f.secret ? undefined : (current[f.name] ?? f.value),
     }));
-    fieldsWrap.replaceChildren(...specs.map(field));
+    const els = specs.map((spec) => [spec, field(spec)]);
+    fieldsWrap.replaceChildren(...els.map(([, el]) => el));
+    /* The custom connector asks for five auth styles' credentials; showing all of them
+       at once was the whole form's worth of boxes to ignore. Each one now declares the
+       auth_type it belongs to (show_if in shared/etl/catalog.py) and the rest hide. */
+    applyVisibility = () => {
+      const current = values(fieldsWrap, specs);
+      for (const [spec, el] of els) el.classList.toggle('d-none', !fieldVisible(spec, current));
+    };
+    applyVisibility();
   };
   select.addEventListener('change', draw);
   await draw();
@@ -852,7 +874,10 @@ async function runEtlConnectorForm(api, presetPlatform) {
     error.classList.add('d-none');
     try {
       const chosen = providers.find((p) => p.id === select.value) || providers[0];
-      const payload = values(fieldsWrap, specs);
+      /* Hidden fields belong to an auth type that was not chosen — a saved value from
+         a previous one would otherwise ride along and confuse the poller. */
+      const all = values(fieldsWrap, specs);
+      const payload = values(fieldsWrap, specs.filter((spec) => fieldVisible(spec, all)));
       const label = chosen.template ? (payload.name || 'Custom connector') : (chosen.label || chosen.id);
       if (chosen.save) await chosen.save(api, payload);
       else await api.etl.saveConfig(chosen.template ? slugifyConnectorId(payload.name) : chosen.id, payload);

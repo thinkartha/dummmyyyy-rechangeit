@@ -11,6 +11,8 @@ include ../mixins/navbars/NavbarTop
 include ../mixins/navbars/NavbarCombo
 include ../mixins/common/RevealBtn
 include ../mixins/common/SettingsPanel
+//- Still included for the theme's own demo layouts, which call +SupportChat
+//- themselves; the product's pages no longer do.
 include ../mixins/common/SupportChat
 include ../mixins/Variables
 
@@ -111,8 +113,10 @@ block mainContent
   else
     +LayoutContent
 
+  //- The theme's support-chat bubble was a canned demo conversation, on every page of
+  //- the product. Removed with the Chat app; a page that wants a chat widget can still
+  //- fill this block.
   block supportChat
-    +SupportChat
 
 block afterMainContent
   if(!hideSettingPanel)
