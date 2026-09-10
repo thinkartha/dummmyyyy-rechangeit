@@ -384,6 +384,20 @@ const ROLE_LABELS = {
  * The theme ships a placeholder name in its profile dropdown. Leaving that in place next
  * to live tenant data is worse than showing nothing — it reads as the signed-in user.
  */
+/**
+ * The letter to put in the avatar.
+ *
+ * Taken from the display name, falling back to the address — `alice@example.com` gives
+ * "A". Non-letters are skipped rather than rendered: an account whose name starts with
+ * a quote or a digit would otherwise get a circle with punctuation in it.
+ */
+function initialOf(session) {
+  if (!session) return '';
+  const source = String(session.name || session.email || session.sub || '');
+  const letter = source.match(/\p{L}/u);
+  return letter ? letter[0].toUpperCase() : '';
+}
+
 function paint() {
   const session = getSession();
 
@@ -394,6 +408,13 @@ function paint() {
   }
   for (const el of document.querySelectorAll('[data-lhb-role]')) {
     el.textContent = session ? (ROLE_LABELS[session.role] || session.role) : '—';
+  }
+  /* The avatar is the account's own initial, taken from the same name slot above so the
+     letter and the name can never disagree. Signed out it keeps the brand letter the
+     markup ships with, rather than a stranger's photograph or an empty circle. */
+  for (const el of document.querySelectorAll('[data-lhb-avatar] .avatar-name span')) {
+    const initial = initialOf(session);
+    if (initial) el.textContent = initial;
   }
   /* Platform-admin-only links stay hidden for everyone else. The backend enforces this
      regardless; hiding is so the page does not advertise a 403. */

@@ -167,7 +167,7 @@ export default function Page() {
       </div>
       <div className="row g-4 mb-4">
         <div className="col-12 col-lg-5">
-          <div className="card h-100">
+          <div className="card h-100" data-mock-block="data-mock-block">
             <div className="card-body">
               <h4 className="mb-3">
                 Connection

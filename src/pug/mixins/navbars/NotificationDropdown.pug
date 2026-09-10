@@ -97,10 +97,20 @@ mixin NotificationDropdown
 					button.btn.btn-link.p-0.fs-9.fw-normal(type='button') Mark all as read
 			.card-body.p-0
 				.scrollbar-overlay(style="height: 27rem;")
-					each item in todays
-						+NotificationItems(item)
-					each item,index in yesterdays
-						+NotificationItems(item,index === yesterdays.length - 1)
+					//- The theme's notifications are invented people doing things this
+					//- product has no feature for — "liked your comment", dated 2021 —
+					//- sitting in the top bar beside live tenant data. Same guard as
+					//- every other fabricated block: hidden unless mock data is on.
+					div(data-mock-block)
+						each item in todays
+							+NotificationItems(item)
+						each item,index in yesterdays
+							+NotificationItems(item,index === yesterdays.length - 1)
+					//- What is left when they go, and only then — data-mock-empty is the
+					//- counterpart to data-mock-block, so the two never show together.
+					.text-center.text-body-tertiary.fs-9.py-6(data-mock-empty)
+						span.fa-solid.fa-bell-slash.d-block.mb-2.fs-7
+						| No notifications yet.
 			.card-footer.p-0.border-top.border-translucent.border-0
 				.my-2.text-center.fw-bold.fs-10.text-body-tertiary.text-opactity-85
 					a(href=`${CWD}${paths['notifications-page']}`).fw-bolder Notification history

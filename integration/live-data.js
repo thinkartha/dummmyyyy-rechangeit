@@ -172,9 +172,9 @@ const money = (v, currency = 'USD') =>
  * metric both legitimately stretch the gap.
  */
 const staleness = (lastSeen) => {
-  if (!lastSeen) return 'No data';
+  if (!lastSeen) return 'Not reporting';
   const age = Date.now() - Date.parse(lastSeen);
-  if (!Number.isFinite(age)) return 'No data';
+  if (!Number.isFinite(age)) return 'Not reporting';
   if (age < 10 * 60 * 1000) return 'Live';
   if (age < 60 * 60 * 1000) return 'Lagging';
   return 'Stale';
@@ -586,7 +586,7 @@ export const SOURCES = {
         },
         p99Latency: {
           value: slowest ? `${num(slowest.p99_latency_ms, 1)}ms` : '—',
-          delta: slowest ? slowest.route : 'no data',
+          delta: slowest ? slowest.route : 'awaiting data',
         },
         routes: { value: num(rows.length), delta: 'from stored spans' },
       };
@@ -712,7 +712,7 @@ export const SOURCES = {
       const total = cost && cost.mtd_total;
       const forecast = cost && cost.forecast_month_end;
       return {
-        mtdSpend: { value: money(total, currency), delta: cost?.period_start ? `since ${cost.period_start}` : 'no data' },
+        mtdSpend: { value: money(total, currency), delta: cost?.period_start ? `since ${cost.period_start}` : 'awaiting data' },
         forecastEom: {
           value: money(forecast, currency),
           // Cost Explorer declines to forecast a new account or the last day of a
@@ -733,7 +733,7 @@ export const SOURCES = {
     }),
     rows: ({ cost, budgets }) => {
       /* An account Cost Explorer refused is one row saying why. Returning [] here would
-         render "Nothing here yet", which reads as a $0 bill rather than a missing
+         render the empty state, which reads as a $0 bill rather than a missing
          permission — and `ce:GetCostAndUsage` missing from the role is the single most
          likely reason this table is empty. */
       if (cost && cost.error) {
@@ -883,7 +883,7 @@ export const SOURCES = {
         mtdSpend: {
           value: cost && !cost.error ? money(cost.mtd_total, currency) : '—',
           delta: cost && cost.error ? 'Cost Explorer denied'
-            : cost && cost.period_start ? `since ${cost.period_start}` : 'no data',
+            : cost && cost.period_start ? `since ${cost.period_start}` : 'awaiting data',
         },
       };
     },
@@ -985,7 +985,7 @@ export const SOURCES = {
         streamedRegions: {
           value: num(((data && data.regions) || []).length),
           delta: ((data && data.accounts) || []).length
-            ? `${num(data.accounts.length)} accounts` : 'no data',
+            ? `${num(data.accounts.length)} accounts` : 'awaiting data',
         },
         datapoints: { value: num((data && data.datapoints) || 0), delta: 'last 3h' },
       };
@@ -1034,7 +1034,7 @@ export const SOURCES = {
                    that never arrives. */
                 badge(!c.enabled ? 'Disabled'
                   : c.firing ? 'Firing'
-                  : c.watching ? 'OK' : 'No data')],
+                  : c.watching ? 'OK' : 'Not matched')],
         action: { key: 'deleteMetricCondition', arg: c.id, label: 'Remove' },
       })),
   },
@@ -1098,7 +1098,7 @@ export const SOURCES = {
         accountAlarms: {
           value: account ? num((account.alarms || []).length) : '—',
           delta: account && (account.regions || []).length
-            ? `${num(account.regions.length)} regions` : 'no data',
+            ? `${num(account.regions.length)} regions` : 'awaiting data',
         },
         accountResources: {
           value: account ? num(countResources(account)) : '—',
@@ -1115,12 +1115,12 @@ export const SOURCES = {
         accountRegions: {
           value: account ? num((account.regions || []).length) : '—',
           delta: account && (account.regions || []).length
-            ? account.regions[0] : 'no data',
+            ? account.regions[0] : 'awaiting data',
         },
         accountSpend: {
           value: cost && !cost.error ? money(cost.total, currency) : '—',
           delta: cost && cost.error ? 'CE denied'
-            : cost && cost.period_start ? `since ${cost.period_start}` : 'no data',
+            : cost && cost.period_start ? `since ${cost.period_start}` : 'awaiting data',
         },
       };
     },
@@ -1662,8 +1662,13 @@ function render(root, rows, plain) {
 function dropWithLayout(el) {
   const column = el.closest('[class*="col-"]');
   /* Only take the column when the block was all it held — a column with a second card
-     in it still has something to show. */
-  const target = column && column.children.length === 1 ? column : el;
+     in it still has something to show — and only when that column is really a grid
+     column. Without the `.row` check this reached outside the card grid: a mock block
+     in the navbar can have a `col-`-ish ancestor that is not part of a row, and taking
+     it would delete a piece of the chrome rather than the fabricated card. */
+  const inGrid = column && column.parentElement
+    && column.parentElement.classList.contains('row');
+  const target = inGrid && column.children.length === 1 ? column : el;
   const row = target.parentElement;
   target.remove();
   if (!row || !row.classList.contains('row')) return;
@@ -1702,7 +1707,10 @@ function showEmpty(root) {
   const cell = document.createElement('td');
   cell.className = 'text-center text-body-tertiary fs-9 py-4';
   cell.colSpan = columns;
-  cell.textContent = 'Nothing here yet.';
+  /* "No data" reads as a verdict on the tenant's systems. It is almost always a
+     verdict on ours — nothing is connected yet — and a first-time visitor cannot tell
+     those apart. Say which one it is. */
+  cell.textContent = 'This fills in once your backend systems are connected and reporting.';
   const row = document.createElement('tr');
   row.appendChild(cell);
   tbody.replaceChildren(row);
@@ -1874,7 +1882,7 @@ async function sweepTables(api, polled) {
       el.removeAttribute('data-obs-stat');
     }
     for (const el of document.querySelectorAll('[data-obs-stat-delta]')) {
-      el.textContent = 'no data';
+      el.textContent = 'awaiting data';
       el.removeAttribute('data-obs-stat-delta');
     }
     /* Cards written by hand from invented rows — a trace waterfall, a critical-path
@@ -1919,7 +1927,7 @@ async function sweepTables(api, polled) {
         // repeat pass the table may still be holding the previous rows, so it is
         // emptied rather than left showing data the API no longer reports.
         if (!MOCK_DATA) showEmpty(root);
-        mark(root, MOCK_DATA ? 'Sample data — none registered yet' : 'No data yet',
+        mark(root, MOCK_DATA ? 'Sample data — none registered yet' : 'Awaiting data',
              MOCK_DATA ? 'warning' : 'secondary');
         return;
       }

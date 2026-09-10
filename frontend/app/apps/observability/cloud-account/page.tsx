@@ -187,7 +187,7 @@ export default function Page() {
                     —
                   </h2>
                   <span className="badge badge-phoenix fs-10 badge-phoenix-danger" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountAlarms">
-                    no data
+                    awaiting data
                   </span>
                 </div>
               </div>
@@ -207,7 +207,7 @@ export default function Page() {
                     —
                   </h2>
                   <span className="badge badge-phoenix fs-10 badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountResources">
-                    no data
+                    awaiting data
                   </span>
                 </div>
               </div>
@@ -227,7 +227,7 @@ export default function Page() {
                     —
                   </h2>
                   <span className="badge badge-phoenix fs-10 badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountStreamed">
-                    no data
+                    awaiting data
                   </span>
                 </div>
               </div>
@@ -247,7 +247,7 @@ export default function Page() {
                     —
                   </h2>
                   <span className="badge badge-phoenix fs-10 badge-phoenix-primary" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountServices">
-                    no data
+                    awaiting data
                   </span>
                 </div>
               </div>
@@ -267,7 +267,7 @@ export default function Page() {
                     —
                   </h2>
                   <span className="badge badge-phoenix fs-10 badge-phoenix-secondary" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountRegions">
-                    no data
+                    awaiting data
                   </span>
                 </div>
               </div>
@@ -287,7 +287,7 @@ export default function Page() {
                     —
                   </h2>
                   <span className="badge badge-phoenix fs-10 badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountSpend">
-                    no data
+                    awaiting data
                   </span>
                 </div>
               </div>

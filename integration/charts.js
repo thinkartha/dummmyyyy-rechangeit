@@ -135,7 +135,7 @@ export const CHARTS = {
       const hours = Number((document.getElementById('account-range') || {}).value) || 3;
       return api.cloudMetrics.seriesByResource({ namespace, metric, account, hours });
     },
-    empty: 'No metrics streamed for this account yet.',
+    empty: 'No metrics streamed for this account yet — set up metric streaming to fill this in.',
     option: (data) => {
       if (!data || !data.series || !data.series.length) return null;
       const c = ink();
@@ -210,7 +210,7 @@ export const CHARTS = {
    */
   accountCost: {
     load: (api) => api.finops.costDaily({ days: 30, account: accountParam() }),
-    empty: 'No Cost Explorer history for this account.',
+    empty: 'Waiting on Cost Explorer history for this account.',
     option: (data) => {
       if (!data || data.error || !(data.points || []).length) return null;
       const c = ink();
@@ -273,7 +273,7 @@ export const CHARTS = {
     load: (api) => api.finops.costBreakdown({
       groupBy: spendGroupBy(), account: accountParam(),
     }),
-    empty: 'No Cost Explorer data for this account.',
+    empty: 'Waiting on Cost Explorer data for this account.',
     option: (data) => {
       if (!data || data.error || !(data.entries || []).length) return null;
       const c = ink();
@@ -371,7 +371,8 @@ async function draw(api, root) {
        rather than "nothing was measured". Dispose and say which it is. */
     const existing = instances.get(root);
     if (existing) { existing.dispose(); instances.delete(root); }
-    message(root, spec.empty || 'Nothing to chart yet.');
+    message(root, spec.empty
+      || 'This fills in once your backend systems are connected and reporting.');
     return;
   }
   let chart = instances.get(root);

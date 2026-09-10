@@ -157,6 +157,8 @@ payload = [];
 tick();
 await new Promise((r) => setTimeout(r, 0));
 assert.equal(tbody.children.length, 1, 'the table falls back to one row');
-assert.equal(tbody.children[0].children[0].textContent, 'Nothing here yet.');
+/* The copy matters as much as the fallback: "No data" reads as a verdict on the
+   tenant's own systems, when it is nearly always a verdict on ours. */
+assert.match(tbody.children[0].children[0].textContent, /once your backend systems are connected/);
 
 console.log('all green');
