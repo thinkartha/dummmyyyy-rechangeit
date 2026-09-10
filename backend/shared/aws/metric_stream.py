@@ -41,12 +41,15 @@ import base64
 import binascii
 import hashlib
 import json
+import logging
 import secrets
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from typing import Any, Iterable
 
 from shared.core import config_store, record_store
+
+log = logging.getLogger("pinghold.metric_stream")
 
 # Same reserved partition trick as customer_gateways: "~" cannot begin a tenant id, and
 # config_store.list_tenants() skips it, so the ETL pollers never read it as an org.
@@ -259,7 +262,25 @@ def ingest(body: dict[str, Any], access_key: str | None) -> dict[str, Any]:
     # outcome with no recovery.
     record_store.append_many(tenant_id, STREAM, stored,
                              moment_key="ts", id_key="id", require_durable=True)
-    return {"tenant_id": tenant_id, "stored": len(stored), "received": len(rows)}
+
+    # Evaluated here because the delivery is the only tick this deployment has — there is
+    # no scheduler, so a condition checked on a timer would never run. Storing first means
+    # an alerting failure cannot cost the metrics; the data is already safe by this point.
+    alerts = 0
+    try:
+        from . import metric_alerts
+        from shared.collector import ingest as collector
+
+        for event in metric_alerts.evaluate(tenant_id, stored):
+            collector.ingest(event)
+            alerts += 1
+    except Exception:  # pragma: no cover - alerting must never fail an ingest
+        # A 500 here would make Firehose retry a delivery that was already stored, which
+        # re-evaluates the same datapoints and is the one thing that could duplicate an
+        # alert. Metrics are the contract; alerting is best-effort on top of them.
+        log.exception("metric alert evaluation failed for %s", tenant_id)
+    return {"tenant_id": tenant_id, "stored": len(stored), "received": len(rows),
+            "alerts": alerts}
 
 
 # --- read -------------------------------------------------------------------

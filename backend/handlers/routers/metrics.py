@@ -16,7 +16,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Body, Depends, Header, HTTPException, Query, Request, status
 from fastapi.responses import JSONResponse
 
-from shared.aws import metric_stream
+from shared.aws import metric_alerts, metric_stream
 from shared.core import record_store
 from shared.core.auth import ROLE_ORG_ADMIN, ROLE_PLATFORM_ADMIN, Principal, get_current_principal
 from shared.core.tenancy import get_tenant_id
@@ -137,6 +137,47 @@ def get_resources(
 ) -> list[dict]:
     """One row per distinct resource the stream has described."""
     return metric_stream.resources(tenant_id, _since(hours))
+
+
+@router.get("/conditions")
+def list_conditions(tenant_id: str = Depends(get_tenant_id)) -> list[dict]:
+    """Threshold rules on streamed metrics, with what each is currently doing."""
+    return metric_alerts.status(tenant_id)
+
+
+@router.post("/conditions", status_code=status.HTTP_201_CREATED)
+def create_condition(
+    body: metric_alerts.MetricCondition,
+    tenant_id: str = Depends(get_tenant_id),
+    _: Principal = Depends(_require_admin),
+) -> dict:
+    """Add a threshold rule.
+
+    Evaluated on the metric-stream write path rather than on a timer — see
+    shared/aws/metric_alerts — so a new rule takes effect on the next delivery.
+    """
+    if body.comparison not in metric_alerts.COMPARISONS:
+        raise HTTPException(status_code=422,
+                            detail=f"comparison must be one of {sorted(metric_alerts.COMPARISONS)}")
+    if body.severity not in metric_alerts.SEVERITIES:
+        raise HTTPException(status_code=422,
+                            detail=f"severity must be one of {list(metric_alerts.SEVERITIES)}")
+    return metric_alerts.create_condition(tenant_id, body)
+
+
+# response_model=None is load-bearing: this module uses `from __future__ import
+# annotations`, so `-> None` reaches FastAPI as the string "None" and is taken for a
+# response model, which a 204 is not allowed to have. The other routers get away with
+# the bare annotation only because they do not postpone theirs.
+@router.delete("/conditions/{condition_id}", status_code=status.HTTP_204_NO_CONTENT,
+               response_model=None)
+def delete_condition(
+    condition_id: str,
+    tenant_id: str = Depends(get_tenant_id),
+    _: Principal = Depends(_require_admin),
+) -> None:
+    if not metric_alerts.delete_condition(tenant_id, condition_id):
+        raise HTTPException(status_code=404, detail=f"No condition {condition_id}")
 
 
 @router.get("/series")
