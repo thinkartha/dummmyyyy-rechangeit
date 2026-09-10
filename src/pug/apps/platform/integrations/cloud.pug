@@ -40,18 +40,20 @@ block content
 
   +ObsToolTable({
     title: 'Linked accounts',
-    live: 'cloudLambda',
-    subtitle: 'What this organization has connected — the AWS, GCP and Azure accounts, plus any managed cloud gateway in use',
+    live: 'cloudAccounts',
+    subtitle: 'Every AWS account the saved credential reaches, plus any managed cloud gateway in use',
     searchPlaceholder: 'Search accounts',
+    pageSize: 8,
     columns: [
       { label: 'Account', className: 'ps-3' },
       { label: 'Cloud' },
       { label: 'Type' },
       { label: 'Resources' },
-      { label: 'Alerts' },
+      { label: 'Open alarms' },
+      { label: 'Cost (MTD)' },
       { label: 'Status' }
     ],
     rows: [
-      { icon: 'fa-cloud', iconColor: 'secondary', meta: 'nothing connected yet', cells: ['—', '—', '—', '0', '0', { text: 'Not connected', badge: 'secondary' }] }
+      { icon: 'fa-cloud', iconColor: 'secondary', meta: 'nothing connected yet', cells: ['—', '—', '—', '0', '0', '—', { text: 'Not connected', badge: 'secondary' }] }
     ]
   })

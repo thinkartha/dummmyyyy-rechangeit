@@ -176,6 +176,7 @@ jobs:
         run: |
           node integration/check-actions.mjs
           node integration/check-auth.mjs
+          node integration/check-live-tables.mjs
 
       - name: Check the live-data row builders
         # These asserted the payload shapes the pages depend on and were only ever run

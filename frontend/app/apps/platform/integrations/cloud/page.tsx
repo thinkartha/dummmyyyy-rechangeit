@@ -128,7 +128,7 @@ export default function Page() {
           </div>
         </div>
       </div>
-      <div className="obs-list-root" data-list={"{\"valueNames\":[\"col0\",\"col1\",\"col2\",\"col3\",\"col4\",\"col5\"],\"page\":5,\"filter\":{\"key\":\"col5\"}}"} data-live-table="cloudLambda">
+      <div className="obs-list-root" data-list={"{\"valueNames\":[\"col0\",\"col1\",\"col2\",\"col3\",\"col4\",\"col5\",\"col6\"],\"page\":8,\"filter\":{\"key\":\"col6\"}}"} data-live-table="cloudAccounts">
         <div className="card">
           <div className="card-header border-bottom border-translucent py-3">
             <div className="row align-items-center g-2 mb-3">
@@ -137,7 +137,7 @@ export default function Page() {
                   Linked accounts
                 </h4>
                 <p className="text-body-tertiary fs-9 mb-0">
-                  What this organization has connected — the AWS, GCP and Azure accounts, plus any managed cloud gateway in use
+                  Every AWS account the saved credential reaches, plus any managed cloud gateway in use
                 </p>
               </div>
             </div>
@@ -178,9 +178,12 @@ export default function Page() {
                     Resources
                   </option>
                   <option value="col4">
-                    Alerts
+                    Open alarms
                   </option>
                   <option value="col5">
+                    Cost (MTD)
+                  </option>
+                  <option value="col6">
                     Status
                   </option>
                 </select>
@@ -205,9 +208,12 @@ export default function Page() {
                       Resources
                     </th>
                     <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col4">
-                      Alerts
+                      Open alarms
                     </th>
                     <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col5">
+                      Cost (MTD)
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col6">
                       Status
                     </th>
                   </tr>
@@ -240,6 +246,9 @@ export default function Page() {
                       0
                     </td>
                     <td className="align-middle col5">
+                      —
+                    </td>
+                    <td className="align-middle col6">
                       <span className="badge badge-phoenix badge-phoenix-secondary">
                         Not connected
                       </span>
