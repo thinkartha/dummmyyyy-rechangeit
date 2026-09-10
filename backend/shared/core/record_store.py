@@ -21,9 +21,9 @@ import logging
 import os
 import time
 import uuid
-from collections import defaultdict, deque
+from collections import defaultdict
 from datetime import datetime, timezone
-from typing import Any, Deque
+from typing import Any
 
 log = logging.getLogger("pinghold.record_store")
 
@@ -41,10 +41,16 @@ MAX_READ = 5000
 
 # Fallback store: same per-(tenant, stream) shape, bounded so a long-running local
 # process cannot exhaust memory.
+#
+# Keyed by sort key rather than appended as pairs, so the fallback behaves the way
+# DynamoDB does in the two places the old deque quietly did not:
+#   * a repeat write of the same key overwrites instead of adding a second row, which is
+#     what makes `record_id` mean "idempotent" in both modes rather than only in AWS;
+#   * reads sort by key, so a batch carrying its own out-of-order timestamps comes back
+#     in time order and not in arrival order.
+# Dicts preserve insertion order, so trimming still drops the oldest thing written.
 _MEM_MAX = 5000
-_mem: dict[tuple[str, str], Deque[tuple[str, dict[str, Any]]]] = defaultdict(
-    lambda: deque(maxlen=_MEM_MAX)
-)
+_mem: dict[tuple[str, str], dict[str, dict[str, Any]]] = defaultdict(dict)
 
 
 class StorageUnavailable(RuntimeError):
@@ -128,7 +134,10 @@ def append(
     if not table:
         if require_durable and configured():
             raise StorageUnavailable(f"DynamoDB record table {_TABLE_NAME!r} is unavailable")
-        _mem[(tenant_id, stream)].append((key, payload))
+        bucket = _mem[(tenant_id, stream)]
+        bucket[key] = payload
+        while len(bucket) > _MEM_MAX:
+            del bucket[next(iter(bucket))]
         return True
     try:
         table.put_item(Item={
@@ -148,11 +157,36 @@ def append(
         return False
 
 
-def append_many(tenant_id: str, stream: str, payloads: list[dict[str, Any]]) -> int:
+def append_many(
+    tenant_id: str,
+    stream: str,
+    payloads: list[dict[str, Any]],
+    *,
+    moment_key: str | None = None,
+    id_key: str | None = None,
+    require_durable: bool = False,
+) -> int:
+    """Add many records in one batch.
+
+    `moment_key` names a field holding each record's own timestamp. Without it every row
+    in the batch is stamped with the arrival time, which is right for a stream of things
+    that just happened and wrong for anything carrying its own clock: a batch of CloudWatch
+    datapoints covering the last minute would all sort as one instant, and `window(since=)`
+    — a range query on that key — would return them as if they arrived together.
+
+    `id_key` names a field holding a stable id, which makes the write idempotent: a
+    delivery retried after a partial failure overwrites its own rows instead of doubling
+    the metric. `require_durable` reports a failed batch instead of logging it, so a
+    caller that must tell its sender to retry can.
+    """
     table = _get_table()
     if not table:
+        if require_durable and configured():
+            raise StorageUnavailable(f"DynamoDB record table {_TABLE_NAME!r} is unavailable")
         for payload in payloads:
-            append(tenant_id, stream, payload)
+            append(tenant_id, stream, payload,
+                   _moment_of(payload, moment_key),
+                   record_id=_id_of(payload, id_key))
         return len(payloads)
     try:
         now = datetime.now(timezone.utc)
@@ -161,14 +195,39 @@ def append_many(tenant_id: str, stream: str, payloads: list[dict[str, Any]]) -> 
             for payload in payloads:
                 batch.put_item(Item={
                     "tenant_id": tenant_id,
-                    "sk": _sort_key(stream, now),
+                    "sk": _sort_key(stream, _moment_of(payload, moment_key) or now,
+                                    _id_of(payload, id_key)),
                     "stream": stream,
                     "payload": json.dumps(payload, default=str),
                     "expires_at": expires,
                 })
     except Exception as exc:  # pragma: no cover - depends on AWS
         log.warning("record batch append failed (%s/%s): %s", tenant_id, stream, exc)
+        if require_durable:
+            raise StorageUnavailable("DynamoDB rejected the batch write") from exc
     return len(payloads)
+
+
+def _moment_of(payload: dict[str, Any], key: str | None) -> datetime | None:
+    """The record's own timestamp, when the caller said which field carries it."""
+    if not key:
+        return None
+    value = payload.get(key)
+    if isinstance(value, datetime):
+        return value
+    if isinstance(value, str) and value:
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+    return None
+
+
+def _id_of(payload: dict[str, Any], key: str | None) -> str | None:
+    if not key:
+        return None
+    value = payload.get(key)
+    return str(value) if value not in (None, "") else None
 
 
 def _query(
@@ -183,11 +242,12 @@ def _query(
     if not table:
         if require_durable and configured():
             raise StorageUnavailable(f"DynamoDB record table {_TABLE_NAME!r} is unavailable")
-        items = [payload for key, payload in _mem.get((tenant_id, stream), ())
-                 if since is None or key >= f"{stream}#{_iso(since)}"]
+        bucket = _mem.get((tenant_id, stream)) or {}
+        low = f"{stream}#{_iso(since)}" if since else ""
+        keys = sorted(k for k in bucket if since is None or k >= low)
         if newest_first:
-            items = list(reversed(items))
-        return items[:limit]
+            keys.reverse()
+        return [bucket[k] for k in keys[:limit]]
 
     # "#" is the separator and sorts below every character the timestamp can contain, so
     # the upper bound "<stream>#~" is past every key in this stream and short of the next.
