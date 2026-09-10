@@ -26,3 +26,7 @@ PyMySQL==1.1.1
 # ELK
 elasticsearch==8.13.1
 python-dateutil==2.8.2
+
+# Alert triage grounding (backend/shared/core/triage.py). Base install only —
+# extraction/LLM extras live in the indexing job, not the Lambda.
+rv-aiknowledge==0.1.0
