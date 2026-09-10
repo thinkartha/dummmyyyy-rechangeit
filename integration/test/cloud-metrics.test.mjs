@@ -128,3 +128,96 @@ const ago = (ms) => new Date(Date.now() - ms).toISOString();
 }
 
 console.log('cloud-metrics: ok');
+
+// --- account drill-down -----------------------------------------------------
+// These sources read the account id off the URL, so the test supplies one.
+globalThis.window = {
+  location: { search: '?account=111122223333', pathname: '/apps/observability/cloud-account.html' },
+};
+globalThis.document = { querySelector: () => null, getElementById: () => null };
+
+const ACCOUNT = {
+  accountId: '111122223333', name: 'prod-root', connected: true,
+  regions: ['us-east-1', 'eu-west-1'], serviceErrors: {},
+  buckets: [{ name: 'a' }, { name: 'b' }], users: [{ userName: 'u' }],
+  hostedZones: [], domains: [], distributions: [],
+  alarms: [{ name: 'cpu-high', metric: 'CPUUtilization', region: 'us-east-1',
+             reason: 'threshold crossed', since: '2026-09-10T09:40:00Z' }],
+  error: null,
+};
+
+// The alarms table shows this account's alarms and nobody else's.
+{
+  const payload = {
+    account: ACCOUNT,
+    streamed: { services: [{ service: 'EC2' }, { service: 'SQS' }] },
+    cost: { currency: 'USD', total: 18220.5, period_start: '2026-09-01', entries: [] },
+  };
+  const rows = SOURCES.accountAlarms.rows(payload);
+  assert.equal(rows.length, 1);
+  assert.equal(cell(rows[0], 0), 'cpu-high');
+  assert.equal(cell(rows[0], 2), 'us-east-1');
+  assert.equal(cell(rows[0], 4), 'In alarm');
+
+  const stats = SOURCES.accountAlarms.stats(payload);
+  assert.equal(stats.accountAlarms.value, '1');
+  assert.equal(stats.accountAlarms.delta, 'across 2 regions');
+  assert.equal(stats.accountResources.value, '3');
+  assert.equal(stats.accountServices.value, '2');
+  assert.equal(stats.accountSpend.value, 'USD 18,220.50');
+}
+
+// An account the credential cannot reach says so instead of showing zero alarms —
+// "no alarms" and "we could not look" are opposite answers.
+{
+  const rows = SOURCES.accountAlarms.rows({
+    account: { ...ACCOUNT, alarms: [], error: 'AccessDenied: sts:AssumeRole' },
+  });
+  assert.equal(rows.length, 1);
+  assert.equal(cell(rows[0], 4), 'Unreachable');
+  assert.match(rows[0].meta, /AssumeRole/);
+}
+
+// An account not in the inventory at all is an empty table, not a crash.
+assert.deepEqual(SOURCES.accountAlarms.rows({ account: null }), []);
+
+// Cards degrade to dashes rather than zeros when a source failed.
+{
+  const stats = SOURCES.accountAlarms.stats({ account: null, streamed: null, cost: null });
+  assert.equal(stats.accountAlarms.value, '—');
+  assert.equal(stats.accountSpend.value, '—');
+  assert.equal(stats.accountServices.delta, 'no stream yet');
+}
+
+// Changes are filtered to this account — the endpoint returns every account's.
+{
+  const rows = SOURCES.accountChanges.rows([
+    { change: 'added', label: 'S3 bucket', name: 'mine', account: '111122223333',
+      at: '2026-09-10T08:00:00Z', fields: {} },
+    { change: 'removed', label: 'S3 bucket', name: 'theirs', account: '999999999999',
+      at: '2026-09-10T08:00:00Z', fields: {} },
+  ]);
+  assert.deepEqual(rows.map((r) => cell(r, 0)), ['mine']);
+}
+
+// The account row links to the drill-down, carrying the id.
+{
+  const rows = SOURCES.cloudAccounts.rows({
+    report: { organization: true, accounts: [ACCOUNT] },
+    cost: null,
+  });
+  assert.match(rows[0].href, /cloud-account\.html\?account=111122223333$/);
+}
+
+// The link form follows the page it was rendered on: the Next app has no .html.
+{
+  globalThis.window.location.pathname = '/apps/observability/cloud-monitoring';
+  const rows = SOURCES.cloudAccounts.rows({
+    report: { organization: true, accounts: [ACCOUNT] },
+    cost: null,
+  });
+  assert.match(rows[0].href, /\/apps\/observability\/cloud-account\?account=111122223333$/);
+  globalThis.window.location.pathname = '/apps/observability/cloud-account.html';
+}
+
+console.log('account-drilldown: ok');

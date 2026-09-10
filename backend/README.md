@@ -186,6 +186,21 @@ Notes:
 - Rotating the key (`POST .../key/rotate`) retires the old one immediately, so the
   Firehose destination has to be updated in the same sitting or delivery stops.
 
+### Reading it back
+
+`/summary`, `/catalog`, `/resources`, `/series` and `/series/by-resource` all take an
+optional `account`, which is what the per-account drill-down page asks for. The filter is
+applied after the query rather than in it: the DynamoDB sort key is time, so account is
+not something a range query can narrow without a second index, and an index that exists
+only to serve one page is the wrong trade until a tenant's stream is big enough to prove
+otherwise.
+
+`/series/by-resource` ranks resources by their own peak and folds everything past `cap`
+into a single "Other" series, re-aggregating the raw buckets rather than averaging the
+lines — the mean of four averages is not the average of what they measured. The cap
+exists because past about six lines a chart stops being readable, and the honest
+alternative to a cap is not more colours.
+
 ## Local
 
 ```bash

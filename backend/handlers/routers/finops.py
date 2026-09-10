@@ -41,6 +41,7 @@ def finops_cloud_cost(tenant_id: str = Depends(get_tenant_id)) -> CloudCostRepor
 @router.get("/finops/cloud-cost/breakdown", response_model=CostBreakdown)
 def finops_cost_breakdown(
     group_by: str = Query(default="SERVICE", alias="groupBy", max_length=128),
+    account: str | None = Query(default=None, max_length=64),
     tenant_id: str = Depends(get_tenant_id),
 ) -> CostBreakdown:
     """MTD spend grouped by service, region, or a tag key.
@@ -49,7 +50,7 @@ def finops_cost_breakdown(
     anything else, a tag key — which is the only way to answer "what does this team
     spend", since the tag keys are the customer's own and cannot be listed here.
     """
-    return breakdown(tenant_id, group_by)
+    return breakdown(tenant_id, group_by, account=account)
 
 
 @router.get("/finops/cloud-cost/daily", response_model=CostSeries)

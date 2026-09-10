@@ -552,6 +552,9 @@ export const api = {
     catalog: (params) => get('/integrations/aws/metrics/catalog', params),
     resources: (params) => get('/integrations/aws/metrics/resources', params),
     series: (params) => get('/integrations/aws/metrics/series', params),
+    /* One line per resource, ranked by peak with the tail folded into "Other" — the
+       shape a multi-series chart reads. */
+    seriesByResource: (params) => get('/integrations/aws/metrics/series/by-resource', params),
     conditions: () => get('/integrations/aws/metrics/conditions'),
     createCondition: (body) => post('/integrations/aws/metrics/conditions', body),
     deleteCondition: (id) => del(`/integrations/aws/metrics/conditions/${id}`)

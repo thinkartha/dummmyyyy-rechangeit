@@ -27,6 +27,11 @@ const PAGES = [
   ...[
     'ai-cost-usage', 'ai-gateway', 'ai-models', 'ai-monitoring', 'alert-management',
     'alerts', 'api-gateway', 'api-monitoring', 'automation', 'cloud-cost',
+    // cloud-account is the per-account drill-down, reached from a row on
+    // cloud-monitoring rather than from the nav — so it is listed here but has no entry
+    // in Variables.pug. It selects its account from ?account=, because the build is a
+    // static export and the account list is AWS's, discovered at read time.
+    'cloud-account',
     'cloud-monitoring', 'data-observability', 'database-monitoring', 'drift',
     'escalation', 'etl-monitoring', 'incident-correlation', 'logs',
     'orchestration-monitoring', 'service-topology', 'slo', 'traces',

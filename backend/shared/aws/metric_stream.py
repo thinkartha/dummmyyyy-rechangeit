@@ -304,9 +304,22 @@ def service_label(namespace: str) -> str:
 
 
 def read(tenant_id: str, since: datetime | None = None,
-         limit: int = record_store.MAX_READ) -> list[dict[str, Any]]:
+         limit: int = record_store.MAX_READ, *,
+         account: str | None = None, region: str | None = None) -> list[dict[str, Any]]:
+    """Stored datapoints, optionally narrowed to one account or region.
+
+    Filtered here rather than in the query: the sort key is time, so account is not
+    something DynamoDB can range over without a second index. At one row per metric per
+    minute this is a small list to walk, and an index that exists only to serve a drill-
+    down page is the wrong trade until a tenant's stream is big enough to prove it.
+    """
     since = since or datetime.now(timezone.utc) - _DEFAULT_WINDOW
-    return record_store.window(tenant_id, STREAM, since, limit)
+    rows = record_store.window(tenant_id, STREAM, since, limit)
+    if account:
+        rows = [r for r in rows if r.get("account") == account]
+    if region:
+        rows = [r for r in rows if r.get("region") == region]
+    return rows
 
 
 def configured(tenant_id: str) -> bool:
@@ -319,9 +332,10 @@ def configured(tenant_id: str) -> bool:
     return bool(record_store.recent(tenant_id, STREAM, 1))
 
 
-def summary(tenant_id: str, since: datetime | None = None) -> dict[str, Any]:
+def summary(tenant_id: str, since: datetime | None = None, *,
+            account: str | None = None) -> dict[str, Any]:
     """What is reporting, per service — the Cloud Monitoring service-coverage table."""
-    rows = read(tenant_id, since)
+    rows = read(tenant_id, since, account=account)
     services: dict[tuple[str, str], dict[str, Any]] = {}
     for row in rows:
         key = (row.get("namespace") or "", row.get("account") or "")
@@ -365,7 +379,7 @@ def summary(tenant_id: str, since: datetime | None = None) -> dict[str, Any]:
 
 def series(tenant_id: str, namespace: str, metric: str, *,
            since: datetime | None = None, dimension_id: str | None = None,
-           statistic: str = "avg") -> list[dict[str, Any]]:
+           statistic: str = "avg", account: str | None = None) -> list[dict[str, Any]]:
     """One metric over time, oldest first — what a chart reads.
 
     Points sharing a minute across several resources are combined, so asking for
@@ -373,7 +387,7 @@ def series(tenant_id: str, namespace: str, metric: str, *,
     whichever instance happened to be written last.
     """
     buckets: dict[str, dict[str, Any]] = {}
-    for row in read(tenant_id, since):
+    for row in read(tenant_id, since, account=account):
         if row.get("namespace") != namespace or row.get("metric") != metric:
             continue
         if dimension_id and row.get("dimension_id") != dimension_id:
@@ -398,10 +412,106 @@ def series(tenant_id: str, namespace: str, metric: str, *,
     return points
 
 
-def catalog(tenant_id: str, since: datetime | None = None) -> list[dict[str, Any]]:
+# How many resources a multi-series chart draws before the tail is folded together.
+# The series-count ladder is the reason for a cap at all: past about six lines nobody
+# can tell them apart, and inventing more colours makes it worse rather than better.
+_SERIES_CAP = 5
+
+
+def series_by_resource(tenant_id: str, namespace: str, metric: str, *,
+                       since: datetime | None = None, statistic: str = "avg",
+                       account: str | None = None,
+                       cap: int = _SERIES_CAP) -> dict[str, Any]:
+    """One line per resource for a metric — the shape a multi-series chart reads.
+
+    Ranked by the resource's own peak rather than by name, so the lines that get their
+    own colour are the ones worth looking at. Everything past the cap is folded into a
+    single "Other" series instead of being dropped: a chart that silently omits half the
+    fleet is worse than one that says how much it is showing.
+    """
+    rows = [r for r in read(tenant_id, since, account=account)
+            if r.get("namespace") == namespace and r.get("metric") == metric]
+    if not rows:
+        return {"namespace": namespace, "metric": metric, "unit": None,
+                "series": [], "folded": 0}
+
+    by_resource: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        dim_id = row.get("dimension_id") or "-"
+        entry = by_resource.setdefault(dim_id, {
+            "id": dim_id,
+            "name": _resource_name(row.get("dimensions") or {}),
+            "points": {},
+            "peak": None,
+        })
+        ts = row.get("ts")
+        if not ts:
+            continue
+        point = entry["points"].setdefault(ts, {"sum": 0.0, "count": 0.0,
+                                                "min": None, "max": None})
+        point["sum"] += row.get("sum") or 0.0
+        point["count"] += row.get("count") or 0.0
+        for edge, pick in (("min", min), ("max", max)):
+            value = row.get(edge)
+            if value is not None:
+                point[edge] = value if point[edge] is None else pick(point[edge], value)
+
+    def _stat(point: dict[str, Any]) -> float | None:
+        if statistic == "avg":
+            return point["sum"] / point["count"] if point["count"] else None
+        return point.get(statistic)
+
+    for entry in by_resource.values():
+        values = [v for v in (_stat(p) for p in entry["points"].values()) if v is not None]
+        entry["peak"] = max(values) if values else None
+
+    ranked = sorted(by_resource.values(),
+                    key=lambda e: (e["peak"] is None, -(e["peak"] or 0), e["name"]))
+    head, tail = ranked[:cap], ranked[cap:]
+
+    def _points(entry) -> list[dict[str, Any]]:
+        return [{"ts": ts, "value": round(v, 6)}
+                for ts, v in sorted((ts, _stat(p)) for ts, p in entry["points"].items())
+                if v is not None]
+
+    series = [{"id": e["id"], "name": e["name"], "points": _points(e)} for e in head]
+
+    if tail:
+        # Folded by re-aggregating the raw buckets, not by averaging the lines: the
+        # mean of four averages is not the average of what they measured.
+        merged: dict[str, dict[str, Any]] = {}
+        for entry in tail:
+            for ts, point in entry["points"].items():
+                into = merged.setdefault(ts, {"sum": 0.0, "count": 0.0,
+                                              "min": None, "max": None})
+                into["sum"] += point["sum"]
+                into["count"] += point["count"]
+                for edge, pick in (("min", min), ("max", max)):
+                    if point[edge] is not None:
+                        into[edge] = point[edge] if into[edge] is None else pick(into[edge], point[edge])
+        series.append({
+            "id": "__other__",
+            "name": f"Other ({len(tail)})",
+            "points": [{"ts": ts, "value": round(v, 6)}
+                       for ts, v in sorted((ts, _stat(p)) for ts, p in merged.items())
+                       if v is not None],
+        })
+
+    return {
+        "namespace": namespace,
+        "metric": metric,
+        "unit": next((r.get("unit") for r in rows if r.get("unit")), None),
+        "statistic": statistic,
+        "series": series,
+        "folded": len(tail),
+    }
+
+
+def catalog(tenant_id: str, since: datetime | None = None, *,
+            account: str | None = None) -> list[dict[str, Any]]:
     """Every (namespace, metric) that has arrived, for populating a metric picker."""
     seen: dict[tuple[str, str], dict[str, Any]] = {}
-    for row in read(tenant_id, since):
+    for row in read(tenant_id, since, account=account):
         key = (row.get("namespace") or "", row.get("metric") or "")
         entry = seen.setdefault(key, {
             "namespace": key[0], "service": service_label(key[0]),
@@ -413,7 +523,8 @@ def catalog(tenant_id: str, since: datetime | None = None) -> list[dict[str, Any
     return out
 
 
-def resources(tenant_id: str, since: datetime | None = None) -> list[dict[str, Any]]:
+def resources(tenant_id: str, since: datetime | None = None, *,
+              account: str | None = None) -> list[dict[str, Any]]:
     """One row per distinct resource seen, with the dimensions that identify it.
 
     This is the closest thing to an inventory that a metric stream provides, and unlike
@@ -421,7 +532,7 @@ def resources(tenant_id: str, since: datetime | None = None) -> list[dict[str, A
     five services somebody wrote a reader for.
     """
     seen: dict[str, dict[str, Any]] = {}
-    for row in read(tenant_id, since):
+    for row in read(tenant_id, since, account=account):
         dim_id = row.get("dimension_id")
         if not dim_id or not row.get("dimensions"):
             continue

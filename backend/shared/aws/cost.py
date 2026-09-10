@@ -213,7 +213,7 @@ def _group_spec(group_by: str) -> dict[str, str]:
 
 
 def breakdown(tenant_id: str, group_by: str = "SERVICE",
-              today: date | None = None) -> CostBreakdown:
+              today: date | None = None, account: str | None = None) -> CostBreakdown:
     """MTD spend grouped by service, region, or a tag key.
 
     Separate from cloud_cost() rather than folded into it: this is a second billed
@@ -227,7 +227,7 @@ def breakdown(tenant_id: str, group_by: str = "SERVICE",
 
     today = today or date.today()
     start, mtd_end, _ = _month_window(today)
-    cache_key = f"{tenant_id}|breakdown|{group_by}|{start.isoformat()}"
+    cache_key = f"{tenant_id}|breakdown|{group_by}|{account or 'all'}|{start.isoformat()}"
     cached = _CACHE.get(cache_key)
     if cached and time.monotonic() - cached[0] < _TTL_SECONDS:
         return cached[1]
@@ -239,6 +239,11 @@ def breakdown(tenant_id: str, group_by: str = "SERVICE",
             Granularity="MONTHLY",
             Metrics=["UnblendedCost"],
             GroupBy=[_group_spec(group_by)],
+            # Narrowing at Cost Explorer rather than after it: the API bills per request
+            # either way, and filtering a whole-payer response down to one account in
+            # Python would still have paid to move every other account's numbers.
+            **({"Filter": {"Dimensions": {"Key": "LINKED_ACCOUNT", "Values": [account]}}}
+               if account else {}),
         )
     except Exception as exc:
         return CostBreakdown(configured=True, groupBy=group_by,

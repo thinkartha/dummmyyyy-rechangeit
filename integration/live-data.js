@@ -189,6 +189,32 @@ function costGroupBy() {
   return value || 'SERVICE';
 }
 
+/**
+ * A link to a sibling page that works in both builds.
+ *
+ * The static export serves `/apps/observability/x.html`; the Next app serves the same
+ * page without the extension. The porter rewrites `.html` links in markup and inline
+ * scripts, but this file is served as an asset and never passes through it — so the
+ * form is taken from the page currently being viewed rather than assumed.
+ */
+const pageHref = (name) => {
+  /* Guarded because this module is imported outside a browser — the CI checks and the
+     row-builder tests both do it — and a row builder must not need a DOM to produce
+     rows. Without a location there is no link to make, and a row without one renders
+     as plain text rather than a dead anchor. */
+  if (typeof window === 'undefined' || !window.location) return '';
+  const path = window.location.pathname || '';
+  const dot = path.endsWith('.html');
+  const dir = path.slice(0, path.lastIndexOf('/') + 1);
+  return `${dir}${name}${dot ? '.html' : ''}`;
+};
+
+/** Which account a drill-down page is about. */
+const accountParam = () => {
+  if (typeof window === 'undefined' || !window.location) return '';
+  return new URLSearchParams(window.location.search || '').get('account') || '';
+};
+
 const countResources = (account) =>
   ['hostedZones', 'domains', 'distributions', 'buckets', 'users']
     .reduce((total, key) => total + ((account && account[key]) || []).length, 0);
@@ -885,6 +911,9 @@ export const SOURCES = {
           iconSet: 'fa-brands',
           icon: 'fa-aws',
           iconColor: account.error ? 'danger' : alarms ? 'warning' : 'success',
+          href: pageHref('cloud-account')
+            ? `${pageHref('cloud-account')}?account=${encodeURIComponent(account.accountId)}`
+            : undefined,
           /* Whichever of these is true is the thing the operator needs: why the row is
              empty, then which reads were refused, then just which account it is. */
           meta: account.error
@@ -1038,6 +1067,112 @@ export const SOURCES = {
         cells: [e.key, money(e.mtd, currency), pct((e.share || 0) * 100, 1),
                 badge(e.share > 0.25 ? 'Major' : e.share > 0.05 ? 'Notable' : 'Minor')],
       }));
+    },
+  },
+
+  /**
+   * The account drill-down's alarms table — and the four cards and the heading above it.
+   *
+   * One source rather than four because it is one question ("what about this account?")
+   * answered by three services that have to agree: the inventory knows what exists and
+   * what is alarming, the metric stream knows what is reporting, Cost Explorer knows
+   * what it costs. Splitting them would make four sweeps of the same three calls.
+   */
+  accountAlarms: {
+    stats: ({ account, streamed, cost }) => {
+      const currency = (cost && cost.currency) || 'USD';
+      return {
+        accountAlarms: {
+          value: account ? num((account.alarms || []).length) : '—',
+          delta: account && (account.regions || []).length
+            ? `across ${num(account.regions.length)} regions` : 'no data',
+        },
+        accountResources: {
+          value: account ? num(countResources(account)) : '—',
+          delta: account && account.error ? 'unreachable' : 'from inventory',
+        },
+        accountServices: {
+          value: streamed ? num((streamed.services || []).length) : '—',
+          delta: streamed && (streamed.services || []).length ? 'streaming' : 'no stream yet',
+        },
+        accountSpend: {
+          value: cost && !cost.error ? money(cost.total, currency) : '—',
+          delta: cost && cost.error ? 'Cost Explorer denied'
+            : cost && cost.period_start ? `since ${cost.period_start}` : 'no data',
+        },
+      };
+    },
+    load: async (api) => {
+      const wanted = accountParam();
+      const report = await api.awsLambda.inventory().catch(() => null);
+      const account = ((report && report.accounts) || [])
+        .find((a) => String(a.accountId) === wanted) || null;
+      /* Painted from here rather than by the page: the account's *name* is an API
+         answer, and a heading that shows the twelve-digit id while the table below it
+         says "prod-workloads" reads as two different accounts. */
+      paintAccountHeading(account, wanted);
+      return {
+        account,
+        streamed: await api.cloudMetrics.summary({ account: wanted }).catch(() => null),
+        cost: await api.finops.costBreakdown({ groupBy: 'SERVICE', account: wanted })
+          .catch(() => null),
+      };
+    },
+    rows: ({ account }) => {
+      if (!account) return [];
+      if (account.error) {
+        return [{
+          icon: 'fa-triangle-exclamation', iconColor: 'danger', meta: account.error,
+          cells: [account.accountId, '—', '—', '—', badge('Unreachable')],
+        }];
+      }
+      return (account.alarms || []).map((a) => ({
+        icon: 'fa-bell',
+        iconColor: 'danger',
+        meta: a.reason || null,
+        cells: [a.name, a.metric || '—', a.region || '—', a.since || '—',
+                badge('In alarm')],
+      }));
+    },
+  },
+
+  accountResources: {
+    /* Honours the page's range control, so the table and the chart above it describe
+       the same window — a resource that stopped reporting two days ago should leave
+       both when the range is three hours, or stay in both when it is seven days. */
+    load: (api) => api.cloudMetrics.resources({
+      account: accountParam(),
+      hours: Number((document.getElementById('account-range') || {}).value) || 3,
+    }),
+    rows: (data) =>
+      (data || []).map((r) => ({
+        icon: 'fa-cube',
+        iconColor: 'info',
+        meta: Object.entries(r.dimensions || {}).map(([k, v]) => `${k}=${v}`).join(' · ') || null,
+        cells: [r.name, r.service, r.region || '—', num(r.metrics),
+                r.last_seen || '—', badge(staleness(r.last_seen))],
+      })),
+  },
+
+  accountChanges: {
+    /* Filtered in the browser: /changes is a short recent list and adding an account
+       parameter to it would be a second filter on the same rows the page already has. */
+    load: (api) => api.awsLambda.changes({ limit: 200 }),
+    rows: (data) => {
+      const wanted = accountParam();
+      return (data || [])
+        .filter((c) => String(c.account) === wanted)
+        .map((c) => ({
+          icon: c.change === 'removed' ? 'fa-trash'
+            : c.change === 'added' ? 'fa-plus' : 'fa-pen',
+          iconColor: c.change === 'removed' ? 'danger'
+            : c.change === 'added' ? 'success' : 'warning',
+          meta: Object.entries(c.fields || {})
+            .map(([field, v]) => `${field}: ${v.from} → ${v.to}`).join(' · ') || null,
+          cells: [c.name, c.label, c.at || '—',
+                  badge(c.change === 'removed' ? 'Removed'
+                    : c.change === 'added' ? 'Added' : 'Modified')],
+        }));
     },
   },
 
@@ -1430,8 +1565,14 @@ function cellHtml(cell, colKey, index, row, plain) {
   if (index === 0 && !plain) {
     const icon = `${row.iconSet || 'fa-solid'} ${row.icon || 'fa-cube'} text-${row.iconColor || 'primary'}`;
     const meta = row.meta ? `<p class="text-body-tertiary fs-10 mb-0">${esc(row.meta)}</p>` : '';
+    /* A row that names a drill-down turns its first cell into the link. The whole row
+       is not clickable: rows carry action buttons, and a click target that swallows the
+       button beside it is how people delete things they meant to open. */
+    const title = row.href
+      ? `<a class="text-decoration-none" href="${esc(row.href)}">${esc(cell)}</a>`
+      : esc(cell);
     return `<td class="align-middle ps-3 py-3 ${colKey}"><div class="d-flex align-items-center">` +
-           `<span class="me-2 ${icon}"></span><div><h6 class="mb-0">${esc(cell)}</h6>${meta}</div></div></td>`;
+           `<span class="me-2 ${icon}"></span><div><h6 class="mb-0">${title}</h6>${meta}</div></div></td>`;
   }
   if (cell && cell.badge) {
     return `<td class="align-middle ${colKey}"><span class="badge badge-phoenix badge-phoenix-${cell.badge}">${esc(cell.text)}</span></td>`;
@@ -1567,6 +1708,33 @@ function publishStats(stats) {
   }
 }
 
+/**
+ * Name the account the drill-down page is about.
+ *
+ * An unknown id is said plainly rather than left as the loading text: the usual cause is
+ * a link to an account the credential no longer reaches, and "Loading…" forever is the
+ * least useful way to report that.
+ */
+function paintAccountHeading(account, wanted) {
+  const name = document.querySelector('[data-account-name]');
+  const meta = document.querySelector('[data-account-meta]');
+  if (!name || !meta) return;
+  if (!account) {
+    name.textContent = wanted || 'No account selected';
+    meta.textContent = wanted
+      ? 'Not in the current inventory — the credential may no longer reach this account.'
+      : 'Open this page from an account row on Cloud Monitoring.';
+    return;
+  }
+  name.textContent = account.name || account.accountId;
+  const bits = [account.accountId];
+  if (account.connected) bits.push('connected account');
+  if ((account.regions || []).length) bits.push(account.regions.join(', '));
+  const refused = Object.keys(account.serviceErrors || {});
+  if (refused.length) bits.push(`no access: ${refused.join(', ')}`);
+  meta.textContent = bits.join(' · ');
+}
+
 /** A small badge on the card header saying where the numbers came from. */
 function mark(root, text, tone) {
   const header = root.querySelector('.card-header');
@@ -1635,8 +1803,27 @@ async function sweep(api, polled) {
   sweeping = true;
   try {
     await sweepTables(api, polled);
+    await sweepCharts(api, polled);
   } finally {
     sweeping = false;
+  }
+}
+
+/**
+ * Charts live in their own module, loaded only when a page has one.
+ *
+ * Dynamically imported rather than imported at the top: charts.js is only useful beside
+ * the echarts vendor script, and every table-only page in the product would otherwise
+ * pay to parse it on load.
+ */
+async function sweepCharts(api, polled) {
+  if (!document.querySelector('[data-lhb-chart]')) return;
+  try {
+    const { hydrateCharts } = await import('./charts.js');
+    await hydrateCharts(api, polled);
+  } catch (err) {
+    // A failed chart must not take the tables on the same page down with it.
+    console.warn('charts unavailable:', err && err.message);
   }
 }
 

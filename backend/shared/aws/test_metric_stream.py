@@ -201,3 +201,44 @@ def test_ingest_endpoint_takes_no_session(client, key):
                            json=_delivery([_record()]),
                            headers={"X-Amz-Firehose-Access-Key": key})
     assert response.status_code == 200
+
+
+def test_series_by_resource_ranks_by_peak_and_folds_the_tail(key):
+    """A chart that silently omits half the fleet is worse than one that says how much
+    it is showing — and the fold has to re-aggregate, not average the lines."""
+    metric_stream.ingest(_delivery([
+        _record(dimensions={"InstanceId": f"i-{n}"},
+                value={"min": n, "max": n * 10, "sum": n * 10, "count": 10.0})
+        for n in range(1, 8)
+    ]), key)
+    since = datetime.now(timezone.utc) - timedelta(days=365 * 10)
+    out = metric_stream.series_by_resource(TENANT, "AWS/EC2", "CPUUtilization",
+                                           since=since, cap=3)
+    names = [s["name"] for s in out["series"]]
+    # Peak is max = n*10, so i-7 leads and the four smallest fold.
+    assert names[:3] == ["i-7", "i-6", "i-5"]
+    assert names[3] == "Other (4)"
+    assert out["folded"] == 4
+    # Other = (1+2+3+4)*10 summed over count 40 -> 2.5, not the mean of four averages.
+    assert out["series"][3]["points"][0]["value"] == 2.5
+
+
+def test_series_by_resource_is_empty_when_nothing_matches(key):
+    since = datetime.now(timezone.utc) - timedelta(days=365 * 10)
+    out = metric_stream.series_by_resource(TENANT, "AWS/NOPE", "Nothing", since=since)
+    assert out["series"] == [] and out["folded"] == 0
+
+
+def test_account_filter_narrows_every_reader(key):
+    metric_stream.ingest(_delivery([
+        _record(account_id="111111111111", dimensions={"InstanceId": "i-a"}),
+        _record(account_id="222222222222", dimensions={"InstanceId": "i-b"}),
+    ]), key)
+    since = datetime.now(timezone.utc) - timedelta(days=365 * 10)
+    assert len(metric_stream.read(TENANT, since)) == 2
+    assert len(metric_stream.read(TENANT, since, account="111111111111")) == 1
+    assert metric_stream.summary(TENANT, since, account="222222222222")["accounts"] == ["222222222222"]
+    assert [r["name"] for r in metric_stream.resources(TENANT, since, account="111111111111")] == ["i-a"]
+    scoped = metric_stream.series_by_resource(TENANT, "AWS/EC2", "CPUUtilization",
+                                              since=since, account="222222222222")
+    assert [s["name"] for s in scoped["series"]] == ["i-b"]

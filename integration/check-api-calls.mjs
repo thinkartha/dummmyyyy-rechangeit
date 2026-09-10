@@ -13,7 +13,7 @@
 import { readFileSync } from 'node:fs';
 import { api } from './api-client.js';
 
-const files = ['live-data.js', 'actions.js', 'auth.js', 'account.js'];
+const files = ['live-data.js', 'actions.js', 'auth.js', 'account.js', 'charts.js'];
 
 const missing = new Set();
 let checked = 0;

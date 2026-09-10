@@ -115,28 +115,51 @@ def rotate_ingest_key(
 @router.get("/summary")
 def get_summary(
     hours: float = Query(default=3, ge=0.1, le=720),
+    account: str | None = Query(default=None),
     tenant_id: str = Depends(get_tenant_id),
 ) -> dict:
-    """Which AWS services are reporting, per account — the service-coverage table."""
-    return metric_stream.summary(tenant_id, _since(hours))
+    """Which AWS services are reporting, per account — the service-coverage table.
+
+    `account` narrows to one linked account, which is what the account drill-down asks
+    for; without it the answer spans every account the stream carries.
+    """
+    return metric_stream.summary(tenant_id, _since(hours), account=account)
 
 
 @router.get("/catalog")
 def get_catalog(
     hours: float = Query(default=3, ge=0.1, le=720),
+    account: str | None = Query(default=None),
     tenant_id: str = Depends(get_tenant_id),
 ) -> list[dict]:
     """Every (namespace, metric) seen, for a metric picker."""
-    return metric_stream.catalog(tenant_id, _since(hours))
+    return metric_stream.catalog(tenant_id, _since(hours), account=account)
 
 
 @router.get("/resources")
 def get_resources(
     hours: float = Query(default=3, ge=0.1, le=720),
+    account: str | None = Query(default=None),
     tenant_id: str = Depends(get_tenant_id),
 ) -> list[dict]:
     """One row per distinct resource the stream has described."""
-    return metric_stream.resources(tenant_id, _since(hours))
+    return metric_stream.resources(tenant_id, _since(hours), account=account)
+
+
+@router.get("/series/by-resource")
+def get_series_by_resource(
+    namespace: str = Query(...),
+    metric: str = Query(...),
+    hours: float = Query(default=3, ge=0.1, le=720),
+    statistic: str = Query(default="avg", pattern="^(avg|min|max|sum|count)$"),
+    account: str | None = Query(default=None),
+    cap: int = Query(default=5, ge=1, le=8),
+    tenant_id: str = Depends(get_tenant_id),
+) -> dict:
+    """One line per resource for a metric, ranked by peak, tail folded into "Other"."""
+    return metric_stream.series_by_resource(tenant_id, namespace, metric,
+                                            since=_since(hours), statistic=statistic,
+                                            account=account, cap=cap)
 
 
 @router.get("/conditions")
@@ -187,8 +210,10 @@ def get_series(
     hours: float = Query(default=3, ge=0.1, le=720),
     statistic: str = Query(default="avg", pattern="^(avg|min|max|sum|count)$"),
     dimension_id: str | None = Query(default=None, alias="dimensionId"),
+    account: str | None = Query(default=None),
     tenant_id: str = Depends(get_tenant_id),
 ) -> list[dict]:
     """One metric over time, oldest first."""
     return metric_stream.series(tenant_id, namespace, metric, since=_since(hours),
-                                dimension_id=dimension_id, statistic=statistic)
+                                dimension_id=dimension_id, statistic=statistic,
+                                account=account)
