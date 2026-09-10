@@ -34,6 +34,10 @@ append headScripts
     html[data-mock='0'] [data-sample-rows] > tr { display: none !important; }
     html[data-mock='0'] [data-obs-stat],
     html[data-mock='0'] [data-obs-stat-delta] { visibility: hidden; }
+    /* The inverse: a placeholder standing in for a hidden mock block has to go when
+       that block is showing, or both appear at once. A CSS comment, not a Pug one —
+       inside `style.` everything is raw text and `//-` would ship as broken CSS. */
+    html[data-mock='1'] [data-mock-empty] { display: none !important; }
   script(src=`${CWD}vendors/simplebar/simplebar.min.js`)
   script(src=`${CWD}assets/js/config.js`)
 

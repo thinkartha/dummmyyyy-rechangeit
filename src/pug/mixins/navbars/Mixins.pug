@@ -221,25 +221,35 @@ mixin NavSearch({placeholder,inputClass})
     .dropdown-menu.border.start-0.py-0.overflow-hidden.w-100
       .scrollbar-overlay(style="max-height: 30rem;")
         .list.pb-3
-          +SearchTotalResult({text: `24 <span class="text-body-quaternary">results</span>`})
-          hr.my-0
-          +SearchResultTitle({text: 'Recently Searched '})
-          +SearchedItems(recentlySearchedItems)
-          hr.my-0
-          +SearchResultTitle({text: 'Products'})
-          +SearchSuggestion(Products)
-          hr.my-0
-          +SearchResultTitle({text: 'Quick Links'})
-          +SearchedItems(QuickLinks)
-          hr.my-0
-          +SearchResultTitle({text: 'Files'})
-          +SearchedItems(suggestionFiles)
-          hr.my-0
-          +SearchResultTitle({text: 'Members'})
-          +SearchSuggestion(suggestionMembers)
-          hr.my-0
-          +SearchResultTitle({text: 'Related Searches'})
-          +SearchedItems(RelatedSearch)
+          //- Every entry below is the theme's e-commerce demo — "MacBook Air", product
+          //- thumbnails, invented members — reached by clicking search in an
+          //- observability product. Guarded like every other fabricated block rather
+          //- than deleted, so the markup is still here for whoever wires real search.
+          div(data-mock-block)
+            +SearchTotalResult({text: `24 <span class="text-body-quaternary">results</span>`})
+            hr.my-0
+            +SearchResultTitle({text: 'Recently Searched '})
+            +SearchedItems(recentlySearchedItems)
+            hr.my-0
+            +SearchResultTitle({text: 'Products'})
+            +SearchSuggestion(Products)
+            hr.my-0
+            +SearchResultTitle({text: 'Quick Links'})
+            +SearchedItems(QuickLinks)
+            hr.my-0
+            +SearchResultTitle({text: 'Files'})
+            +SearchedItems(suggestionFiles)
+            hr.my-0
+            +SearchResultTitle({text: 'Members'})
+            +SearchSuggestion(suggestionMembers)
+            hr.my-0
+            +SearchResultTitle({text: 'Related Searches'})
+            +SearchedItems(RelatedSearch)
+          //- Shown when the fabricated block above is hidden, which is every deployment
+          //- that has not turned mock data on.
+          .text-center.text-body-tertiary.fs-9.py-5(data-mock-empty)
+            span.fa-solid.fa-magnifying-glass.d-block.mb-2.fs-7
+            | Search is not wired up yet.
         .text-center
           p.fallback.fw-bold.fs-7.d-none No Result Found.
 
@@ -279,25 +289,11 @@ mixin NavbarIcons(config)
           span(data-feather='bell' style="height:20px;width:20px;")
       = '\n'
       +NotificationDropdown
-
-    li.nav-item.dropdown
-      = '\n'
-      a#navbarDropdownNindeDots.nav-link(href='#' role='button' data-bs-toggle='dropdown' aria-haspopup='true' data-bs-auto-close="outside" aria-expanded='false')
-        svg(width='16' height='16' viewbox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg')
-          circle(cx='2' cy='2' r='2' fill='currentColor')
-          circle(cx='2' cy='8' r='2' fill='currentColor')
-          circle(cx='2' cy='14' r='2' fill='currentColor')
-          circle(cx='8' cy='8' r='2' fill='currentColor')
-          circle(cx='8' cy='14' r='2' fill='currentColor')
-          circle(cx='14' cy='8' r='2' fill='currentColor')
-          circle(cx='14' cy='14' r='2' fill='currentColor')
-          circle(cx='8' cy='2' r='2' fill='currentColor')
-          circle(cx='14' cy='2' r='2' fill='currentColor')
-      = '\n'
-      +NineDotsDropdown
     li.nav-item.dropdown
       a#navbarDropdownUser.nav-link.lh-1.pe-0(href='#!' role='button' data-bs-toggle='dropdown' data-bs-auto-close="outside" aria-haspopup='true' aria-expanded='false')
-        +Avatar({img: 'team/40x40/57.webp', size: 'l', status: '', round: 'circle'})
+        .avatar.avatar-l(data-lhb-avatar)
+          .avatar-name.rounded-circle
+            span.fa-solid.fa-user
       +ProfileDropdown
 mixin NavbarIconsSlim
   ul.navbar-nav.navbar-nav-icons.flex-row
@@ -314,22 +310,6 @@ mixin NavbarIconsSlim
           span(data-feather='bell' style="height:12px;width:12px;")
       = '\n'
       +NotificationDropdown
-
-    li.nav-item.dropdown
-      = '\n'
-      a#navbarDropdownNindeDots.nav-link(href='#' role='button' data-bs-toggle='dropdown' aria-haspopup='true' data-bs-auto-close="outside" aria-expanded='false')
-        svg(width='10' height='10' viewbox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg')
-          circle(cx='2' cy='2' r='2' fill='currentColor')
-          circle(cx='2' cy='8' r='2' fill='currentColor')
-          circle(cx='2' cy='14' r='2' fill='currentColor')
-          circle(cx='8' cy='8' r='2' fill='currentColor')
-          circle(cx='8' cy='14' r='2' fill='currentColor')
-          circle(cx='14' cy='8' r='2' fill='currentColor')
-          circle(cx='14' cy='14' r='2' fill='currentColor')
-          circle(cx='8' cy='2' r='2' fill='currentColor')
-          circle(cx='14' cy='2' r='2' fill='currentColor')
-      = '\n'
-      +NineDotsDropdown
 
     li.nav-item.dropdown
       //- The theme's "Olivia" sat next to live tenant data and read as the signed-in
@@ -360,7 +340,14 @@ mixin ProfileDropdown
     .card.position-relative.border-0
       .card-body.p-0
         .text-center.pt-4.pb-3
-          +Avatar({img: 'team/72x72/57.webp', size: 'xl', status: '', round: 'circle'})
+          //- The account's own initial, the way Google does it — not a stock
+          //- photograph, and not a hardcoded letter either. The markup ships a generic
+          //- person; integration/auth.js swaps in the first letter of the signed-in
+          //- name once there is one. Signed out, a letter would be a claim about
+          //- somebody, so the icon stays.
+          .avatar.avatar-xl(data-lhb-avatar)
+            .avatar-name.rounded-circle
+              span.fa-solid.fa-user
           //- Filled from the cached session by integration/auth.js. The placeholder name
           //- the theme shipped read as the signed-in user next to live tenant data.
           h6.mt-2.text-body-emphasis(data-lhb-user) Not signed in
@@ -416,40 +403,6 @@ mixin ProfileDropdown
           a.text-body-quaternary.mx-1(href="#!") Terms
           | &bull;
           a.text-body-quaternary.ms-1(href="#!") Cookies
-
-mixin NineDotsMenuItem(config)
-  - var config = Object.assign({ title:'title', contentClass:'', link: '#!', width:'30'}, config);
-  .col-4
-    a.d-block.bg-body-secondary-hover.p-2.rounded-3.text-center.text-decoration-none.mb-3(href=`${config.link}`)
-      img(src=`${CWD}assets/img/${config.img}` alt='' width=`${config.width}`)
-      p.mb-0.text-body-emphasis.text-truncate.fs-10.mt-1(class=`${config.img || config.icon ? 'pt-1' : ''}`)=config.title
-
-
-mixin NineDotsDropdown
-  .dropdown-menu.dropdown-menu-end.navbar-dropdown-caret.py-0.dropdown-nine-dots.shadow.border(aria-labelledby='navbarDropdownNindeDots')
-    .card.bg-body-emphasis.position-relative.border-0
-      .card-body.pt-3.px-3.pb-0.overflow-auto.scrollbar(style="height: 20rem;")
-        .row.text-center.align-items-center.gx-0.gy-0
-          -
-            var brands = [
-              {img: 'nav-icons/behance.webp', title: 'Behance'},
-              {img: 'nav-icons/google-cloud.webp', title: 'Cloud'},
-              {img: 'nav-icons/slack.webp', title: 'Slack'},
-              {img: 'nav-icons/gitlab.webp', title: 'Gitlab'},
-              {img: 'nav-icons/bitbucket.webp', title: 'BitBucket'},
-              {img: 'nav-icons/google-drive.webp', title: 'Drive'},
-              {img: 'nav-icons/trello.webp', title: 'Trello'},
-              {img: 'nav-icons/figma.webp', title: 'Figma', width: '20'},
-              {img: 'nav-icons/twitter.webp', title: 'Twitter'},
-              {img: 'nav-icons/pinterest.webp', title: 'Pinterest'},
-              {img: 'nav-icons/ln.webp', title: 'Linkedin'},
-              {img: 'nav-icons/google-maps.webp', title: 'Maps'},
-              {img: 'nav-icons/google-photos.webp', title: 'Photos'},
-              {img: 'nav-icons/spotify.webp', title: 'Spotify'},
-            ];
-
-          each item in brands 
-            +NineDotsMenuItem(item)  
 
 //--------- navbar top new design --------------
 

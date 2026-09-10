@@ -26,7 +26,9 @@ const PAGES = [
   'pages/authentication/confirm.html',
   ...[
     'ai-cost-usage', 'ai-gateway', 'ai-models', 'ai-monitoring', 'alert-management',
-    'alerts', 'api-gateway', 'api-monitoring', 'automation', 'cloud-cost',
+    // 'cloud-cost' is hidden from the nav (see src/pug/mixins/Variables.pug); it is
+    // dropped here too so the export does not carry a route nothing links to.
+    'alerts', 'api-gateway', 'api-monitoring', 'automation',
     // cloud-account is the per-account drill-down, reached from a row on
     // cloud-monitoring rather than from the nav — so it is listed here but has no entry
     // in Variables.pug. It selects its account from ?account=, because the build is a

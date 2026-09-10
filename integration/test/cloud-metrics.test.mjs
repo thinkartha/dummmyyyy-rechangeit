@@ -27,7 +27,8 @@ const ago = (ms) => new Date(Date.now() - ms).toISOString();
         metrics: 0, last_seen: null },
     ],
   });
-  assert.deepEqual(rows.map((r) => cell(r, 6)), ['Live', 'Lagging', 'Stale', 'No data']);
+  assert.deepEqual(rows.map((r) => cell(r, 6)),
+    ['Live', 'Lagging', 'Stale', 'Not reporting']);
 }
 
 // Nothing streamed is an empty table and a card that says so, never invented rows.
@@ -69,7 +70,8 @@ const ago = (ms) => new Date(Date.now() - ms).toISOString();
     { id: 'd', name: 'Off', namespace: 'AWS/EC2', metric: 'CPU', statistic: 'avg',
       comparison: 'gt', threshold: 90, for_periods: 1, enabled: false, watching: 9, firing: 4 },
   ]);
-  assert.deepEqual(rows.map((r) => cell(r, 5)), ['Firing', 'OK', 'No data', 'Disabled']);
+  assert.deepEqual(rows.map((r) => cell(r, 5)),
+    ['Firing', 'OK', 'Not matched', 'Disabled']);
   assert.match(rows[0].meta, /AWS\/EC2 · avg > 80/);
   assert.match(rows[1].meta, /max > 100/);
   assert.equal(rows[0].action.key, 'deleteMetricCondition');

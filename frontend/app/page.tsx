@@ -31,11 +31,7 @@ export default function Page() {
                     Integrations
                   </a>
                 </li>
-                <li className="nav-item">
-                  <a className="nav-link fw-semibold" href="#mobile">
-                    Mobile
-                  </a>
-                </li>
+                <li className="nav-item"></li>
                 <li className="nav-item">
                   <a className="nav-link fw-semibold" href="/pages/authentication/sign-in/">
                     Sign In
@@ -290,97 +286,6 @@ export default function Page() {
                   <span className="badge border border-translucent bg-body text-body-emphasis fw-normal px-3 py-2">
                     Jenkins
                   </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-        <section className="bg-body-highlight py-8 py-md-11" id="mobile">
-          <div className="container">
-            <div className="text-center mb-8">
-              <h2 className="fw-bolder mb-3">
-                Monitor On-the-Go with LoveHeartBeat Mobile
-              </h2>
-              <p className="fs-7 text-body-secondary mx-auto" style={{ maxWidth: "42rem" }}>
-                Stay connected to your data infrastructure anywhere, anytime. Get real-time alerts, monitor system health, and manage incidents directly from your mobile device.
-              </p>
-            </div>
-            <div className="row g-6 align-items-center">
-              <div className="col-12 col-lg-6">
-                <div className="d-flex align-items-center justify-content-center bg-primary-subtle rounded-3 mb-5" style={{ height: "4rem", width: "4rem" }}>
-                  <span className="fa-solid fa-mobile-screen-button fs-4 text-primary"></span>
-                </div>
-                <h3 className="fw-bold mb-4">
-                  Full-Featured Mobile Experience
-                </h3>
-                <ul className="list-unstyled text-body-secondary mb-6">
-                  <li className="d-flex align-items-center gap-3 mb-3">
-                    <span className="bg-primary rounded-circle flex-shrink-0" style={{ height: ".5rem", width: ".5rem" }}></span>
-                    <span>
-                      Real-time alerts and notifications
-                    </span>
-                  </li>
-                  <li className="d-flex align-items-center gap-3 mb-3">
-                    <span className="bg-primary rounded-circle flex-shrink-0" style={{ height: ".5rem", width: ".5rem" }}></span>
-                    <span>
-                      Interactive dashboards and metrics
-                    </span>
-                  </li>
-                  <li className="d-flex align-items-center gap-3 mb-3">
-                    <span className="bg-primary rounded-circle flex-shrink-0" style={{ height: ".5rem", width: ".5rem" }}></span>
-                    <span>
-                      Incident management and escalation
-                    </span>
-                  </li>
-                  <li className="d-flex align-items-center gap-3 mb-3">
-                    <span className="bg-primary rounded-circle flex-shrink-0" style={{ height: ".5rem", width: ".5rem" }}></span>
-                    <span>
-                      AI-powered insights and recommendations
-                    </span>
-                  </li>
-                </ul>
-                <div className="d-flex flex-column flex-sm-row gap-3">
-                  <a className="btn btn-dark btn-lg" href="#!">
-                    <span className="fa-solid fa-download me-2"></span>
-                    Download for iOS
-                  </a>
-                  <a className="btn btn-phoenix-secondary btn-lg" href="#!">
-                    <span className="fa-solid fa-download me-2"></span>
-                    Download for Android
-                  </a>
-                </div>
-              </div>
-              <div className="col-12 col-lg-6">
-                <div className="bg-primary-subtle rounded-3 p-5 p-md-7">
-                  <div className="card border-0 shadow mx-auto" style={{ maxWidth: "22rem" }}>
-                    <div className="card-body">
-                      <div className="d-flex align-items-center gap-2 mb-4">
-                        <span className="d-flex flex-center bg-primary rounded" style={{ height: "1.5rem", width: "1.5rem" }}>
-                          <span className="fa-solid fa-shield-halved text-white fs-10"></span>
-                        </span>
-                        <span className="fw-semibold text-body-emphasis">
-                          LoveHeartBeat Mobile
-                        </span>
-                      </div>
-                      <div className="alert alert-subtle-success d-flex align-items-center gap-2 py-2 mb-3">
-                        <span className="bg-success rounded-circle" style={{ height: ".5rem", width: ".5rem" }}></span>
-                        <span className="fs-9 fw-medium">
-                          All Systems Operational
-                        </span>
-                      </div>
-                      <div className="alert alert-subtle-warning d-flex align-items-center gap-2 py-2 mb-3">
-                        <span className="bg-warning rounded-circle" style={{ height: ".5rem", width: ".5rem" }}></span>
-                        <span className="fs-9 fw-medium">
-                          2 Warnings Detected
-                        </span>
-                      </div>
-                      <div className="alert alert-subtle-info py-2 mb-0">
-                        <span className="fs-9">
-                          ETL Pipeline: 98.5% Success Rate
-                        </span>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>

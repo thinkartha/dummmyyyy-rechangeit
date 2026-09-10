@@ -93,7 +93,7 @@ export default function Page() {
                   </h3>
                 </div>
                 <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="pipelines">
-                  no data
+                  awaiting data
                 </span>
               </div>
             </div>
@@ -112,7 +112,7 @@ export default function Page() {
                   </h3>
                 </div>
                 <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="successRate">
-                  no data
+                  awaiting data
                 </span>
               </div>
             </div>
@@ -131,7 +131,7 @@ export default function Page() {
                   </h3>
                 </div>
                 <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="failedRuns">
-                  no data
+                  awaiting data
                 </span>
               </div>
             </div>
@@ -150,7 +150,7 @@ export default function Page() {
                   </h3>
                 </div>
                 <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
-                  no data
+                  awaiting data
                 </span>
               </div>
             </div>

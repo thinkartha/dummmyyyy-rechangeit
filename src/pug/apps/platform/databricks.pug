@@ -32,7 +32,12 @@ block content
 
   .row.g-4.mb-4
     .col-12.col-lg-5
-      .card.h-100
+      //- data-mock-block: every value in this card is invented — a workspace host, a
+      //- warehouse id, a token age. Painted beside real tables it reads as a live
+      //- connection, which is exactly the "am I already connected?" confusion this
+      //- attribute exists to prevent. It is hidden until something fills it from
+      //- /integrations/databricks/config.
+      .card.h-100(data-mock-block)
         .card-body
           h4.mb-3 Connection
           p.text-body-tertiary.fs-9 Stored server-side as a secret reference under this organization's id. The token is never returned to the browser once saved, so the field below is write-only.

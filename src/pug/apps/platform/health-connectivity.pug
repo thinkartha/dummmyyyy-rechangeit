@@ -26,7 +26,10 @@ block content
 
   .row.g-4.mb-4
     .col-12.col-lg-6
-      .card.h-100
+      //- data-mock-block: these green badges are hardcoded. A self-check that always
+      //- says "ok" is worse than no self-check — it answers the one question it exists
+      //- to answer, wrongly, and does it in the reassuring direction.
+      .card.h-100(data-mock-block)
         .card-body
           h4.mb-3 Platform self-check
           p.text-body-tertiary.fs-9 What the backend reports about its own dependencies. A store falling back to memory is the check worth watching — writes look successful and vanish on the next cold start.

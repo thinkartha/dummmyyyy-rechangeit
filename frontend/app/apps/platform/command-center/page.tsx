@@ -583,14 +583,6 @@ export default function Page() {
               </a>
             </div>
             <div className="col-6 col-md-4 col-xl-3">
-              <a className="d-block text-decoration-none border border-translucent rounded-3 p-3 h-100" href="/apps/observability/cloud-cost/">
-                <span className="fa-solid text-primary mb-2 d-block fa-coins"></span>
-                <h6 className="mb-0 text-body-emphasis">
-                  Cloud Cost
-                </h6>
-              </a>
-            </div>
-            <div className="col-6 col-md-4 col-xl-3">
               <a className="d-block text-decoration-none border border-translucent rounded-3 p-3 h-100" href="/apps/observability/ai-cost-usage/">
                 <span className="fa-solid text-primary mb-2 d-block fa-sack-dollar"></span>
                 <h6 className="mb-0 text-body-emphasis">

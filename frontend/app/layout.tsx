@@ -74,6 +74,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               "html[data-mock='0'] [data-sample-rows]>tr{display:none!important}",
               "html[data-mock='0'] [data-obs-stat],",
               "html[data-mock='0'] [data-obs-stat-delta]{visibility:hidden}",
+              // The inverse: a placeholder standing in for a hidden mock block has to
+              // go when that block is showing, or both appear at once. Kept in step
+              // with the same rule in src/pug/layouts/LayoutTheme.pug — this file is
+              // hand-maintained, the porter does not generate it.
+              "html[data-mock='1'] [data-mock-empty]{display:none!important}",
             ].join(''),
           }}
         />

@@ -51,7 +51,6 @@ block mainContent
           li.nav-item
             a.nav-link.fw-semibold(href='#integrations') Integrations
           li.nav-item
-            a.nav-link.fw-semibold(href='#mobile') Mobile
           li.nav-item
             a.nav-link.fw-semibold(href=`${CWD}${paths['product-signin']}`) Sign In
           li.nav-item.mt-2.mt-lg-0
@@ -111,47 +110,6 @@ block mainContent
             .d-flex.flex-wrap.justify-content-center.gap-2
               each item in group.items
                 span.badge.border.border-translucent.bg-body.text-body-emphasis.fw-normal.px-3.py-2= item
-
-  //- --------------------------------------------------------------- mobile
-  section#mobile.bg-body-highlight.py-8.py-md-11
-    .container
-      .text-center.mb-8
-        h2.fw-bolder.mb-3 Monitor On-the-Go with LoveHeartBeat Mobile
-        p.fs-7.text-body-secondary.mx-auto(style='max-width: 42rem;')
-          | Stay connected to your data infrastructure anywhere, anytime. Get real-time alerts, monitor system health, and manage incidents directly from your mobile device.
-      .row.g-6.align-items-center
-        .col-12.col-lg-6
-          .d-flex.align-items-center.justify-content-center.bg-primary-subtle.rounded-3.mb-5(style='height: 4rem; width: 4rem;')
-            span.fa-solid.fa-mobile-screen-button.fs-4.text-primary
-          h3.fw-bold.mb-4 Full-Featured Mobile Experience
-          ul.list-unstyled.text-body-secondary.mb-6
-            each line in ['Real-time alerts and notifications', 'Interactive dashboards and metrics', 'Incident management and escalation', 'AI-powered insights and recommendations']
-              li.d-flex.align-items-center.gap-3.mb-3
-                span.bg-primary.rounded-circle.flex-shrink-0(style='height: .5rem; width: .5rem;')
-                span= line
-          .d-flex.flex-column.flex-sm-row.gap-3
-            a.btn.btn-dark.btn-lg(href='#!')
-              span.fa-solid.fa-download.me-2
-              | Download for iOS
-            a.btn.btn-phoenix-secondary.btn-lg(href='#!')
-              span.fa-solid.fa-download.me-2
-              | Download for Android
-        .col-12.col-lg-6
-          .bg-primary-subtle.rounded-3.p-5.p-md-7
-            .card.border-0.shadow.mx-auto(style='max-width: 22rem;')
-              .card-body
-                .d-flex.align-items-center.gap-2.mb-4
-                  span.d-flex.flex-center.bg-primary.rounded(style='height: 1.5rem; width: 1.5rem;')
-                    span.fa-solid.fa-shield-halved.text-white.fs-10
-                  span.fw-semibold.text-body-emphasis LoveHeartBeat Mobile
-                .alert.alert-subtle-success.d-flex.align-items-center.gap-2.py-2.mb-3
-                  span.bg-success.rounded-circle(style='height: .5rem; width: .5rem;')
-                  span.fs-9.fw-medium All Systems Operational
-                .alert.alert-subtle-warning.d-flex.align-items-center.gap-2.py-2.mb-3
-                  span.bg-warning.rounded-circle(style='height: .5rem; width: .5rem;')
-                  span.fs-9.fw-medium 2 Warnings Detected
-                .alert.alert-subtle-info.py-2.mb-0
-                  span.fs-9 ETL Pipeline: 98.5% Success Rate
 
   //- ------------------------------------------------------------------ cta
   section.bg-primary.py-8.py-md-11
