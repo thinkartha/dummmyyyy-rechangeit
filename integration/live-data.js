@@ -1088,6 +1088,8 @@ export const SOURCES = {
     load: async (api) => {
       const probes = [
         ['AWS Lambda', 'Cloud', () => api.awsLambda.config()],
+        ['Google Cloud', 'Cloud', () => api.cloud.config('gcp')],
+        ['Microsoft Azure', 'Cloud', () => api.cloud.config('azure')],
         ['API gateway', 'Gateway', () => api.gateways.status()],
         ['Databricks', 'Data', () => api.databricks.status()],
         ['Elasticsearch', 'Telemetry', () => api.elk.esHealth()],
@@ -1111,6 +1113,8 @@ export const SOURCES = {
          the table lists them all, this is the shortcut from the row that is broken. */
       const CONFIGURE = {
         'AWS Lambda': 'connectAwsAccount',
+        'Google Cloud': 'connectGcp',
+        'Microsoft Azure': 'connectAzure',
         'API gateway': 'connectGateway',
         Databricks: 'connectDatabricks',
       };

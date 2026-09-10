@@ -71,7 +71,7 @@ export default function Page() {
               Cloud accounts
             </h2>
             <h5 className="text-body-tertiary fw-semibold mb-0">
-              One AWS connection per organization — its credentials feed Cloud Monitoring, Orchestration, and the Lambda job stream
+              One connection per cloud per organization — AWS credentials feed Cloud Monitoring, Orchestration, and the Lambda job stream; GCP and Azure store the account for the gateway readers
             </h5>
           </div>
           <div className="col-auto">
@@ -104,7 +104,7 @@ export default function Page() {
                 Google Cloud
               </h6>
               <p className="text-body-tertiary fs-9 mb-3">
-                No collector yet. Apigee is readable today as an API gateway — connect it under Integrations → API gateway.
+                Project, service-account key or workload identity, and the regions to read. Apigee is also readable as an API gateway.
               </p>
               <button className="btn btn-sm btn-phoenix-secondary" type="button" data-lhb-action="connectGcp">
                 Connect GCP
@@ -119,7 +119,7 @@ export default function Page() {
                 Microsoft Azure
               </h6>
               <p className="text-body-tertiary fs-9 mb-3">
-                No subscription-wide collector yet. Azure API Management is readable today as an API gateway.
+                Subscription, directory tenant, app registration credentials, and the resource groups to read. Azure API Management is also readable as an API gateway.
               </p>
               <button className="btn btn-sm btn-phoenix-secondary" type="button" data-lhb-action="connectAzure">
                 Connect Azure
@@ -137,7 +137,7 @@ export default function Page() {
                   Linked accounts
                 </h4>
                 <p className="text-body-tertiary fs-9 mb-0">
-                  What this organization has connected — the AWS collector, plus any managed cloud gateway in use
+                  What this organization has connected — the AWS, GCP and Azure accounts, plus any managed cloud gateway in use
                 </p>
               </div>
             </div>

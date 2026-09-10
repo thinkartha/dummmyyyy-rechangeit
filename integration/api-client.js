@@ -525,6 +525,13 @@ export const api = {
     poll: () => post('/integrations/aws/lambda/poll')
   },
 
+  /* GCP and Azure — credential storage only; there is no subscription-wide collector
+     for either yet, so these connect an account and nothing more. */
+  cloud: {
+    config: (provider) => get(`/integrations/cloud/${provider}/config`),
+    saveConfig: (provider, body) => put(`/integrations/cloud/${provider}/config`, body)
+  },
+
   /* ELK — logs, metrics, traces */
   elk: {
     esHealth: () => get('/health/es'),

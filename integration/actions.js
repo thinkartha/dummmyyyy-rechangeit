@@ -1771,6 +1771,58 @@ export const ACTIONS = {
   },
 
   /**
+   * GCP and Azure connect the same way AWS does — a credential stored per tenant.
+   *
+   * ponytail: no collector behind either one yet, so the form saves the account and the
+   * integrations table reports it as connected; the metric sweeps land when the
+   * collectors do, reading the credential this stores.
+   */
+  connectGcp: {
+    title: 'Connect GCP project',
+    submit: 'Save connection',
+    success: 'GCP project connected.',
+    prefill: (api) => api.cloud.config('gcp').then((s) => (s && s.fields) || {}).catch(() => ({})),
+    fields: (current = {}) => [
+      { name: 'projectId', label: 'Project ID', required: true, width: 'half',
+        value: current.project_id, placeholder: 'my-project-123456' },
+      { name: 'authMethod', label: 'Authentication', type: 'select', width: 'half',
+        options: ['service-account', 'workload-identity'],
+        value: current.auth_method || 'service-account' },
+      { name: 'serviceAccountJson', label: 'Service account key (JSON)', type: 'textarea',
+        help: 'Only for service-account. Left blank keeps the stored key.' },
+      { name: 'workloadIdentityPool', label: 'Workload identity pool', width: 'half',
+        value: current.workload_identity_pool,
+        placeholder: 'projects/123/locations/global/workloadIdentityPools/loveheartbeat' },
+      { name: 'regions', label: 'Regions', type: 'list', value: current.regions,
+        help: 'Comma separated. Empty reads every region the credential can see.' },
+      { name: 'collectionIntervalSeconds', label: 'Collect every (seconds)', type: 'number',
+        width: 'half', value: current.collection_interval_seconds || 300 },
+    ],
+    run: (api, body) => api.cloud.saveConfig('gcp', body),
+  },
+
+  connectAzure: {
+    title: 'Connect Azure subscription',
+    submit: 'Save connection',
+    success: 'Azure subscription connected.',
+    prefill: (api) => api.cloud.config('azure').then((s) => (s && s.fields) || {}).catch(() => ({})),
+    fields: (current = {}) => [
+      { name: 'subscriptionId', label: 'Subscription ID', required: true, width: 'half',
+        value: current.subscription_id },
+      { name: 'azureTenantId', label: 'Directory (tenant) ID', required: true, width: 'half',
+        value: current.azure_tenant_id },
+      { name: 'clientId', label: 'Application (client) ID', width: 'half', value: current.client_id },
+      { name: 'clientSecret', label: 'Client secret', type: 'password', width: 'half',
+        help: 'Left blank keeps the stored secret.' },
+      { name: 'resourceGroups', label: 'Resource groups', type: 'list', value: current.resource_groups,
+        help: 'Comma separated. Empty reads the whole subscription.' },
+      { name: 'collectionIntervalSeconds', label: 'Collect every (seconds)', type: 'number',
+        width: 'half', value: current.collection_interval_seconds || 300 },
+    ],
+    run: (api, body) => api.cloud.saveConfig('azure', body),
+  },
+
+  /**
    * "Save search" keeps the logs filter bar's current state under a name.
    *
    * ponytail: localStorage, not an endpoint — a saved search is three strings and no
@@ -2156,8 +2208,6 @@ export const ACTIONS = {
 /* Buttons whose endpoint does not exist yet. Listed rather than omitted so the gap is
  * visible in one place instead of being rediscovered page by page. */
 export const UNSUPPORTED = {
-  connectGcp: 'No GCP collector yet — the backend collects AWS (Lambda, CloudWatch) and reads Apigee if you connect it as your API gateway.',
-  connectAzure: 'No Azure collector yet — Azure API Management is readable as an API gateway, but there is no subscription-wide collector.',
   addAiRoute: 'AI gateway routes come from the APISIX config, not the API — edit infrastructure/apisix/apisix.yaml.',
   rebaseline: 'No drift rebaseline endpoint yet.',
   defineSlo: 'No SLO definition endpoint yet — slo is read-only.',
