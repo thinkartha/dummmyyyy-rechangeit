@@ -502,6 +502,11 @@ export const api = {
     /* MTD spend per linked AWS account, from Cost Explorer. Cached server-side: the
        source lags a day and bills per request, so this is not a poll. */
     cloudCost: () => get('/finops/cloud-cost'),
+    /* MTD spend grouped by service, region, or a tag key — the account rollup cannot
+       answer "what does this team spend". */
+    costBreakdown: (params) => get('/finops/cloud-cost/breakdown', params),
+    /* Daily spend. A month-to-date total only ever rises, so it cannot show a trend. */
+    costDaily: (params) => get('/finops/cloud-cost/daily', params),
     saveBudget: (body) => post('/finops/budgets', body),
     deleteBudget: (id) => del(`/finops/budgets/${id}`)
   },
@@ -517,12 +522,42 @@ export const api = {
   /* AWS Lambda integration */
   awsLambda: {
     overview: () => get('/integrations/aws/lambda/overview'),
+    /* Every AWS account the saved credential reaches, from organizations:ListAccounts,
+       each read through the cross-account role. Cached server-side for 15 minutes —
+       it is ~6 API calls per account, so this is not a poll target. */
+    inventory: (params) => get('/integrations/aws/inventory', params),
+    /* Probe the saved credential and report what it can actually do. POST because it
+       calls AWS every time and is deliberately uncached — it exists to be pressed. */
+    test: () => post('/integrations/aws/test'),
+    /* The ARN a customer's cross-account role must trust. Derived from STS, not
+       configured, so it is right even after the stack is renamed. */
+    connectorIdentity: () => get('/integrations/aws/connector-identity'),
+    /* Resources added, removed or modified since the last snapshot. */
+    changes: (params) => get('/integrations/aws/changes', params),
+    scanChanges: () => post('/integrations/aws/changes/scan'),
     config: () => get('/integrations/aws/lambda/config'),
     saveConfig: (body) => put('/integrations/aws/lambda/config', body),
     invocations: (params) => get('/integrations/aws/lambda/invocations', params),
     invoke: (body) => post('/integrations/aws/lambda/invoke', body),
     retry: (id) => post(`/integrations/aws/lambda/invocations/${id}/retry`),
     poll: () => post('/integrations/aws/lambda/poll')
+  },
+
+  /* CloudWatch Metric Streams — every AWS service, pushed via Kinesis Firehose. The
+     ingest endpoint itself is not here: it is called by Firehose, not the browser. */
+  cloudMetrics: {
+    key: () => get('/integrations/aws/metrics/key'),
+    rotateKey: () => post('/integrations/aws/metrics/key/rotate'),
+    summary: (params) => get('/integrations/aws/metrics/summary', params),
+    catalog: (params) => get('/integrations/aws/metrics/catalog', params),
+    resources: (params) => get('/integrations/aws/metrics/resources', params),
+    series: (params) => get('/integrations/aws/metrics/series', params),
+    /* One line per resource, ranked by peak with the tail folded into "Other" — the
+       shape a multi-series chart reads. */
+    seriesByResource: (params) => get('/integrations/aws/metrics/series/by-resource', params),
+    conditions: () => get('/integrations/aws/metrics/conditions'),
+    createCondition: (body) => post('/integrations/aws/metrics/conditions', body),
+    deleteCondition: (id) => del(`/integrations/aws/metrics/conditions/${id}`)
   },
 
   /* GCP and Azure — credential storage only; there is no subscription-wide collector

@@ -17,6 +17,7 @@ import { hydrate } from './live-data.js';
    error reads "API 422: {\"detail\":…}". auth.js already unwraps that for the sign-in
    forms; the same unwrapping is what makes a failed connector test actionable here. */
 import { explain } from './auth.js';
+import { API_BASE_URL, API_PREFIX } from './api-client.js';
 
 /* ------------------------------------------------------------------ feedback */
 
@@ -300,6 +301,163 @@ function resultLine(label, value, mono) {
  * be sent. Condensed logs are shown rather than the raw ones — the whole point of the
  * brief is that N repeats of a line collapse to one with a count.
  */
+/**
+ * The AWS setup dialog: what to trust, what to send, and what currently works.
+ *
+ * Deliberately one screen rather than a wizard. The three facts are needed at the same
+ * moment — the customer is in the AWS console with a role open — and a wizard that
+ * reveals the Firehose key two steps after the trust policy makes them start over.
+ */
+function showCloudSetup(api, identity, key, probe) {
+  const body = document.createElement('div');
+
+  const section = (heading, help) => {
+    const h = document.createElement('h6');
+    h.className = 'fs-9 mb-1 mt-3';
+    h.textContent = heading;
+    const p = document.createElement('p');
+    p.className = 'text-body-tertiary fs-10 mb-2';
+    p.textContent = help;
+    body.append(h, p);
+  };
+
+  /* Copy rather than select-and-drag: these are long opaque strings where a truncated
+     paste fails silently in the AWS console hours later. */
+  const copyable = (value, fallback) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'd-flex gap-2 align-items-start mb-2';
+    const pre = document.createElement('pre');
+    pre.className = 'bg-body-emphasis border border-translucent rounded-3 p-2 fs-10 mb-0 flex-grow-1';
+    pre.style.whiteSpace = 'pre-wrap';
+    pre.style.wordBreak = 'break-all';
+    pre.textContent = value || fallback;
+    wrap.appendChild(pre);
+    if (value) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-phoenix-secondary btn-sm flex-shrink-0';
+      btn.textContent = 'Copy';
+      btn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(value);
+          btn.textContent = 'Copied';
+        } catch {
+          // Clipboard is blocked on insecure origins and in some embedded views.
+          // Selecting the text is the fallback that always works.
+          const range = document.createRange();
+          range.selectNodeContents(pre);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          btn.textContent = 'Press ⌘C';
+        }
+        setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+      });
+      wrap.appendChild(btn);
+    }
+    body.appendChild(wrap);
+  };
+
+  section('1. Trust this principal',
+    'Paste into the Principal of your cross-account role\u2019s trust policy, with your '
+    + 'own external ID as the sts:ExternalId condition.');
+  copyable(identity && identity.principal_arn,
+    (identity && identity.error) || 'Unavailable — this deployment has no AWS identity.');
+
+  section('2. Send metrics here',
+    'Kinesis Firehose delivery stream, destination HTTP Endpoint. CloudWatch metric '
+    + 'stream output format must be JSON.');
+  // Built from the client's own base URL and prefix rather than window.location: the
+  // frontend and the API are different origins in every deployed environment, and a
+  // customer pasting the frontend's host into Firehose gets a 404 an hour later.
+  copyable(`${API_BASE_URL}${API_PREFIX}/integrations/aws/metrics/stream`, 'Unavailable');
+
+  section('3. Firehose access key',
+    'Sent as X-Amz-Firehose-Access-Key. This is what identifies your organization — '
+    + 'there is no other credential on that request.');
+  copyable(key && key.key, (key && key.error) || 'Unavailable');
+
+  const receiving = document.createElement('p');
+  receiving.className = `fs-10 mb-0 ${key && key.receiving ? 'text-success' : 'text-body-tertiary'}`;
+  /* A minted key proves nothing. The common failure is a key created and the Firehose
+     side never finished, which looks exactly like a working setup until a page is empty. */
+  receiving.textContent = key && key.receiving
+    ? 'Metrics are arriving.'
+    : 'No metrics received yet — the Firehose side is not delivering.';
+  body.appendChild(receiving);
+
+  section('What this credential can do', 'Probed just now, one capability at a time.');
+  const list = document.createElement('ul');
+  list.className = 'list-unstyled fs-9 mb-0';
+  if (probe && probe.error) {
+    const li = document.createElement('li');
+    li.className = 'text-danger';
+    li.textContent = probe.error;
+    list.appendChild(li);
+    if (probe.hint) {
+      const hint = document.createElement('li');
+      hint.className = 'text-body-tertiary fs-10 mt-1';
+      hint.textContent = probe.hint;
+      list.appendChild(hint);
+    }
+  }
+  for (const check of (probe && probe.checks) || []) {
+    const li = document.createElement('li');
+    li.className = 'mb-1';
+    const mark = document.createElement('span');
+    mark.className = `me-2 ${check.ok ? 'text-success' : 'text-danger'}`;
+    mark.textContent = check.ok ? '\u2713' : '\u2717';
+    const label = document.createElement('span');
+    label.textContent = check.label;
+    const permission = document.createElement('span');
+    permission.className = 'text-body-tertiary fs-10 ms-2';
+    permission.textContent = check.permission;
+    li.append(mark, label, permission);
+    if (!check.ok && check.error) {
+      const why = document.createElement('div');
+      why.className = 'text-body-tertiary fs-10 ms-4';
+      why.textContent = check.error;
+      li.appendChild(why);
+    }
+    list.appendChild(li);
+  }
+  body.appendChild(list);
+
+  const footer = document.createElement('div');
+  footer.className = 'd-flex gap-2';
+  const retest = document.createElement('button');
+  retest.type = 'button';
+  retest.className = 'btn btn-phoenix-secondary';
+  retest.textContent = 'Test again';
+  retest.addEventListener('click', async () => {
+    retest.disabled = true;
+    retest.textContent = 'Testing…';
+    try {
+      const [nextIdentity, nextKey, nextProbe] = await Promise.all([
+        api.awsLambda.connectorIdentity().catch((err) => ({ error: err.message })),
+        api.cloudMetrics.key().catch((err) => ({ error: err.message })),
+        api.awsLambda.test().catch((err) => ({ error: err.message, checks: [] })),
+      ]);
+      /* Re-open rather than hide-then-open: open() replaces the shell's contents in
+         place and show() on an already-visible modal is a no-op, whereas hiding first
+         races Bootstrap's ~150ms fade and can leave the backdrop behind. */
+      showCloudSetup(api, nextIdentity, nextKey, nextProbe);
+    } finally {
+      retest.disabled = false;
+      retest.textContent = 'Test again';
+    }
+  });
+  const done = document.createElement('button');
+  done.type = 'button';
+  done.className = 'btn btn-primary';
+  done.textContent = 'Done';
+  done.addEventListener('click', () => hide());
+  footer.append(retest, done);
+
+  const hide = open('Finish connecting AWS', body, footer);
+}
+
+
 function showBrief(brief, options = {}) {
   const body = document.createElement('div');
 
@@ -1666,6 +1824,105 @@ export const ACTIONS = {
    * spans as they arrive, so the useful question after sending a telemetry batch is
    * "did it land?" — which otherwise needs a full page reload.
    */
+  /**
+   * Everything a customer needs to finish an AWS connection, on one screen.
+   *
+   * These four values live in four different places — the trust-policy principal comes
+   * from STS, the Firehose key from this app, the endpoint from the deployment, and the
+   * capability list from probing AWS — and a customer who cannot see them together
+   * cannot complete the setup. Before this they were a `describe-stacks` call, an
+   * undocumented endpoint, and a guess.
+   */
+  cloudSetup: {
+    custom: async (api) => {
+      const [identity, key, probe] = await Promise.all([
+        api.awsLambda.connectorIdentity().catch((err) => ({ error: err.message })),
+        api.cloudMetrics.key().catch((err) => ({ error: err.message })),
+        api.awsLambda.test().catch((err) => ({ error: err.message, checks: [] })),
+      ]);
+      showCloudSetup(api, identity, key, probe);
+    },
+  },
+
+  rotateMetricStreamKey: {
+    direct: true,
+    confirm: 'Rotate the metric stream key?\n\nThe current key stops working immediately, '
+      + 'so the Firehose destination must be updated in the same sitting or delivery stops.',
+    run: async (api) => {
+      const record = await api.cloudMetrics.rotateKey();
+      return `New key: ${record.key}`;
+    },
+  },
+
+  scanCloudChanges: {
+    direct: true,
+    run: async (api) => {
+      const found = await api.awsLambda.scanChanges();
+      return found.length
+        ? `${found.length} change(s) since the last snapshot.`
+        : 'No changes since the last snapshot.';
+    },
+  },
+
+  addMetricCondition: {
+    title: 'Alert on a streamed metric',
+    submit: 'Create condition',
+    success: 'Condition created — it is evaluated on the next metric delivery.',
+    /* The namespace and metric have to exist in what the tenant actually streams, so the
+       options come from the catalog rather than from a hardcoded list of AWS services:
+       a picker offering RDS to somebody who streams only EC2 is a rule that never fires. */
+    prefill: (api) => api.cloudMetrics.catalog()
+      .then((rows) => ({ catalog: rows || [] }))
+      .catch(() => ({ catalog: [] })),
+    fields: (current = {}) => {
+      const catalog = current.catalog || [];
+      const options = catalog.map((c) => `${c.namespace} ${c.metric}`);
+      return [
+        { name: 'name', label: 'Condition name', required: true,
+          placeholder: 'EC2 CPU above 80%' },
+        options.length
+          ? { name: 'target', label: 'Metric', type: 'select', required: true,
+              options, help: 'Only metrics your stream has actually delivered.' }
+          : { name: 'target', label: 'Metric', required: true,
+              placeholder: 'AWS/EC2 CPUUtilization',
+              help: 'Nothing has been streamed yet — namespace and metric, space separated.' },
+        { name: 'statistic', label: 'Statistic', type: 'select', width: 'half',
+          options: ['avg', 'max', 'min', 'sum', 'count'] },
+        { name: 'comparison', label: 'Comparison', type: 'select', width: 'half',
+          options: ['gt', 'gte', 'lt', 'lte'] },
+        { name: 'threshold', label: 'Threshold', type: 'number', step: 'any',
+          required: true, width: 'half' },
+        { name: 'for_periods', label: 'For (minutes)', type: 'number', width: 'half',
+          value: 2, help: 'Consecutive breaching minutes before it fires.' },
+        { name: 'severity', label: 'Severity', type: 'select', width: 'half',
+          options: ['warning', 'critical', 'info'] },
+      ];
+    },
+    run: (api, body) => {
+      /* The picker is one field because "namespace" and "metric" are not independent —
+         offering them separately lets somebody pair AWS/SQS with CPUUtilization. */
+      const [namespace, ...rest] = String(body.target || '').trim().split(/\s+/);
+      if (!namespace || !rest.length) {
+        throw new Error('Pick a metric, or type "<namespace> <metric>".');
+      }
+      const { target, ...fields } = body;
+      return api.cloudMetrics.createCondition({
+        ...fields,
+        namespace,
+        metric: rest.join(' '),
+        threshold: Number(body.threshold),
+        for_periods: Number(body.for_periods) || 1,
+      });
+    },
+  },
+
+  deleteMetricCondition: {
+    direct: true,
+    confirm: 'Remove this condition?',
+    success: 'Condition removed.',
+    run: (api, id) => api.cloudMetrics.deleteCondition(id),
+  },
+
   refreshData: {
     direct: true,
     refresh: false,
@@ -2235,6 +2492,14 @@ export function bind(api) {
     el.title = reason;
     el.classList.add('disabled');
   }
+
+  /* Controls that change what a live table asks for — the Cost breakdown's grouping,
+     say. The sources read these out of the DOM on every sweep, so the poll would pick a
+     change up on its own within ten seconds; re-hydrating on change is what stops a
+     select looking broken for those ten seconds. */
+  document.addEventListener('change', (event) => {
+    if (event.target.closest('[data-lhb-refresh]')) hydrate(api);
+  });
 
   document.addEventListener('click', (event) => {
     const trigger = event.target.closest('[data-lhb-action]');

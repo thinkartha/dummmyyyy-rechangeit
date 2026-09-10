@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import uuid
 from collections import defaultdict, deque
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from statistics import mean
 from typing import Any, Deque
 
@@ -64,6 +64,8 @@ def config_status(tenant_id: str) -> dict[str, Any]:
         "source": "frontend" if cfg else "unset",
         "fields": {
             "region": cfg.region if cfg else None,
+            "regions": ",".join(cfg.regions) if cfg else None,
+            "member_role_name": cfg.member_role_name if cfg else None,
             "auth_method": cfg.auth_method if cfg else None,
             "access_key_id": _mask(cfg.access_key_id) if cfg else None,
             "secret_access_key": "***" if cfg and cfg.secret_access_key else None,
@@ -151,6 +153,124 @@ def _session(cfg: AwsLambdaConfig):
             region_name=cfg.region,
         )
     return session
+
+
+_CONNECTOR_IDENTITY: dict[str, Any] | None = None
+
+
+def connector_identity() -> dict[str, Any]:
+    """The IAM role ARN a customer's cross-account role must trust.
+
+    Derived from this process's own credentials rather than configured: STS reports the
+    assumed-role ARN it is running as, and the role ARN is a mechanical rewrite of it.
+    A configured value is one more thing to keep in step with reality and to get wrong
+    after a stack rename; asking is always right.
+
+    Cached for the life of the execution environment because it cannot change without
+    the function being replaced.
+    """
+    global _CONNECTOR_IDENTITY
+    if _CONNECTOR_IDENTITY is not None:
+        return _CONNECTOR_IDENTITY
+    try:
+        import boto3
+
+        identity = boto3.client("sts").get_caller_identity()
+        arn = identity.get("Arn", "")
+        account = identity.get("Account")
+        # arn:aws:sts::123:assumed-role/<role>/<session> -> arn:aws:iam::123:role/<role>
+        role_arn = arn
+        if ":assumed-role/" in arn:
+            role = arn.split(":assumed-role/", 1)[1].split("/", 1)[0]
+            role_arn = f"arn:aws:iam::{account}:role/{role}"
+        _CONNECTOR_IDENTITY = {"principal_arn": role_arn, "account": account,
+                               "resolved": True, "error": None}
+    except Exception as exc:
+        # Locally there are no credentials at all, which is normal — the page shows the
+        # reason instead of a fabricated ARN somebody might paste into a trust policy.
+        _CONNECTOR_IDENTITY = {"principal_arn": None, "account": None,
+                               "resolved": False, "error": f"{type(exc).__name__}: {exc}"}
+    return _CONNECTOR_IDENTITY
+
+
+def test_connection(tenant_id: str) -> dict[str, Any]:
+    """Can we actually use this connection, and for what?
+
+    Saving a connection told the operator nothing: `config_status` reports that fields
+    are stored, never that AWS accepts them, so a wrong role ARN or a trust policy that
+    does not name us looked identical to a working setup until some other page came back
+    empty hours later.
+
+    Each capability is probed separately and reported separately, because they fail
+    separately and for different reasons — a role can be perfectly good for CloudWatch
+    and missing `ce:GetCostAndUsage`, and "it doesn't work" is not a useful answer to
+    that. The probes are the cheapest call that proves the permission, not a full read.
+    """
+    cfg = get_config(tenant_id)
+    if not cfg:
+        return {"configured": False, "ok": False,
+                "error": "No AWS connection saved for this organization.",
+                "checks": []}
+
+    try:
+        session = _session(cfg)
+        identity = session.client("sts").get_caller_identity()
+    except Exception as exc:
+        # The first hop failed, so every capability below is unreachable and probing them
+        # would return five copies of the same error.
+        return {
+            "configured": True, "ok": False, "account": None,
+            "error": f"{type(exc).__name__}: {exc}",
+            "hint": "Check the role ARN, the external ID, and that the role's trust "
+                    "policy names this deployment's ConnectorPrincipalArn.",
+            "checks": [],
+        }
+
+    from . import inventory as inventory_mod
+
+    regions = inventory_mod.read_regions(cfg)
+    primary = regions[0]
+
+    def _probe(name: str, label: str, call, needs: str):
+        try:
+            call()
+            return {"id": name, "label": label, "ok": True, "permission": needs, "error": None}
+        except Exception as exc:
+            return {"id": name, "label": label, "ok": False, "permission": needs,
+                    "error": f"{type(exc).__name__}: {exc}"}
+
+    checks = [
+        _probe("organizations", "Discover member accounts",
+               lambda: session.client("organizations", region_name="us-east-1").list_accounts(MaxResults=1),
+               "organizations:ListAccounts"),
+        _probe("cloudwatch", f"Read CloudWatch alarms ({primary})",
+               lambda: session.client("cloudwatch", region_name=primary).describe_alarms(MaxRecords=1),
+               "cloudwatch:DescribeAlarms"),
+        _probe("lambda", f"List Lambda functions ({primary})",
+               lambda: session.client("lambda", region_name=primary).list_functions(MaxItems=1),
+               "lambda:ListFunctions"),
+        _probe("cost", "Read Cost Explorer",
+               lambda: session.client("ce", region_name="us-east-1").get_cost_and_usage(
+                   TimePeriod={"Start": (date.today() - timedelta(days=2)).isoformat(),
+                               "End": (date.today() - timedelta(days=1)).isoformat()},
+                   Granularity="DAILY", Metrics=["UnblendedCost"]),
+               "ce:GetCostAndUsage"),
+        _probe("tags", f"Read resource tags ({primary})",
+               lambda: session.client("resourcegroupstaggingapi", region_name=primary)
+                              .get_resources(ResourcesPerPage=1),
+               "tag:GetResources"),
+    ]
+    return {
+        "configured": True,
+        # The credential works. An individual capability being refused is a finding to
+        # show, not a failed connection — most of the product works without Cost Explorer.
+        "ok": True,
+        "account": identity.get("Account"),
+        "arn": identity.get("Arn"),
+        "regions": regions,
+        "error": None,
+        "checks": checks,
+    }
 
 
 def _matches(name: str, prefixes: list[str]) -> bool:

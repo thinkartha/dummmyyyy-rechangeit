@@ -10,6 +10,9 @@ export default function Page() {
           "code": "\n          (function() {\n            document.querySelectorAll('[data-obs-sort]').forEach(function(select) {\n              if (select.dataset.bound === '1') return;\n              select.dataset.bound = '1';\n              select.addEventListener('change', function() {\n                var key = select.value;\n                if (!key) return;\n                var root = select.closest('[data-list]');\n                if (!root) return;\n                var header = root.querySelector('th[data-sort=\"' + key + '\"]');\n                if (header) header.click();\n              });\n            });\n          })();\n        "
         },
         {
+          "code": "\n          (function() {\n            document.querySelectorAll('[data-obs-sort]').forEach(function(select) {\n              if (select.dataset.bound === '1') return;\n              select.dataset.bound = '1';\n              select.addEventListener('change', function() {\n                var key = select.value;\n                if (!key) return;\n                var root = select.closest('[data-list]');\n                if (!root) return;\n                var header = root.querySelector('th[data-sort=\"' + key + '\"]');\n                if (header) header.click();\n              });\n            });\n          })();\n        "
+        },
+        {
           "code": "\n        var navbarTopStyle = window.config.config.phoenixNavbarTopStyle;\n        var navbarTop = document.querySelector('.navbar-top');\n        if (navbarTopStyle === 'darker') {\n          navbarTop.setAttribute('data-navbar-appearance', 'darker');\n        }\n\n        var navbarVerticalStyle = window.config.config.phoenixNavbarVerticalStyle;\n        var navbarVertical = document.querySelector('.navbar-vertical');\n        if (navbarVertical && navbarVerticalStyle === 'darker') {\n          navbarVertical.setAttribute('data-navbar-appearance', 'darker');\n        }\n      "
         },
         {
@@ -47,6 +50,9 @@ export default function Page() {
           "src": "/vendors/dayjs/dayjs.min.js"
         },
         {
+          "src": "/vendors/echarts/echarts.min.js"
+        },
+        {
           "src": "/assets/js/phoenix.js"
         }
       ]}>
@@ -54,16 +60,16 @@ export default function Page() {
         <ol className="breadcrumb mb-0">
           <li className="breadcrumb-item">
             <a href="#!">
-              Platform
+              Observability
             </a>
           </li>
           <li className="breadcrumb-item">
-            <a href="/apps/platform/integrations/">
-              Integrations
+            <a href="/apps/observability/cloud-monitoring/">
+              Cloud Monitoring
             </a>
           </li>
           <li className="breadcrumb-item active">
-            Cloud accounts
+            Account
           </li>
         </ol>
       </nav>
@@ -71,91 +77,183 @@ export default function Page() {
         <div className="row align-items-center g-3">
           <div className="col">
             <h2 className="mb-2">
-              Cloud accounts
+              Account detail
             </h2>
             <h5 className="text-body-tertiary fw-semibold mb-0">
-              One connection per cloud per organization — AWS credentials feed Cloud Monitoring, Orchestration, and the Lambda job stream; GCP and Azure store the account for the gateway readers
+              Everything this AWS account is reporting — alarms, streamed metrics, spend and changes
             </h5>
           </div>
-          <div className="col-auto d-flex gap-2">
-            <button className="btn btn-phoenix-secondary" type="button" data-lhb-action="cloudSetup">
-              Finish setup & test
-            </button>
-            <button className="btn btn-primary" type="button" data-lhb-action="connectAwsAccount">
-              Connect AWS account
-            </button>
+          <div className="col-auto">
+            <a className="btn btn-phoenix-primary" href="/apps/observability/cloud-monitoring/">
+              All accounts
+            </a>
           </div>
         </div>
       </div>
-      <div className="row g-4 mb-4">
-        <div className="col-md-4">
+      <div className="mb-4" data-account-heading="data-account-heading">
+        <h3 className="mb-1" data-account-name="data-account-name">
+          —
+        </h3>
+        <p className="text-body-tertiary fs-9 mb-0" data-account-meta="data-account-meta">
+          Loading account…
+        </p>
+      </div>
+      <div className="row g-3 mb-6">
+        <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <h6 className="mb-2">
-                AWS
-              </h6>
-              <p className="text-body-tertiary fs-9 mb-3">
-                Regions, credentials (default chain, access keys, or an assumed role), the member-account role, and the thresholds that raise an anomaly.
-              </p>
-              <p className="text-body-tertiary fs-10 mb-3">
-                The credential is only half of it:
-                <strong>
-                  Finish setup & test
-                </strong>
-                shows the ARN your role must trust, the metric-stream endpoint and key, and probes what the credential can actually do.
-              </p>
-              <div className="d-flex gap-2 flex-wrap">
-                <button className="btn btn-sm btn-primary" type="button" data-lhb-action="connectAwsAccount">
-                  Connect AWS account
-                </button>
-                <button className="btn btn-sm btn-phoenix-secondary" type="button" data-lhb-action="cloudSetup">
-                  Finish setup & test
-                </button>
+              <div className="d-flex justify-content-between align-items-start">
+                <div>
+                  <h6 className="text-body-tertiary mb-2">
+                    Open alarms
+                  </h6>
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="accountAlarms">
+                    —
+                  </h3>
+                </div>
+                <span className="badge badge-phoenix badge-phoenix-danger" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountAlarms">
+                  no data
+                </span>
               </div>
             </div>
           </div>
         </div>
-        <div className="col-md-4">
+        <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <h6 className="mb-2">
-                Google Cloud
-              </h6>
-              <p className="text-body-tertiary fs-9 mb-3">
-                Project, service-account key or workload identity, and the regions to read. Apigee is also readable as an API gateway.
-              </p>
-              <button className="btn btn-sm btn-phoenix-secondary" type="button" data-lhb-action="connectGcp">
-                Connect GCP
-              </button>
+              <div className="d-flex justify-content-between align-items-start">
+                <div>
+                  <h6 className="text-body-tertiary mb-2">
+                    Resources
+                  </h6>
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="accountResources">
+                    —
+                  </h3>
+                </div>
+                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountResources">
+                  no data
+                </span>
+              </div>
             </div>
           </div>
         </div>
-        <div className="col-md-4">
+        <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <h6 className="mb-2">
-                Microsoft Azure
-              </h6>
-              <p className="text-body-tertiary fs-9 mb-3">
-                Subscription, directory tenant, app registration credentials, and the resource groups to read. Azure API Management is also readable as an API gateway.
-              </p>
-              <button className="btn btn-sm btn-phoenix-secondary" type="button" data-lhb-action="connectAzure">
-                Connect Azure
-              </button>
+              <div className="d-flex justify-content-between align-items-start">
+                <div>
+                  <h6 className="text-body-tertiary mb-2">
+                    Streamed services
+                  </h6>
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="accountServices">
+                    —
+                  </h3>
+                </div>
+                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountServices">
+                  no data
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="col-12 col-sm-6 col-xl-3">
+          <div className="card h-100">
+            <div className="card-body">
+              <div className="d-flex justify-content-between align-items-start">
+                <div>
+                  <h6 className="text-body-tertiary mb-2">
+                    Spend month to date
+                  </h6>
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="accountSpend">
+                    —
+                  </h3>
+                </div>
+                <span className="badge badge-phoenix badge-phoenix-primary" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountSpend">
+                  no data
+                </span>
+              </div>
             </div>
           </div>
         </div>
       </div>
-      <div className="obs-list-root" data-list={"{\"valueNames\":[\"col0\",\"col1\",\"col2\",\"col3\",\"col4\",\"col5\",\"col6\"],\"page\":8,\"filter\":{\"key\":\"col6\"}}"} data-live-table="cloudAccounts">
+      <div className="card mb-4">
+        <div className="card-body py-3">
+          <div className="row g-3 align-items-end">
+            <div className="col-6 col-sm-3 col-lg-2">
+              <label className="form-label fs-9 mb-1" htmlFor="account-range">
+                Range
+              </label>
+              <select className="form-select form-select-sm" id="account-range" data-lhb-chart-control="data-lhb-chart-control" data-lhb-refresh="data-lhb-refresh" aria-label="Time range">
+                <option value="3">
+                  Last 3h
+                </option>
+                <option value="12">
+                  Last 12h
+                </option>
+                <option value="24">
+                  Last 24h
+                </option>
+                <option value="168">
+                  Last 7d
+                </option>
+              </select>
+            </div>
+            <div className="col-12 col-sm-6 col-lg-4">
+              <label className="form-label fs-9 mb-1" htmlFor="account-metric">
+                Metric
+              </label>
+              <select className="form-select form-select-sm" id="account-metric" data-lhb-chart-control="data-lhb-chart-control" aria-label="Metric to chart"></select>
+            </div>
+            <div className="col text-sm-end">
+              <span className="text-body-tertiary fs-10">
+                Range scopes the metric chart and streamed resources. Alarms are current state; spend is month to date.
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="row g-4 mb-4">
+        <div className="col-12 col-xl-7">
+          <div className="card h-100">
+            <div className="card-header border-bottom border-translucent py-3">
+              <h4 className="mb-0">
+                Metric over time
+              </h4>
+              <p className="text-body-tertiary fs-9 mb-0">
+                One line per resource, the five highest by peak. Anything beyond folds into “Other” rather than being dropped.
+              </p>
+            </div>
+            <div className="card-body">
+              <div data-lhb-chart="accountMetric" style={{ height: "320px", width: "100%" }}></div>
+            </div>
+          </div>
+        </div>
+        <div className="col-12 col-xl-5">
+          <div className="card h-100">
+            <div className="card-header border-bottom border-translucent py-3">
+              <h4 className="mb-0">
+                Spend by service
+              </h4>
+              <p className="text-body-tertiary fs-9 mb-0">
+                Month to date for this account, largest first. Every bar is labelled with its value.
+              </p>
+            </div>
+            <div className="card-body">
+              <div data-lhb-chart="accountSpend" style={{ height: "320px", width: "100%" }}></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="obs-list-root" data-list={"{\"valueNames\":[\"col0\",\"col1\",\"col2\",\"col3\",\"col4\"],\"page\":5,\"filter\":{\"key\":\"col4\"}}"} data-live-table="accountAlarms">
         <div className="card">
           <div className="card-header border-bottom border-translucent py-3">
             <div className="row align-items-center g-2 mb-3">
               <div className="col">
                 <h4 className="mb-0">
-                  Linked accounts
+                  Open alarms
                 </h4>
                 <p className="text-body-tertiary fs-9 mb-0">
-                  Every AWS account the saved credential reaches, plus any managed cloud gateway in use
+                  CloudWatch alarms currently in ALARM, across every region this connector reads
                 </p>
               </div>
             </div>
@@ -163,7 +261,7 @@ export default function Page() {
               <div className="col-12 col-md">
                 <div className="search-box w-100">
                   <form className="position-relative">
-                    <input className="form-control search-input search form-control-sm" type="search" placeholder="Search accounts" aria-label="Search" />
+                    <input className="form-control search-input search form-control-sm" type="search" placeholder="Search alarms" aria-label="Search" />
                     <span className="fas fa-search search-box-icon"></span>
                   </form>
                 </div>
@@ -173,8 +271,8 @@ export default function Page() {
                   <option value="">
                     Filter: All
                   </option>
-                  <option value="Not connected">
-                    Not connected
+                  <option value="In alarm">
+                    In alarm
                   </option>
                 </select>
               </div>
@@ -184,25 +282,19 @@ export default function Page() {
                     Sort by
                   </option>
                   <option value="col0">
-                    Account
+                    Alarm
                   </option>
                   <option value="col1">
-                    Cloud
+                    Metric
                   </option>
                   <option value="col2">
-                    Type
+                    Region
                   </option>
                   <option value="col3">
-                    Resources
+                    Since
                   </option>
                   <option value="col4">
-                    Open alarms
-                  </option>
-                  <option value="col5">
-                    Cost (MTD)
-                  </option>
-                  <option value="col6">
-                    Status
+                    State
                   </option>
                 </select>
               </div>
@@ -214,25 +306,19 @@ export default function Page() {
                 <thead>
                   <tr>
                     <th className="sort align-middle white-space-nowrap text-uppercase ps-3" scope="col" data-sort="col0">
-                      Account
+                      Alarm
                     </th>
                     <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col1">
-                      Cloud
+                      Metric
                     </th>
                     <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col2">
-                      Type
+                      Region
                     </th>
                     <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col3">
-                      Resources
+                      Since
                     </th>
                     <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col4">
-                      Open alarms
-                    </th>
-                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col5">
-                      Cost (MTD)
-                    </th>
-                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col6">
-                      Status
+                      State
                     </th>
                   </tr>
                 </thead>
@@ -240,35 +326,29 @@ export default function Page() {
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
                       <div className="d-flex align-items-center">
-                        <span className="me-2 fa-solid fa-cloud text-secondary"></span>
+                        <span className="me-2 fa-solid fa-bell text-danger"></span>
                         <div>
                           <h6 className="mb-0">
-                            —
+                            cpu-high-prod
                           </h6>
                           <p className="text-body-tertiary fs-10 mb-0">
-                            nothing connected yet
+                            threshold crossed
                           </p>
                         </div>
                       </div>
                     </td>
                     <td className="align-middle col1">
-                      —
+                      CPUUtilization
                     </td>
                     <td className="align-middle col2">
-                      —
+                      us-east-1
                     </td>
                     <td className="align-middle col3">
-                      0
+                      2026-09-10T09:40:00Z
                     </td>
                     <td className="align-middle col4">
-                      0
-                    </td>
-                    <td className="align-middle col5">
-                      —
-                    </td>
-                    <td className="align-middle col6">
-                      <span className="badge badge-phoenix badge-phoenix-secondary">
-                        Not connected
+                      <span className="badge badge-phoenix badge-phoenix-danger">
+                        In alarm
                       </span>
                     </td>
                   </tr>
@@ -308,7 +388,7 @@ export default function Page() {
           </div>
         </div>
       </div>
-      <div className="obs-list-root" data-list={"{\"valueNames\":[\"col0\",\"col1\",\"col2\",\"col3\",\"col4\",\"col5\",\"col6\"],\"page\":10,\"filter\":{\"key\":\"col6\"}}"} data-live-table="cloudResources">
+      <div className="obs-list-root" data-list={"{\"valueNames\":[\"col0\",\"col1\",\"col2\",\"col3\",\"col4\",\"col5\"],\"page\":10,\"filter\":{\"key\":\"col5\"}}"} data-live-table="accountResources">
         <div className="card">
           <div className="card-header border-bottom border-translucent py-3">
             <div className="row align-items-center g-2 mb-3">
@@ -317,7 +397,7 @@ export default function Page() {
                   Streamed resources
                 </h4>
                 <p className="text-body-tertiary fs-9 mb-0">
-                  Everything the CloudWatch metric stream has described — one row per resource, across every service you selected
+                  Every resource this account’s metric stream has described
                 </p>
               </div>
             </div>
@@ -352,18 +432,15 @@ export default function Page() {
                     Service
                   </option>
                   <option value="col2">
-                    Account
-                  </option>
-                  <option value="col3">
                     Region
                   </option>
-                  <option value="col4">
+                  <option value="col3">
                     Metrics
                   </option>
-                  <option value="col5">
+                  <option value="col4">
                     Last seen
                   </option>
-                  <option value="col6">
+                  <option value="col5">
                     Freshness
                   </option>
                 </select>
@@ -382,18 +459,15 @@ export default function Page() {
                       Service
                     </th>
                     <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col2">
-                      Account
-                    </th>
-                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col3">
                       Region
                     </th>
-                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col4">
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col3">
                       Metrics
                     </th>
-                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col5">
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col4">
                       Last seen
                     </th>
-                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col6">
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col5">
                       Freshness
                     </th>
                   </tr>
@@ -417,55 +491,152 @@ export default function Page() {
                       EC2
                     </td>
                     <td className="align-middle col2">
-                      111122223333
-                    </td>
-                    <td className="align-middle col3">
                       us-east-1
                     </td>
-                    <td className="align-middle col4">
+                    <td className="align-middle col3">
                       14
                     </td>
-                    <td className="align-middle col5">
+                    <td className="align-middle col4">
                       2026-09-10T10:04:00Z
                     </td>
-                    <td className="align-middle col6">
+                    <td className="align-middle col5">
                       <span className="badge badge-phoenix badge-phoenix-success">
                         Live
                       </span>
                     </td>
                   </tr>
+                </tbody>
+              </table>
+            </div>
+            <div className="text-center p-3 fallback d-none">
+              <p className="mb-0 text-body-tertiary">
+                No matching results
+              </p>
+            </div>
+          </div>
+          <div className="card-footer border-top border-translucent">
+            <div className="row align-items-center g-2">
+              <div className="pagination d-none"></div>
+              <div className="col d-flex fs-9 flex-wrap">
+                <p className="mb-0 d-none d-sm-block me-3 fw-semibold text-body" data-list-info="data-list-info"></p>
+                <a className="fw-semibold" href="#!" data-list-view="*">
+                  View all
+                  <span className="fas fa-angle-right ms-1" data-fa-transform="down-1"></span>
+                </a>
+                <a className="fw-semibold d-none" href="#!" data-list-view="less">
+                  View less
+                </a>
+              </div>
+              <div className="col-auto d-flex">
+                <button className="btn btn-link px-1 me-1" type="button" title="Previous" data-list-pagination="prev">
+                  <span className="fas fa-chevron-left me-2"></span>
+                  Previous
+                </button>
+                <button className="btn btn-link px-1 ms-1" type="button" title="Next" data-list-pagination="next">
+                  Next
+                  <span className="fas fa-chevron-right ms-2"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="obs-list-root" data-list={"{\"valueNames\":[\"col0\",\"col1\",\"col2\",\"col3\"],\"page\":5,\"filter\":{\"key\":\"col3\"}}"} data-live-table="accountChanges">
+        <div className="card">
+          <div className="card-header border-bottom border-translucent py-3">
+            <div className="row align-items-center g-2 mb-3">
+              <div className="col">
+                <h4 className="mb-0">
+                  Recent changes
+                </h4>
+                <p className="text-body-tertiary fs-9 mb-0">
+                  What appeared, vanished or changed in this account between inventory snapshots
+                </p>
+              </div>
+            </div>
+            <div className="row align-items-center g-2">
+              <div className="col-12 col-md">
+                <div className="search-box w-100">
+                  <form className="position-relative">
+                    <input className="form-control search-input search form-control-sm" type="search" placeholder="Search changes" aria-label="Search" />
+                    <span className="fas fa-search search-box-icon"></span>
+                  </form>
+                </div>
+              </div>
+              <div className="col-6 col-md-auto">
+                <select className="form-select form-select-sm" data-list-filter="data-list-filter" aria-label="Filter">
+                  <option value="">
+                    Filter: All
+                  </option>
+                  <option value="Added">
+                    Added
+                  </option>
+                </select>
+              </div>
+              <div className="col-6 col-md-auto">
+                <select className="form-select form-select-sm" aria-label="Sort by" data-obs-sort="data-obs-sort">
+                  <option value="">
+                    Sort by
+                  </option>
+                  <option value="col0">
+                    Resource
+                  </option>
+                  <option value="col1">
+                    Kind
+                  </option>
+                  <option value="col2">
+                    Seen
+                  </option>
+                  <option value="col3">
+                    Change
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div className="card-body p-0">
+            <div className="table-responsive scrollbar">
+              <table className="table table-sm fs-9 mb-0">
+                <thead>
+                  <tr>
+                    <th className="sort align-middle white-space-nowrap text-uppercase ps-3" scope="col" data-sort="col0">
+                      Resource
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col1">
+                      Kind
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col2">
+                      Seen
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col3">
+                      Change
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="list" data-sample-rows="data-sample-rows">
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
                       <div className="d-flex align-items-center">
-                        <span className="me-2 fa-solid fa-cube text-info"></span>
+                        <span className="me-2 fa-solid fa-plus text-success"></span>
                         <div>
                           <h6 className="mb-0">
-                            orders
+                            assets-staging
                           </h6>
                           <p className="text-body-tertiary fs-10 mb-0">
-                            QueueName=orders
+                            assets-staging
                           </p>
                         </div>
                       </div>
                     </td>
                     <td className="align-middle col1">
-                      SQS
+                      S3 bucket
                     </td>
                     <td className="align-middle col2">
-                      444455556666
+                      2026-09-10T08:00:00Z
                     </td>
                     <td className="align-middle col3">
-                      us-east-1
-                    </td>
-                    <td className="align-middle col4">
-                      9
-                    </td>
-                    <td className="align-middle col5">
-                      2026-09-10T10:03:00Z
-                    </td>
-                    <td className="align-middle col6">
                       <span className="badge badge-phoenix badge-phoenix-success">
-                        Live
+                        Added
                       </span>
                     </td>
                   </tr>

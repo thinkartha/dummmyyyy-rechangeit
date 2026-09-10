@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from shared.aws.dto import AwsLambdaConfig, AwsLambdaInvocationResponse, AwsLambdaInvokeRequest, AwsLambdaOverview
+from shared.aws import changes as change_tracking
 from shared.aws.inventory import AwsInventoryReport, inventory
 from shared.aws.lambda_service import (
     anomaly_events,
@@ -31,6 +32,27 @@ def get_lambda_config_status(tenant_id: str = Depends(get_tenant_id)) -> dict:
     return config_status(tenant_id)
 
 
+@router.get("/connector-identity")
+def get_connector_identity() -> dict:
+    """The ARN a customer's cross-account role has to trust, plus the trust policy.
+
+    Handed to the browser so the connect form can show it: the role this deployment runs
+    as is deliberately unnamed (a named IAM role forces a replacement on some stack
+    updates), so without this a customer cannot write the trust policy at all.
+    """
+    return connector_identity()
+
+
+@router.post("/test")
+def test_aws_connection(tenant_id: str = Depends(get_tenant_id)) -> dict:
+    """Probe the saved credential and report what it can actually do.
+
+    POST rather than GET because it calls out to AWS on every request and is deliberately
+    not cached — it exists to be pressed after changing something.
+    """
+    return test_connection(tenant_id)
+
+
 @router.get("/lambda/overview", response_model=AwsLambdaOverview)
 def get_lambda_overview(tenant_id: str = Depends(get_tenant_id)) -> AwsLambdaOverview:
     return lambda_overview(tenant_id)
@@ -49,6 +71,31 @@ def get_aws_inventory(
     `organization: false`, which is an answer rather than an error.
     """
     return inventory(tenant_id, role_name=role_name)
+
+
+@router.get("/changes")
+def get_aws_changes(
+    tenant_id: str = Depends(get_tenant_id),
+    limit: int = Query(default=100, ge=1, le=500),
+) -> list[dict]:
+    """Resources added, removed or modified since the last inventory read."""
+    return change_tracking.recent(tenant_id, limit)
+
+
+@router.post("/changes/scan", response_model=list[CloudEvent])
+def scan_aws_changes(
+    tenant_id: str = Depends(get_tenant_id),
+    role_name: str | None = Query(default=None, alias="roleName"),
+) -> list[CloudEvent]:
+    """Re-read the inventory, diff it against the stored snapshot, raise what changed.
+
+    A POST because it takes a baseline: the first call for an account records nothing and
+    only snapshots, and every call after it moves the comparison point forward. That is a
+    write, and it should not happen because somebody opened a page twice.
+    """
+    report = inventory(tenant_id, role_name=role_name)
+    found = change_tracking.record(tenant_id, report)
+    return [collector.ingest(event) for event in change_tracking.events(tenant_id, found)]
 
 
 @router.post("/lambda/poll", response_model=list[CloudEvent])

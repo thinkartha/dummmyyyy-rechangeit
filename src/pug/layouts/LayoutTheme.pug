@@ -105,6 +105,11 @@ append layoutScripts
   script(src=`${CWD}vendors/list.js/list.min.js`)
   script(src=`${CWD}vendors/feather-icons/feather.min.js`)
   script(src=`${CWD}vendors/dayjs/dayjs.min.js`)
+  //- Only the pages that draw something. echarts is ~1MB, and every table-only page in
+  //- the product would otherwise pay for it on load; integration/charts.js is likewise
+  //- imported dynamically and only when a chart element is on the page.
+  if useECharts
+    script(src=`${CWD}vendors/echarts/echarts.min.js`)
 
 block mainContent
   //- +LayoutContentProd

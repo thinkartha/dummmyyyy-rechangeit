@@ -40,12 +40,19 @@ on which organization a request belongs to.
 
 `/health` · `/api/v1/tenant` · `/organizations` · `/auth` · `/observability` ·
 `/observability/agents` · `/gateways` · `/integrations/etl` · `/integrations/aws/lambda` ·
-`/alerts` · `/alert-management` · `/automation` · `/ai-models` · `/databases` ·
-`/data-observability` · `/databricks` · `/finops` · `/slo` · `/drift` ·
+`/integrations/aws/metrics` · `/integrations/aws/inventory` · `/integrations/aws/changes` ·
+`/integrations/cloud` · `/alerts` · `/alert-management` · `/automation` · `/ai-models` ·
+`/databases` · `/data-observability` · `/databricks` · `/finops` · `/slo` · `/drift` ·
 `/correlated-incidents` · `/incidents/{id}/rca` · `/logs` · `/metrics` · `/traces` ·
 `/ingest` · `/admin`
 
 Full list at `/docs` when running locally.
+
+Two routes are deliberately outside the app-wide auth dependency, because their callers
+cannot present a session and authenticate with their own credential instead:
+`/gateways/telemetry/apisix` (an enrolled customer gateway) and
+`/integrations/aws/metrics/stream` (Kinesis Firehose). Both are registered separately in
+`handlers/api.py` rather than exempted per route, so the set is readable in one place.
 
 ## AWS connector IAM policy
 
@@ -93,7 +100,8 @@ Attach to the role the customer creates for us:
         "s3:GetBucketLocation",
         "cloudwatch:DescribeAlarms",
         "iam:ListUsers",
-        "organizations:ListAccounts"
+        "organizations:ListAccounts",
+        "tag:GetResources"
       ],
       "Resource": "*"
     },
@@ -116,10 +124,82 @@ Notes:
   already covers it; a hand-rolled replacement needs these actions.
 - `organizations:ListAccounts` only works from the organization's management account. A
   member-account credential returns its own account only, which is a valid answer.
-- The trust policy on the role should name our account as principal and require the
-  `externalId` the tenant entered, so the ARN alone is not enough to assume it.
+- The permissions above say what the role may *do*. They do not say who may assume it,
+  which is the other half and the usual reason a correct-looking connection returns
+  zeros. Attach this as the role's **trust policy**:
+
+  ```json
+  {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Principal": { "AWS": "<ConnectorPrincipalArn from the backend stack outputs>" },
+        "Action": "sts:AssumeRole",
+        "Condition": { "StringEquals": { "sts:ExternalId": "<the externalId they type into the connect form>" } }
+      }
+    ]
+  }
+  ```
+
+  `ConnectorPrincipalArn` is a stack Output (`aws cloudformation describe-stacks
+  --stack-name loveheartbeat-backend --query
+  'Stacks[0].Outputs[?OutputKey==\`ConnectorPrincipalArn\`].OutputValue' --output text`).
+  The `externalId` must match the connect form character for character — it is what stops
+  one tenant from entering another tenant's role ARN and reading an account that is not
+  theirs, since this Lambda is trusted by both.
 - AWS has **no public API for payment methods or billing contacts** — card details are
   console-only, so no policy grants access to them and no endpoint here reports them.
+
+## CloudWatch Metric Streams
+
+The IAM role above is *pull*: it answers when a page is opened. A metric stream is
+*push*, and it is how every AWS service other than Lambda gets measured — EC2, RDS, ALB,
+SQS, DynamoDB and the rest arrive without a collector each, about a minute behind live.
+Nothing in the deployed stack is on a schedule, so this is also the only thing that
+collects when nobody is looking.
+
+The customer creates two resources in their account:
+
+1. A **Kinesis Data Firehose** delivery stream, destination *HTTP Endpoint*:
+   - URL: `https://<api>/api/v1/integrations/aws/metrics/stream`
+   - Access key: the value from `GET /api/v1/integrations/aws/metrics/key` (shown on
+     **Integrations → Cloud accounts**). Firehose sends it as `X-Amz-Firehose-Access-Key`,
+     which is what identifies the tenant — there is no other credential on that request.
+   - Keep the S3 backup bucket Firehose asks for. A delivery we answer with a 5xx is
+     retried and then parked there, so it is the difference between a slow outage and a
+     silent gap.
+2. A **CloudWatch metric stream** pointed at that delivery stream, output format **JSON**
+   (not OpenTelemetry — the reader here parses the JSON shape), with the namespaces they
+   want included.
+
+Notes:
+
+- The stream is per-region and per-account. A tenant wanting three regions creates three,
+  all pointing at the same URL and key; the account and region travel in every record, so
+  the rows separate themselves.
+- Cost is Firehose ingestion plus the metric-stream update charge, both on the customer's
+  bill. Selecting namespaces rather than "all metrics" is the lever, and it is theirs.
+- `GET /api/v1/integrations/aws/metrics/key` reports `receiving`, which is true only once
+  a delivery has actually arrived. A minted key proves nothing on its own — the common
+  failure is a key created and the Firehose side never finished.
+- Rotating the key (`POST .../key/rotate`) retires the old one immediately, so the
+  Firehose destination has to be updated in the same sitting or delivery stops.
+
+### Reading it back
+
+`/summary`, `/catalog`, `/resources`, `/series` and `/series/by-resource` all take an
+optional `account`, which is what the per-account drill-down page asks for. The filter is
+applied after the query rather than in it: the DynamoDB sort key is time, so account is
+not something a range query can narrow without a second index, and an index that exists
+only to serve one page is the wrong trade until a tenant's stream is big enough to prove
+otherwise.
+
+`/series/by-resource` ranks resources by their own peak and folds everything past `cap`
+into a single "Other" series, re-aggregating the raw buckets rather than averaging the
+lines — the mean of four averages is not the average of what they measured. The cap
+exists because past about six lines a chart stops being readable, and the honest
+alternative to a cap is not more colours.
 
 ## Local
 

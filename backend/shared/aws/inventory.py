@@ -118,12 +118,24 @@ class IamUser(BaseModel):
 class AccountInventory(BaseModel):
     account_id: str = Field(alias="accountId")
     name: str | None = None
+    # The account whose credential this tenant saved, as opposed to one reached by
+    # assuming a role. The page labels them differently because they fail differently:
+    # a member account with no cross-account role is the common setup mistake.
+    connected: bool = False
     hosted_zones: list[HostedZone] = Field(default_factory=list, alias="hostedZones")
     domains: list[Domain] = Field(default_factory=list)
     distributions: list[Distribution] = Field(default_factory=list)
     buckets: list[Bucket] = Field(default_factory=list)
     alarms: list[Alarm] = Field(default_factory=list)
     users: list[IamUser] = Field(default_factory=list)
+    # The regions this account was actually read in, so a page can say "no alarms in the
+    # regions we looked at" rather than the unqualified "no alarms".
+    regions: list[str] = Field(default_factory=list)
+    # Resource ARN -> tags, from the Resource Groups Tagging API. One call per region
+    # covers every taggable service, which is what makes grouping by team or environment
+    # affordable at all.
+    tags: dict[str, dict[str, str]] = Field(default_factory=dict)
+    tag_keys: list[str] = Field(default_factory=list, alias="tagKeys")
     # The account could not be reached at all — almost always a missing cross-account role.
     error: str | None = None
     # One service refused; the rest of the account is still real. Keyed by service name so
@@ -139,6 +151,9 @@ class AwsInventoryReport(BaseModel):
     # no organizations:ListAccounts. It is not a failure, but it explains a short report.
     organization: bool = False
     role_name: str = Field(default=_DEFAULT_ROLE, alias="roleName")
+    # Which regions were read. An empty alarm list means something different depending
+    # on this, so it travels with the report rather than being assumed by the reader.
+    regions: list[str] = Field(default_factory=list)
     configured: bool = False
     # Same contract as the cost report and the Lambda overview: empty with a reason beats
     # an empty list that reads as "you own nothing".
@@ -173,6 +188,15 @@ def _guard(errors: dict[str, str], service: str, read: Callable[[], list]) -> li
     except Exception as exc:
         errors[service] = f"{type(exc).__name__}: {exc}"
         return []
+
+
+def _guard_dict(errors: dict[str, str], service: str, read: Callable[[], dict]) -> dict:
+    """Same contract for a read that answers with a mapping rather than a list."""
+    try:
+        return read()
+    except Exception as exc:
+        errors[service] = f"{type(exc).__name__}: {exc}"
+        return {}
 
 
 def _hosted_zones(session) -> list[HostedZone]:
@@ -262,24 +286,54 @@ def _buckets(session) -> list[Bucket]:
     ]
 
 
-def _alarms(session, region: str) -> list[Alarm]:
-    # ponytail: the connector's own region only. Alarms are regional and iterating every
-    # enabled region multiplies the call count by ~17 for accounts that use one. Take a
-    # `regions` list on the config if anyone actually alarms outside their home region.
-    cw = session.client("cloudwatch", region_name=region)
-    return sorted(
-        (
-            Alarm(
-                name=item.get("AlarmName", ""),
-                metric=item.get("MetricName"),
-                region=region,
-                reason=item.get("StateReason"),
-                since=_iso(item.get("StateUpdatedTimestamp")),
+def _alarms(session, regions: list[str]) -> list[Alarm]:
+    """Alarms currently firing, across every region the tenant asked for.
+
+    Regions come from the connector config rather than from `ec2:DescribeRegions`:
+    iterating all ~17 enabled regions multiplies the call count for the majority of
+    accounts that only use one, and an account that alarms in three regions knows which
+    three. A region that refuses the read is skipped rather than failing the account —
+    losing eu-west-1 should not also lose us-east-1.
+    """
+    found: list[Alarm] = []
+    for region in regions:
+        cw = session.client("cloudwatch", region_name=region)
+        try:
+            found.extend(
+                Alarm(
+                    name=item.get("AlarmName", ""),
+                    metric=item.get("MetricName"),
+                    region=region,
+                    reason=item.get("StateReason"),
+                    since=_iso(item.get("StateUpdatedTimestamp")),
+                )
+                for item in _items(cw, "describe_alarms", "MetricAlarms", StateValue="ALARM")
             )
-            for item in _items(cw, "describe_alarms", "MetricAlarms", StateValue="ALARM")
-        ),
-        key=lambda a: a.name,
-    )
+        except Exception:
+            continue
+    return sorted(found, key=lambda a: (a.region or "", a.name))
+
+
+def _tags(session, regions: list[str]) -> dict[str, dict[str, str]]:
+    """Every tagged resource ARN -> its tags, via the Resource Groups Tagging API.
+
+    One paginated call per region covers every taggable service at once, which is the
+    only reason tags are affordable here: asking each service for its own tags would be
+    a call per service per account. Tags are what make "spend by team" and "alarms in
+    prod" answerable, so they are worth the one extra read.
+    """
+    out: dict[str, dict[str, str]] = {}
+    for region in regions:
+        api = session.client("resourcegroupstaggingapi", region_name=region)
+        try:
+            for item in _items(api, "get_resources", "ResourceTagMappingList"):
+                arn = item.get("ResourceARN")
+                if not arn:
+                    continue
+                out[arn] = {t.get("Key", ""): t.get("Value", "") for t in item.get("Tags", [])}
+        except Exception:
+            continue
+    return out
 
 
 def _users(session) -> list[IamUser]:
@@ -325,19 +379,41 @@ def _org_accounts(session) -> list[dict]:
         return []
 
 
-def _collect(session, account_id: str, name: str | None, region: str) -> AccountInventory:
+def _collect(session, account_id: str, name: str | None, regions: list[str],
+             connected: bool = False) -> AccountInventory:
     errors: dict[str, str] = {}
+    tags = _guard_dict(errors, "resourcegroupstaggingapi", lambda: _tags(session, regions))
     return AccountInventory(
         accountId=account_id,
         name=name,
+        connected=connected,
+        regions=list(regions),
         hostedZones=_guard(errors, "route53", lambda: _hosted_zones(session)),
         domains=_guard(errors, "route53domains", lambda: _domains(session)),
         distributions=_guard(errors, "cloudfront", lambda: _distributions(session)),
         buckets=_guard(errors, "s3", lambda: _buckets(session)),
-        alarms=_guard(errors, "cloudwatch", lambda: _alarms(session, region)),
+        alarms=_guard(errors, "cloudwatch", lambda: _alarms(session, regions)),
         users=_guard(errors, "iam", lambda: _users(session)),
+        tags=tags,
+        tagKeys=sorted({k for values in tags.values() for k in values}),
         serviceErrors=errors,
     )
+
+
+def read_regions(cfg) -> list[str]:
+    """The regions to read for this tenant: the primary first, then the extras.
+
+    De-duplicated while preserving order, because `region` being repeated in `regions`
+    is the obvious thing for an operator to do and would otherwise double every regional
+    call and every alarm row.
+    """
+    ordered = [cfg.region, *(getattr(cfg, "regions", None) or [])]
+    seen: dict[str, None] = {}
+    for region in ordered:
+        cleaned = str(region or "").strip()
+        if cleaned:
+            seen.setdefault(cleaned, None)
+    return list(seen) or [_GLOBAL_REGION]
 
 
 def inventory(tenant_id: str, role_name: str | None = None) -> AwsInventoryReport:
@@ -346,9 +422,12 @@ def inventory(tenant_id: str, role_name: str | None = None) -> AwsInventoryRepor
     if not cfg:
         return AwsInventoryReport(configured=False)
 
-    role_name = role_name or _DEFAULT_ROLE
-    # The role name changes the fan-out, so it changes the answer, so it changes the key.
-    cache_key = f"{tenant_id}|{role_name}"
+    # Explicit argument wins, then the saved config, then the role Organizations makes.
+    role_name = role_name or getattr(cfg, "member_role_name", None) or _DEFAULT_ROLE
+    regions = read_regions(cfg)
+    # The role name and the region set both change the fan-out, so both change the
+    # answer, so both belong in the key.
+    cache_key = f"{tenant_id}|{role_name}|{','.join(regions)}"
     cached = _CACHE.get(cache_key)
     if cached and time.monotonic() - cached[0] < _TTL_SECONDS:
         return cached[1]
@@ -368,12 +447,12 @@ def inventory(tenant_id: str, role_name: str | None = None) -> AwsInventoryRepor
         if account_id == connected_id:
             # The management account already has the credential; assuming a role into
             # itself would fail, and OrganizationAccountAccessRole usually is not there.
-            return _collect(base, account_id, name, cfg.region)
+            return _collect(base, account_id, name, regions, connected=True)
         try:
             member = _assume(base, account_id, role_name, cfg.region)
         except Exception as exc:
             return AccountInventory(accountId=account_id, name=name, error=f"{type(exc).__name__}: {exc}")
-        return _collect(member, account_id, name, cfg.region)
+        return _collect(member, account_id, name, regions)
 
     # Serially this is ~6 calls per account plus one per bucket, which for a handful of
     # accounts runs past API Gateway's hard 29s integration timeout — so every cache miss
@@ -389,6 +468,7 @@ def inventory(tenant_id: str, role_name: str | None = None) -> AwsInventoryRepor
         accounts=accounts,
         organization=bool(org_accounts),
         roleName=role_name,
+        regions=regions,
         configured=True,
     )
     _CACHE[cache_key] = (time.monotonic(), report)

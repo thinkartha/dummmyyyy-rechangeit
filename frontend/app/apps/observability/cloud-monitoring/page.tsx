@@ -7,6 +7,15 @@ export default function Page() {
           "code": "\n          (function() {\n            document.querySelectorAll('[data-obs-sort]').forEach(function(select) {\n              if (select.dataset.bound === '1') return;\n              select.dataset.bound = '1';\n              select.addEventListener('change', function() {\n                var key = select.value;\n                if (!key) return;\n                var root = select.closest('[data-list]');\n                if (!root) return;\n                var header = root.querySelector('th[data-sort=\"' + key + '\"]');\n                if (header) header.click();\n              });\n            });\n          })();\n        "
         },
         {
+          "code": "\n          (function() {\n            document.querySelectorAll('[data-obs-sort]').forEach(function(select) {\n              if (select.dataset.bound === '1') return;\n              select.dataset.bound = '1';\n              select.addEventListener('change', function() {\n                var key = select.value;\n                if (!key) return;\n                var root = select.closest('[data-list]');\n                if (!root) return;\n                var header = root.querySelector('th[data-sort=\"' + key + '\"]');\n                if (header) header.click();\n              });\n            });\n          })();\n        "
+        },
+        {
+          "code": "\n              (function() {\n                document.querySelectorAll('[data-obs-sort]').forEach(function(select) {\n                  if (select.dataset.bound === '1') return;\n                  select.dataset.bound = '1';\n                  select.addEventListener('change', function() {\n                    var key = select.value;\n                    if (!key) return;\n                    var root = select.closest('[data-list]');\n                    if (!root) return;\n                    var header = root.querySelector('th[data-sort=\"' + key + '\"]');\n                    if (header) header.click();\n                  });\n                });\n              })();\n            "
+        },
+        {
+          "code": "\n          (function() {\n            document.querySelectorAll('[data-obs-sort]').forEach(function(select) {\n              if (select.dataset.bound === '1') return;\n              select.dataset.bound = '1';\n              select.addEventListener('change', function() {\n                var key = select.value;\n                if (!key) return;\n                var root = select.closest('[data-list]');\n                if (!root) return;\n                var header = root.querySelector('th[data-sort=\"' + key + '\"]');\n                if (header) header.click();\n              });\n            });\n          })();\n        "
+        },
+        {
           "code": "\n        var navbarTopStyle = window.config.config.phoenixNavbarTopStyle;\n        var navbarTop = document.querySelector('.navbar-top');\n        if (navbarTopStyle === 'darker') {\n          navbarTop.setAttribute('data-navbar-appearance', 'darker');\n        }\n\n        var navbarVerticalStyle = window.config.config.phoenixNavbarVerticalStyle;\n        var navbarVertical = document.querySelector('.navbar-vertical');\n        if (navbarVertical && navbarVerticalStyle === 'darker') {\n          navbarVertical.setAttribute('data-navbar-appearance', 'darker');\n        }\n      "
         },
         {
@@ -66,7 +75,7 @@ export default function Page() {
               Cloud Monitoring
             </h2>
             <h5 className="text-body-tertiary fw-semibold mb-0">
-              Health and inventory across AWS, GCP, and Azure — accounts are connected under Orchestration, and their functions and anomalies surface here
+              Every AWS account your connected credential reaches, with what it owns, what is alarming, and what it has cost this month
             </h5>
           </div>
           <div className="col-auto">
@@ -85,11 +94,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Linked accounts
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="linkedAccounts">
                     18
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta">
+                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="linkedAccounts">
                   3 clouds
                 </span>
               </div>
@@ -104,11 +113,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Resources watched
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="resources">
                     12.4k
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
+                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="resources">
                   +320
                 </span>
               </div>
@@ -121,13 +130,13 @@ export default function Page() {
               <div className="d-flex justify-content-between align-items-start">
                 <div>
                   <h6 className="text-body-tertiary mb-2">
-                    Open cloud alerts
+                    Open cloud alarms
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="openAlarms">
                     7
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-danger" data-obs-stat-delta="data-obs-stat-delta">
+                <span className="badge badge-phoenix badge-phoenix-danger" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="openAlarms">
                   2 critical
                 </span>
               </div>
@@ -140,14 +149,14 @@ export default function Page() {
               <div className="d-flex justify-content-between align-items-start">
                 <div>
                   <h6 className="text-body-tertiary mb-2">
-                    Regions
+                    Spend month to date
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
-                    26
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="mtdSpend">
+                    USD 42,180.00
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-primary" data-obs-stat-delta="data-obs-stat-delta">
-                  global
+                <span className="badge badge-phoenix badge-phoenix-primary" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="mtdSpend">
+                  since 2026-09-01
                 </span>
               </div>
             </div>
@@ -240,7 +249,7 @@ export default function Page() {
           </div>
         </div>
       </div>
-      <div className="obs-list-root" data-list={"{\"valueNames\":[\"col0\",\"col1\",\"col2\",\"col3\",\"col4\",\"col5\"],\"page\":5,\"filter\":{\"key\":\"col5\"}}"} data-live-table="cloudLambda">
+      <div className="obs-list-root" data-list={"{\"valueNames\":[\"col0\",\"col1\",\"col2\",\"col3\",\"col4\",\"col5\",\"col6\"],\"page\":8,\"filter\":{\"key\":\"col6\"}}"} data-live-table="cloudAccounts">
         <div className="card">
           <div className="card-header border-bottom border-translucent py-3">
             <div className="row align-items-center g-2 mb-3">
@@ -249,7 +258,7 @@ export default function Page() {
                   Linked accounts
                 </h4>
                 <p className="text-body-tertiary fs-9 mb-0">
-                  All environments monitored together
+                  From organizations:ListAccounts on the connected credential — nothing is registered here
                 </p>
               </div>
             </div>
@@ -270,8 +279,11 @@ export default function Page() {
                   <option value="Healthy">
                     Healthy
                   </option>
-                  <option value="Watch">
-                    Watch
+                  <option value="Alarm">
+                    Alarm
+                  </option>
+                  <option value="Unreachable">
+                    Unreachable
                   </option>
                 </select>
               </div>
@@ -293,9 +305,12 @@ export default function Page() {
                     Resources
                   </option>
                   <option value="col4">
-                    Alerts
+                    Open alarms
                   </option>
                   <option value="col5">
+                    Cost (MTD)
+                  </option>
+                  <option value="col6">
                     Status
                   </option>
                 </select>
@@ -320,9 +335,12 @@ export default function Page() {
                       Resources
                     </th>
                     <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col4">
-                      Alerts
+                      Open alarms
                     </th>
                     <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col5">
+                      Cost (MTD)
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col6">
                       Status
                     </th>
                   </tr>
@@ -331,10 +349,10 @@ export default function Page() {
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
                       <div className="d-flex align-items-center">
-                        <span className="me-2 fa-brands fa-aws text-warning"></span>
+                        <span className="me-2 fa-brands fa-aws text-success"></span>
                         <div>
                           <h6 className="mb-0">
-                            prod-root (org)
+                            prod-root
                           </h6>
                           <p className="text-body-tertiary fs-10 mb-0">
                             111122223333
@@ -346,15 +364,18 @@ export default function Page() {
                       AWS
                     </td>
                     <td className="align-middle col2">
-                      Organizations
+                      Connected account
                     </td>
                     <td className="align-middle col3">
-                      4,820
+                      482
                     </td>
                     <td className="align-middle col4">
-                      3
+                      0
                     </td>
                     <td className="align-middle col5">
+                      USD 18,220.14
+                    </td>
+                    <td className="align-middle col6">
                       <span className="badge badge-phoenix badge-phoenix-success">
                         Healthy
                       </span>
@@ -381,21 +402,24 @@ export default function Page() {
                       Member account
                     </td>
                     <td className="align-middle col3">
-                      2,140
+                      214
                     </td>
                     <td className="align-middle col4">
                       2
                     </td>
                     <td className="align-middle col5">
-                      <span className="badge badge-phoenix badge-phoenix-info">
-                        Watch
+                      USD 15,904.77
+                    </td>
+                    <td className="align-middle col6">
+                      <span className="badge badge-phoenix badge-phoenix-warning">
+                        Alarm
                       </span>
                     </td>
                   </tr>
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
                       <div className="d-flex align-items-center">
-                        <span className="me-2 fa-brands fa-aws text-warning"></span>
+                        <span className="me-2 fa-brands fa-aws text-success"></span>
                         <div>
                           <h6 className="mb-0">
                             dev-sandbox
@@ -413,12 +437,15 @@ export default function Page() {
                       Member account
                     </td>
                     <td className="align-middle col3">
-                      680
+                      68
                     </td>
                     <td className="align-middle col4">
                       0
                     </td>
                     <td className="align-middle col5">
+                      USD 1,142.03
+                    </td>
+                    <td className="align-middle col6">
                       <span className="badge badge-phoenix badge-phoenix-success">
                         Healthy
                       </span>
@@ -427,13 +454,13 @@ export default function Page() {
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
                       <div className="d-flex align-items-center">
-                        <span className="me-2 fa-brands fa-aws text-warning"></span>
+                        <span className="me-2 fa-brands fa-aws text-danger"></span>
                         <div>
                           <h6 className="mb-0">
                             data-platform
                           </h6>
                           <p className="text-body-tertiary fs-10 mb-0">
-                            121212121212
+                            ClientError: not authorized to perform sts:AssumeRole
                           </p>
                         </div>
                       </div>
@@ -445,142 +472,638 @@ export default function Page() {
                       Member account
                     </td>
                     <td className="align-middle col3">
-                      910
+                      —
                     </td>
                     <td className="align-middle col4">
-                      1
+                      —
                     </td>
                     <td className="align-middle col5">
+                      USD 6,913.44
+                    </td>
+                    <td className="align-middle col6">
+                      <span className="badge badge-phoenix badge-phoenix-danger">
+                        Unreachable
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div className="text-center p-3 fallback d-none">
+              <p className="mb-0 text-body-tertiary">
+                No matching results
+              </p>
+            </div>
+          </div>
+          <div className="card-footer border-top border-translucent">
+            <div className="row align-items-center g-2">
+              <div className="pagination d-none"></div>
+              <div className="col d-flex fs-9 flex-wrap">
+                <p className="mb-0 d-none d-sm-block me-3 fw-semibold text-body" data-list-info="data-list-info"></p>
+                <a className="fw-semibold" href="#!" data-list-view="*">
+                  View all
+                  <span className="fas fa-angle-right ms-1" data-fa-transform="down-1"></span>
+                </a>
+                <a className="fw-semibold d-none" href="#!" data-list-view="less">
+                  View less
+                </a>
+              </div>
+              <div className="col-auto d-flex">
+                <button className="btn btn-link px-1 me-1" type="button" title="Previous" data-list-pagination="prev">
+                  <span className="fas fa-chevron-left me-2"></span>
+                  Previous
+                </button>
+                <button className="btn btn-link px-1 ms-1" type="button" title="Next" data-list-pagination="next">
+                  Next
+                  <span className="fas fa-chevron-right ms-2"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="obs-list-root" data-list={"{\"valueNames\":[\"col0\",\"col1\",\"col2\",\"col3\",\"col4\",\"col5\",\"col6\"],\"page\":8,\"filter\":{\"key\":\"col6\"}}"} data-live-table="cloudServices">
+        <div className="card">
+          <div className="card-header border-bottom border-translucent py-3">
+            <div className="row align-items-center g-2 mb-3">
+              <div className="col">
+                <h4 className="mb-0">
+                  Streamed services
+                </h4>
+                <p className="text-body-tertiary fs-9 mb-0">
+                  Every AWS service your CloudWatch metric stream is delivering — no per-service integration behind any of these
+                </p>
+              </div>
+              <div className="col-auto">
+                <button className="btn btn-primary btn-sm" type="button" data-lhb-action="cloudSetup">
+                  Set up metric streaming
+                </button>
+              </div>
+            </div>
+            <div className="row align-items-center g-2">
+              <div className="col-12 col-md">
+                <div className="search-box w-100">
+                  <form className="position-relative">
+                    <input className="form-control search-input search form-control-sm" type="search" placeholder="Search services" aria-label="Search" />
+                    <span className="fas fa-search search-box-icon"></span>
+                  </form>
+                </div>
+              </div>
+              <div className="col-6 col-md-auto">
+                <select className="form-select form-select-sm" data-list-filter="data-list-filter" aria-label="Filter">
+                  <option value="">
+                    Filter: All
+                  </option>
+                  <option value="Live">
+                    Live
+                  </option>
+                  <option value="Lagging">
+                    Lagging
+                  </option>
+                </select>
+              </div>
+              <div className="col-6 col-md-auto">
+                <select className="form-select form-select-sm" aria-label="Sort by" data-obs-sort="data-obs-sort">
+                  <option value="">
+                    Sort by
+                  </option>
+                  <option value="col0">
+                    Service
+                  </option>
+                  <option value="col1">
+                    Account
+                  </option>
+                  <option value="col2">
+                    Regions
+                  </option>
+                  <option value="col3">
+                    Resources
+                  </option>
+                  <option value="col4">
+                    Metrics
+                  </option>
+                  <option value="col5">
+                    Last seen
+                  </option>
+                  <option value="col6">
+                    Freshness
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div className="card-body p-0">
+            <div className="table-responsive scrollbar">
+              <table className="table table-sm fs-9 mb-0">
+                <thead>
+                  <tr>
+                    <th className="sort align-middle white-space-nowrap text-uppercase ps-3" scope="col" data-sort="col0">
+                      Service
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col1">
+                      Account
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col2">
+                      Regions
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col3">
+                      Resources
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col4">
+                      Metrics
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col5">
+                      Last seen
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col6">
+                      Freshness
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="list" data-sample-rows="data-sample-rows">
+                  <tr>
+                    <td className="align-middle ps-3 py-3 col0">
+                      <div className="d-flex align-items-center">
+                        <span className="me-2 fa-brands fa-aws text-warning"></span>
+                        <div>
+                          <h6 className="mb-0">
+                            EC2
+                          </h6>
+                          <p className="text-body-tertiary fs-10 mb-0">
+                            AWS/EC2
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="align-middle col1">
+                      111122223333
+                    </td>
+                    <td className="align-middle col2">
+                      us-east-1
+                    </td>
+                    <td className="align-middle col3">
+                      42
+                    </td>
+                    <td className="align-middle col4">
+                      18
+                    </td>
+                    <td className="align-middle col5">
+                      2026-09-10T10:04:00Z
+                    </td>
+                    <td className="align-middle col6">
                       <span className="badge badge-phoenix badge-phoenix-success">
-                        Healthy
+                        Live
                       </span>
                     </td>
                   </tr>
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
                       <div className="d-flex align-items-center">
-                        <span className="me-2 fa-brands fa-google text-danger"></span>
+                        <span className="me-2 fa-brands fa-aws text-warning"></span>
                         <div>
                           <h6 className="mb-0">
-                            acme-prod
+                            RDS
                           </h6>
                           <p className="text-body-tertiary fs-10 mb-0">
-                            acme-prod
+                            AWS/RDS
                           </p>
                         </div>
                       </div>
                     </td>
                     <td className="align-middle col1">
-                      GCP
+                      111122223333
                     </td>
                     <td className="align-middle col2">
-                      Project
+                      us-east-1, eu-west-1
                     </td>
                     <td className="align-middle col3">
-                      1,250
+                      6
                     </td>
                     <td className="align-middle col4">
-                      1
+                      24
                     </td>
                     <td className="align-middle col5">
+                      2026-09-10T10:04:00Z
+                    </td>
+                    <td className="align-middle col6">
                       <span className="badge badge-phoenix badge-phoenix-success">
-                        Healthy
+                        Live
                       </span>
                     </td>
                   </tr>
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
                       <div className="d-flex align-items-center">
-                        <span className="me-2 fa-brands fa-google text-danger"></span>
+                        <span className="me-2 fa-brands fa-aws text-warning"></span>
                         <div>
                           <h6 className="mb-0">
-                            acme-analytics
+                            SQS
                           </h6>
                           <p className="text-body-tertiary fs-10 mb-0">
-                            acme-analytics
+                            AWS/SQS
                           </p>
                         </div>
                       </div>
                     </td>
                     <td className="align-middle col1">
-                      GCP
+                      444455556666
                     </td>
                     <td className="align-middle col2">
-                      Project
+                      us-east-1
                     </td>
                     <td className="align-middle col3">
-                      540
+                      11
                     </td>
                     <td className="align-middle col4">
-                      0
+                      9
                     </td>
                     <td className="align-middle col5">
+                      2026-09-10T09:12:00Z
+                    </td>
+                    <td className="align-middle col6">
+                      <span className="badge badge-phoenix badge-phoenix-warning">
+                        Lagging
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div className="text-center p-3 fallback d-none">
+              <p className="mb-0 text-body-tertiary">
+                No matching results
+              </p>
+            </div>
+          </div>
+          <div className="card-footer border-top border-translucent">
+            <div className="row align-items-center g-2">
+              <div className="pagination d-none"></div>
+              <div className="col d-flex fs-9 flex-wrap">
+                <p className="mb-0 d-none d-sm-block me-3 fw-semibold text-body" data-list-info="data-list-info"></p>
+                <a className="fw-semibold" href="#!" data-list-view="*">
+                  View all
+                  <span className="fas fa-angle-right ms-1" data-fa-transform="down-1"></span>
+                </a>
+                <a className="fw-semibold d-none" href="#!" data-list-view="less">
+                  View less
+                </a>
+              </div>
+              <div className="col-auto d-flex">
+                <button className="btn btn-link px-1 me-1" type="button" title="Previous" data-list-pagination="prev">
+                  <span className="fas fa-chevron-left me-2"></span>
+                  Previous
+                </button>
+                <button className="btn btn-link px-1 ms-1" type="button" title="Next" data-list-pagination="next">
+                  Next
+                  <span className="fas fa-chevron-right ms-2"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="row g-4 mb-4">
+        <div className="col-12">
+          <div className="obs-list-root" data-list={"{\"valueNames\":[\"col0\",\"col1\",\"col2\",\"col3\",\"col4\",\"col5\"],\"page\":5,\"filter\":{\"key\":\"col5\"}}"} data-live-table="metricConditions">
+            <div className="card">
+              <div className="card-header border-bottom border-translucent py-3">
+                <div className="row align-items-center g-2 mb-3">
+                  <div className="col">
+                    <h4 className="mb-0">
+                      Metric alert conditions
+                    </h4>
+                    <p className="text-body-tertiary fs-9 mb-0">
+                      Evaluated as each delivery lands, so a breach is about a minute old — not a poll interval old
+                    </p>
+                  </div>
+                  <div className="col-auto">
+                    <button className="btn btn-primary btn-sm" type="button" data-lhb-action="addMetricCondition">
+                      Add condition
+                    </button>
+                  </div>
+                </div>
+                <div className="row align-items-center g-2">
+                  <div className="col-12 col-md">
+                    <div className="search-box w-100">
+                      <form className="position-relative">
+                        <input className="form-control search-input search form-control-sm" type="search" placeholder="Search conditions" aria-label="Search" />
+                        <span className="fas fa-search search-box-icon"></span>
+                      </form>
+                    </div>
+                  </div>
+                  <div className="col-6 col-md-auto">
+                    <select className="form-select form-select-sm" data-list-filter="data-list-filter" aria-label="Filter">
+                      <option value="">
+                        Filter: All
+                      </option>
+                      <option value="Firing">
+                        Firing
+                      </option>
+                      <option value="OK">
+                        OK
+                      </option>
+                    </select>
+                  </div>
+                  <div className="col-6 col-md-auto">
+                    <select className="form-select form-select-sm" aria-label="Sort by" data-obs-sort="data-obs-sort">
+                      <option value="">
+                        Sort by
+                      </option>
+                      <option value="col0">
+                        Condition
+                      </option>
+                      <option value="col1">
+                        Metric
+                      </option>
+                      <option value="col2">
+                        For
+                      </option>
+                      <option value="col3">
+                        Watching
+                      </option>
+                      <option value="col4">
+                        Firing
+                      </option>
+                      <option value="col5">
+                        Status
+                      </option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div className="card-body p-0">
+                <div className="table-responsive scrollbar">
+                  <table className="table table-sm fs-9 mb-0">
+                    <thead>
+                      <tr>
+                        <th className="sort align-middle white-space-nowrap text-uppercase ps-3" scope="col" data-sort="col0">
+                          Condition
+                        </th>
+                        <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col1">
+                          Metric
+                        </th>
+                        <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col2">
+                          For
+                        </th>
+                        <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col3">
+                          Watching
+                        </th>
+                        <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col4">
+                          Firing
+                        </th>
+                        <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col5">
+                          Status
+                        </th>
+                        <th className="align-middle text-end pe-3" scope="col"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="list" data-sample-rows="data-sample-rows">
+                      <tr>
+                        <td className="align-middle ps-3 py-3 col0">
+                          <div className="d-flex align-items-center">
+                            <span className="me-2 fa-solid fa-bell text-danger"></span>
+                            <div>
+                              <h6 className="mb-0">
+                                EC2 CPU above 80%
+                              </h6>
+                              <p className="text-body-tertiary fs-10 mb-0">
+                                AWS/EC2 · avg &gt; 80
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="align-middle col1">
+                          CPUUtilization
+                        </td>
+                        <td className="align-middle col2">
+                          2m
+                        </td>
+                        <td className="align-middle col3">
+                          42
+                        </td>
+                        <td className="align-middle col4">
+                          3
+                        </td>
+                        <td className="align-middle col5">
+                          <span className="badge badge-phoenix badge-phoenix-danger">
+                            Firing
+                          </span>
+                        </td>
+                        <td className="align-middle pe-3"></td>
+                      </tr>
+                      <tr>
+                        <td className="align-middle ps-3 py-3 col0">
+                          <div className="d-flex align-items-center">
+                            <span className="me-2 fa-solid fa-bell-slash text-success"></span>
+                            <div>
+                              <h6 className="mb-0">
+                                Order queue backing up
+                              </h6>
+                              <p className="text-body-tertiary fs-10 mb-0">
+                                AWS/SQS · max &gt; 1000
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="align-middle col1">
+                          ApproximateNumberOfMessagesVisible
+                        </td>
+                        <td className="align-middle col2">
+                          3m
+                        </td>
+                        <td className="align-middle col3">
+                          11
+                        </td>
+                        <td className="align-middle col4">
+                          0
+                        </td>
+                        <td className="align-middle col5">
+                          <span className="badge badge-phoenix badge-phoenix-success">
+                            OK
+                          </span>
+                        </td>
+                        <td className="align-middle pe-3"></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div className="text-center p-3 fallback d-none">
+                  <p className="mb-0 text-body-tertiary">
+                    No matching results
+                  </p>
+                </div>
+              </div>
+              <div className="card-footer border-top border-translucent">
+                <div className="row align-items-center g-2">
+                  <div className="pagination d-none"></div>
+                  <div className="col d-flex fs-9 flex-wrap">
+                    <p className="mb-0 d-none d-sm-block me-3 fw-semibold text-body" data-list-info="data-list-info"></p>
+                    <a className="fw-semibold" href="#!" data-list-view="*">
+                      View all
+                      <span className="fas fa-angle-right ms-1" data-fa-transform="down-1"></span>
+                    </a>
+                    <a className="fw-semibold d-none" href="#!" data-list-view="less">
+                      View less
+                    </a>
+                  </div>
+                  <div className="col-auto d-flex">
+                    <button className="btn btn-link px-1 me-1" type="button" title="Previous" data-list-pagination="prev">
+                      <span className="fas fa-chevron-left me-2"></span>
+                      Previous
+                    </button>
+                    <button className="btn btn-link px-1 ms-1" type="button" title="Next" data-list-pagination="next">
+                      Next
+                      <span className="fas fa-chevron-right ms-2"></span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="obs-list-root" data-list={"{\"valueNames\":[\"col0\",\"col1\",\"col2\",\"col3\",\"col4\"],\"page\":5,\"filter\":{\"key\":\"col4\"}}"} data-live-table="cloudChanges">
+        <div className="card">
+          <div className="card-header border-bottom border-translucent py-3">
+            <div className="row align-items-center g-2 mb-3">
+              <div className="col">
+                <h4 className="mb-0">
+                  Resource changes
+                </h4>
+                <p className="text-body-tertiary fs-9 mb-0">
+                  What appeared, vanished or changed between inventory snapshots
+                </p>
+              </div>
+              <div className="col-auto">
+                <button className="btn btn-primary btn-sm" type="button" data-lhb-action="scanCloudChanges">
+                  Scan for changes
+                </button>
+              </div>
+            </div>
+            <div className="row align-items-center g-2">
+              <div className="col-12 col-md">
+                <div className="search-box w-100">
+                  <form className="position-relative">
+                    <input className="form-control search-input search form-control-sm" type="search" placeholder="Search changes" aria-label="Search" />
+                    <span className="fas fa-search search-box-icon"></span>
+                  </form>
+                </div>
+              </div>
+              <div className="col-6 col-md-auto">
+                <select className="form-select form-select-sm" data-list-filter="data-list-filter" aria-label="Filter">
+                  <option value="">
+                    Filter: All
+                  </option>
+                  <option value="Added">
+                    Added
+                  </option>
+                  <option value="Removed">
+                    Removed
+                  </option>
+                </select>
+              </div>
+              <div className="col-6 col-md-auto">
+                <select className="form-select form-select-sm" aria-label="Sort by" data-obs-sort="data-obs-sort">
+                  <option value="">
+                    Sort by
+                  </option>
+                  <option value="col0">
+                    Resource
+                  </option>
+                  <option value="col1">
+                    Kind
+                  </option>
+                  <option value="col2">
+                    Account
+                  </option>
+                  <option value="col3">
+                    Seen
+                  </option>
+                  <option value="col4">
+                    Change
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div className="card-body p-0">
+            <div className="table-responsive scrollbar">
+              <table className="table table-sm fs-9 mb-0">
+                <thead>
+                  <tr>
+                    <th className="sort align-middle white-space-nowrap text-uppercase ps-3" scope="col" data-sort="col0">
+                      Resource
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col1">
+                      Kind
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col2">
+                      Account
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col3">
+                      Seen
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col4">
+                      Change
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="list" data-sample-rows="data-sample-rows">
+                  <tr>
+                    <td className="align-middle ps-3 py-3 col0">
+                      <div className="d-flex align-items-center">
+                        <span className="me-2 fa-solid fa-plus text-success"></span>
+                        <div>
+                          <h6 className="mb-0">
+                            assets-staging
+                          </h6>
+                          <p className="text-body-tertiary fs-10 mb-0">
+                            111122223333
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="align-middle col1">
+                      S3 bucket
+                    </td>
+                    <td className="align-middle col2">
+                      prod-root
+                    </td>
+                    <td className="align-middle col3">
+                      2026-09-10T08:00:00Z
+                    </td>
+                    <td className="align-middle col4">
                       <span className="badge badge-phoenix badge-phoenix-success">
-                        Healthy
+                        Added
                       </span>
                     </td>
                   </tr>
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
                       <div className="d-flex align-items-center">
-                        <span className="me-2 fa-brands fa-microsoft text-info"></span>
+                        <span className="me-2 fa-solid fa-trash text-danger"></span>
                         <div>
                           <h6 className="mb-0">
-                            Contoso Prod
+                            legacy-exports
                           </h6>
                           <p className="text-body-tertiary fs-10 mb-0">
-                            sub-prod
+                            444455556666
                           </p>
                         </div>
                       </div>
                     </td>
                     <td className="align-middle col1">
-                      Azure
+                      S3 bucket
                     </td>
                     <td className="align-middle col2">
-                      Subscription
+                      prod-workloads
                     </td>
                     <td className="align-middle col3">
-                      1,480
+                      2026-09-09T18:20:00Z
                     </td>
                     <td className="align-middle col4">
-                      0
-                    </td>
-                    <td className="align-middle col5">
-                      <span className="badge badge-phoenix badge-phoenix-success">
-                        Healthy
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="align-middle ps-3 py-3 col0">
-                      <div className="d-flex align-items-center">
-                        <span className="me-2 fa-brands fa-microsoft text-info"></span>
-                        <div>
-                          <h6 className="mb-0">
-                            Contoso Shared
-                          </h6>
-                          <p className="text-body-tertiary fs-10 mb-0">
-                            sub-shared
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="align-middle col1">
-                      Azure
-                    </td>
-                    <td className="align-middle col2">
-                      Subscription
-                    </td>
-                    <td className="align-middle col3">
-                      620
-                    </td>
-                    <td className="align-middle col4">
-                      0
-                    </td>
-                    <td className="align-middle col5">
-                      <span className="badge badge-phoenix badge-phoenix-success">
-                        Healthy
+                      <span className="badge badge-phoenix badge-phoenix-danger">
+                        Removed
                       </span>
                     </td>
                   </tr>

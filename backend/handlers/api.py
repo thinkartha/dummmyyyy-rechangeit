@@ -9,7 +9,7 @@ from shared.core.request_spans import record_request_span
 from handlers.routers import (
     health, rca, ingest, finops, slo, auth, correlation, drift, stream, etl, aws, elk,
     admin, observability, databricks, gateways, databases, ai_models, alerts,
-    data_observability, automation, alert_management, tenant, otlp, cloud,
+    data_observability, automation, alert_management, tenant, otlp, cloud, metrics,
 )
 from shared.pipeline import runtime
 from shared.pipeline import stream as stream_consumer
@@ -61,10 +61,13 @@ app.include_router(auth.router)
 app.include_router(tenant.router)
 app.include_router(gateways.customer_agent_router)
 app.include_router(gateways.telemetry_router)
+# CloudWatch Metric Streams arrive from Kinesis Firehose, which authenticates with the
+# per-tenant access key in the body's own header and cannot present a session.
+app.include_router(metrics.ingest_router)
 
 for _router in (rca, ingest, finops, slo, admin, correlation, drift, stream, etl, aws, elk,
                 observability, databricks, gateways, databases, ai_models, alerts,
-                data_observability, automation, alert_management, otlp, cloud):
+                data_observability, automation, alert_management, otlp, cloud, metrics):
     app.include_router(_router.router, dependencies=_auth)
 
 
