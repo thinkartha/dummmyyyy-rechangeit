@@ -31,6 +31,27 @@ def get_lambda_config_status(tenant_id: str = Depends(get_tenant_id)) -> dict:
     return config_status(tenant_id)
 
 
+@router.get("/connector-identity")
+def get_connector_identity() -> dict:
+    """The ARN a customer's cross-account role has to trust, plus the trust policy.
+
+    Handed to the browser so the connect form can show it: the role this deployment runs
+    as is deliberately unnamed (a named IAM role forces a replacement on some stack
+    updates), so without this a customer cannot write the trust policy at all.
+    """
+    return connector_identity()
+
+
+@router.post("/test")
+def test_aws_connection(tenant_id: str = Depends(get_tenant_id)) -> dict:
+    """Probe the saved credential and report what it can actually do.
+
+    POST rather than GET because it calls out to AWS on every request and is deliberately
+    not cached — it exists to be pressed after changing something.
+    """
+    return test_connection(tenant_id)
+
+
 @router.get("/lambda/overview", response_model=AwsLambdaOverview)
 def get_lambda_overview(tenant_id: str = Depends(get_tenant_id)) -> AwsLambdaOverview:
     return lambda_overview(tenant_id)

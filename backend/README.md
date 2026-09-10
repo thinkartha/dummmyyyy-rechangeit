@@ -93,7 +93,8 @@ Attach to the role the customer creates for us:
         "s3:GetBucketLocation",
         "cloudwatch:DescribeAlarms",
         "iam:ListUsers",
-        "organizations:ListAccounts"
+        "organizations:ListAccounts",
+        "tag:GetResources"
       ],
       "Resource": "*"
     },
@@ -142,6 +143,41 @@ Notes:
   theirs, since this Lambda is trusted by both.
 - AWS has **no public API for payment methods or billing contacts** — card details are
   console-only, so no policy grants access to them and no endpoint here reports them.
+
+## CloudWatch Metric Streams
+
+The IAM role above is *pull*: it answers when a page is opened. A metric stream is
+*push*, and it is how every AWS service other than Lambda gets measured — EC2, RDS, ALB,
+SQS, DynamoDB and the rest arrive without a collector each, about a minute behind live.
+Nothing in the deployed stack is on a schedule, so this is also the only thing that
+collects when nobody is looking.
+
+The customer creates two resources in their account:
+
+1. A **Kinesis Data Firehose** delivery stream, destination *HTTP Endpoint*:
+   - URL: `https://<api>/api/v1/integrations/aws/metrics/stream`
+   - Access key: the value from `GET /api/v1/integrations/aws/metrics/key` (shown on
+     **Integrations → Cloud accounts**). Firehose sends it as `X-Amz-Firehose-Access-Key`,
+     which is what identifies the tenant — there is no other credential on that request.
+   - Keep the S3 backup bucket Firehose asks for. A delivery we answer with a 5xx is
+     retried and then parked there, so it is the difference between a slow outage and a
+     silent gap.
+2. A **CloudWatch metric stream** pointed at that delivery stream, output format **JSON**
+   (not OpenTelemetry — the reader here parses the JSON shape), with the namespaces they
+   want included.
+
+Notes:
+
+- The stream is per-region and per-account. A tenant wanting three regions creates three,
+  all pointing at the same URL and key; the account and region travel in every record, so
+  the rows separate themselves.
+- Cost is Firehose ingestion plus the metric-stream update charge, both on the customer's
+  bill. Selecting namespaces rather than "all metrics" is the lever, and it is theirs.
+- `GET /api/v1/integrations/aws/metrics/key` reports `receiving`, which is true only once
+  a delivery has actually arrived. A minted key proves nothing on its own — the common
+  failure is a key created and the Firehose side never finished.
+- Rotating the key (`POST .../key/rotate`) retires the old one immediately, so the
+  Firehose destination has to be updated in the same sitting or delivery stops.
 
 ## Local
 

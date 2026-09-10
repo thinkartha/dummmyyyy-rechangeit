@@ -7,6 +7,16 @@ from pydantic import BaseModel, Field
 
 class AwsLambdaConfig(BaseModel):
     region: str = "us-east-1"
+    # Extra regions to read alongside `region`. Alarms and resources are regional, so a
+    # tenant with anything outside their home region was simply not being shown it — the
+    # GCP and Azure configs have taken a region list since they were added.
+    # `region` stays the primary: it is what the global services are pinned against and
+    # what a single-region tenant already has stored.
+    regions: list[str] = Field(default_factory=list)
+    # The cross-account role assumed in each member account. AWS Organizations creates
+    # OrganizationAccountAccessRole, which is why it is the default, but an org that
+    # renamed it or rolled its own had no way to say so outside a query parameter.
+    member_role_name: str | None = Field(default=None, alias="memberRoleName")
     auth_method: Literal["default-chain", "access-keys", "iam-role"] = Field(
         default="default-chain", alias="authMethod"
     )

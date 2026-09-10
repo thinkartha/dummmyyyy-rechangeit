@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
-from shared.aws.cost import CloudCostReport, cloud_cost
+from shared.aws.cost import CloudCostReport, CostBreakdown, CostSeries, breakdown, cloud_cost, daily
 from shared.core import budgets as budget_store
 from shared.core.auth import ROLE_ORG_ADMIN, ROLE_PLATFORM_ADMIN, Principal, get_current_principal
 from shared.core import mock_data
@@ -36,6 +36,32 @@ def finops_cloud_cost(tenant_id: str = Depends(get_tenant_id)) -> CloudCostRepor
     from different places and a tenant with no budgets is the normal case, not an error.
     """
     return cloud_cost(tenant_id)
+
+
+@router.get("/finops/cloud-cost/breakdown", response_model=CostBreakdown)
+def finops_cost_breakdown(
+    group_by: str = Query(default="SERVICE", alias="groupBy", max_length=128),
+    tenant_id: str = Depends(get_tenant_id),
+) -> CostBreakdown:
+    """MTD spend grouped by service, region, or a tag key.
+
+    `groupBy` takes a Cost Explorer dimension (SERVICE, REGION, USAGE_TYPE, …) or, for
+    anything else, a tag key — which is the only way to answer "what does this team
+    spend", since the tag keys are the customer's own and cannot be listed here.
+    """
+    return breakdown(tenant_id, group_by)
+
+
+@router.get("/finops/cloud-cost/daily", response_model=CostSeries)
+def finops_cost_daily(
+    days: int = Query(default=30, ge=2, le=365),
+    tenant_id: str = Depends(get_tenant_id),
+) -> CostSeries:
+    """Daily spend, so the page can show whether spend is accelerating.
+
+    A month-to-date total only ever rises; it cannot answer that question on its own.
+    """
+    return daily(tenant_id, days)
 
 
 # --- budgets ----------------------------------------------------------------
