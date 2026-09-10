@@ -517,6 +517,10 @@ export const api = {
   /* AWS Lambda integration */
   awsLambda: {
     overview: () => get('/integrations/aws/lambda/overview'),
+    /* Every AWS account the saved credential reaches, from organizations:ListAccounts,
+       each read through the cross-account role. Cached server-side for 15 minutes —
+       it is ~6 API calls per account, so this is not a poll target. */
+    inventory: (params) => get('/integrations/aws/inventory', params),
     config: () => get('/integrations/aws/lambda/config'),
     saveConfig: (body) => put('/integrations/aws/lambda/config', body),
     invocations: (params) => get('/integrations/aws/lambda/invocations', params),

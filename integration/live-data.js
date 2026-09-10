@@ -141,6 +141,33 @@ const pct = (v, digits = 1) =>
   v === null || v === undefined ? '—' : `${Number(v).toFixed(digits)}%`;
 
 /**
+ * An amount of money, always to the cent.
+ *
+ * num() sets `maximumFractionDigits` only, so a whole-cent amount lost its trailing
+ * zero and $1,234.50 rendered as "USD 1,234.5" — which reads as a truncated number
+ * rather than a price, and made two amounts in the same column line up differently.
+ */
+const money = (v, currency = 'USD') =>
+  v === null || v === undefined || Number.isNaN(Number(v))
+    ? '—'
+    : `${currency} ${Number(v).toLocaleString(undefined, {
+        minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+/**
+ * What "resources" means for one AWS account, in one place.
+ *
+ * The inventory report is five independent lists and the page shows one number, so the
+ * definition has to live somewhere — here, rather than being spelled out once in the
+ * row and again in the card, where the two copies disagree the moment a service is
+ * added to the report. IAM users are counted: they are the thing in the account most
+ * likely to be a finding, and leaving them out makes an account of nothing but users
+ * read as empty.
+ */
+const countResources = (account) =>
+  ['hostedZones', 'domains', 'distributions', 'buckets', 'users']
+    .reduce((total, key) => total + ((account && account[key]) || []).length, 0);
+
+/**
  * Registry: key -> how to load it and how to turn the payload into table rows.
  *
  * `rows` returns objects in the same shape the Pug mixin emits statically
@@ -617,7 +644,6 @@ export const SOURCES = {
        budgets too, which is the other reason the join lives on this side. */
     stats: ({ cost, budgets }) => {
       const currency = (cost && cost.currency) || 'USD';
-      const money = (v) => (v == null ? '—' : `${currency} ${num(v, 2)}`);
       const over = ((cost && cost.accounts) || []).filter((a) => {
         const budget = (budgets || []).find((b) => b.target === a.account)
           || (budgets || []).find((b) => b.target === '*');
@@ -626,9 +652,9 @@ export const SOURCES = {
       const total = cost && cost.mtd_total;
       const forecast = cost && cost.forecast_month_end;
       return {
-        mtdSpend: { value: money(total), delta: cost?.period_start ? `since ${cost.period_start}` : 'no data' },
+        mtdSpend: { value: money(total, currency), delta: cost?.period_start ? `since ${cost.period_start}` : 'no data' },
         forecastEom: {
-          value: money(forecast),
+          value: money(forecast, currency),
           // Cost Explorer declines to forecast a new account or the last day of a
           // month. That is an answer, and it should not read as $0.
           delta: forecast == null ? 'not enough history'
@@ -672,8 +698,8 @@ export const SOURCES = {
           iconColor: over ? 'danger' : 'warning',
           meta: a.account,
           cells: [a.account, a.cloud || 'AWS',
-                  `${currency} ${num(a.mtd, 2)}`,
-                  limit != null ? `${budget.currency || currency} ${num(limit, 2)}/mo` : 'no budget set',
+                  money(a.mtd, currency),
+                  limit != null ? `${money(limit, budget.currency || currency)}/mo` : 'no budget set',
                   variance != null ? `${variance > 0 ? '+' : ''}${pct(variance, 1)}` : '—',
                   badge(limit == null ? 'Untracked' : over ? 'Over' : 'On track')],
           actions: budget ? [{ key: 'deleteBudget', arg: budget.id, label: 'Clear budget' }] : [],
@@ -755,38 +781,100 @@ export const SOURCES = {
   },
 
   /**
-   * Columns: Account · Cloud · Type · Resources · Alerts · Status.
+   * Columns: Account · Cloud · Type · Resources · Open alarms · MTD cost · Status.
    *
-   * Two things tie a tenant to a cloud, and the page only ever showed one of them: the
-   * Lambda connector, and the API gateway they connected under API Gateway. A managed
-   * gateway *is* a cloud account in use — AWS API Gateway, Azure API Management, Apigee
-   * on GCP — so it gets its own row here instead of that fact living on one tab only.
+   * One row per AWS account the saved credential can actually reach. The account list
+   * is AWS's own (`organizations:ListAccounts`) rather than anything registered here,
+   * so an account added to the org this morning appears without anybody touching a
+   * settings page — and an account whose cross-account role is missing appears too,
+   * saying so, instead of silently not existing.
+   *
+   * Three answers are joined because they come from three different services and no
+   * single AWS call returns them together: inventory (what exists, per account),
+   * Cost Explorer (what it cost, per linked account), and the gateway connection. The
+   * join key is the twelve-digit account id, which is what LINKED_ACCOUNT reports.
+   *
+   * A managed API gateway is still a row: it is the only real signal this app has for
+   * an Azure or GCP account, and dropping it would make "multi-cloud" mean AWS.
    */
-  cloudLambda: {
+  cloudAccounts: {
+    stats: ({ report, cost }) => {
+      const accounts = (report && report.accounts) || [];
+      const resources = accounts.reduce((t, a) => t + countResources(a), 0);
+      const alarms = accounts.reduce((t, a) => t + ((a.alarms || []).length), 0);
+      const alarming = accounts.filter((a) => (a.alarms || []).length).length;
+      const currency = (cost && cost.currency) || 'USD';
+      /* Unreachable accounts are counted as linked — AWS lists them, so they are the
+         tenant's — but they contribute no resources, and a card that quietly averaged
+         them away would hide the missing role that is the actual problem. */
+      const unreachable = accounts.filter((a) => a.error).length;
+      return {
+        linkedAccounts: {
+          value: num(accounts.length),
+          delta: report && report.organization
+            ? (unreachable ? `${num(unreachable)} unreachable` : 'AWS Organizations')
+            : 'standalone account',
+        },
+        resources: { value: num(resources), delta: `across ${num(accounts.length)} accounts` },
+        openAlarms: {
+          value: num(alarms),
+          delta: alarms ? `in ${num(alarming)} accounts` : 'all clear',
+        },
+        mtdSpend: {
+          value: cost && !cost.error ? money(cost.mtd_total, currency) : '—',
+          delta: cost && cost.error ? 'Cost Explorer denied'
+            : cost && cost.period_start ? `since ${cost.period_start}` : 'no data',
+        },
+      };
+    },
+    /* Sequential rather than Promise.all: inventory is the slow one and the other two
+       are cheap, and a burst of three signed calls per poll tick against the same
+       credential is how a tenant meets AWS throttling. Each failure is caught on its
+       own — a role without ce:GetCostAndUsage should still get its inventory. */
     load: async (api) => ({
-      lambda: await api.awsLambda.overview().catch(() => null),
+      report: await api.awsLambda.inventory().catch((err) => ({ error: err.message })),
+      cost: await api.finops.cloudCost().catch(() => null),
       gateway: await api.gateways.status().catch(() => null),
     }),
-    rows: ({ lambda, gateway }) => {
+    rows: ({ report, cost, gateway }) => {
       const rows = [];
-      /* An account whose credentials AWS rejected is the case this row kept getting
-         wrong: it counted zero functions and still said Healthy. `error` is why the
-         numbers are zero, and it belongs in front of the operator who just saved the
-         connection — that is the only way "connected but nothing is updating" is
-         distinguishable from "connected and quiet". */
-      if (lambda) {
-        const failed = Boolean(lambda.error);
+      /* A credential AWS rejected is one row saying why. Returning [] renders "Nothing
+         here yet", which reads as "you own no accounts" — the opposite of the truth,
+         and it hides the one string that says which permission is missing. */
+      if (report && report.error) {
         rows.push({
-          icon: 'fa-aws',
+          iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'danger',
+          meta: report.error,
+          cells: ['AWS connection', 'AWS', 'Credential', '—', '—', '—',
+                  badge('Unreachable')],
+        });
+      }
+      const spend = new Map(((cost && cost.accounts) || []).map((a) => [String(a.account), a]));
+      const currency = (cost && cost.currency) || 'USD';
+      for (const account of (report && report.accounts) || []) {
+        const alarms = (account.alarms || []).length;
+        const partial = Object.keys(account.serviceErrors || {});
+        const mtd = spend.get(String(account.accountId));
+        rows.push({
           iconSet: 'fa-brands',
-          iconColor: failed || lambda.errorRate > 0.05 ? 'danger' : 'warning',
-          meta: lambda.error
-            || `${lambda.source} · ${num(lambda.invocationsPerMinute)} inv/min`,
-          cells: [`AWS Lambda · ${lambda.region}`, 'AWS', 'Serverless',
-                  num(lambda.functions), num(lambda.activeAlarms),
-                  badge(!lambda.configured ? 'Not connected'
-                    : failed ? 'Auth failed'
-                    : lambda.errorRate > 0.05 ? 'Degraded' : 'Healthy')],
+          icon: 'fa-aws',
+          iconColor: account.error ? 'danger' : alarms ? 'warning' : 'success',
+          /* Whichever of these is true is the thing the operator needs: why the row is
+             empty, then which reads were refused, then just which account it is. */
+          meta: account.error
+            || (partial.length ? `${account.accountId} · no access: ${partial.join(', ')}` : account.accountId),
+          cells: [
+            account.name || account.accountId,
+            'AWS',
+            account.connected ? 'Connected account'
+              : report.organization ? 'Member account' : 'Standalone account',
+            account.error ? '—' : num(countResources(account)),
+            account.error ? '—' : num(alarms),
+            mtd ? money(mtd.mtd, currency) : '—',
+            badge(account.error ? 'Unreachable'
+              : alarms ? 'Alarm'
+              : partial.length ? 'Partial access' : 'Healthy'),
+          ],
         });
       }
       /* Only the managed gateways say anything about a cloud account. A self-hosted
@@ -801,7 +889,7 @@ export const SOURCES = {
           iconColor: gateway.reachable ? 'success' : 'danger',
           meta: gateway.error || 'API gateway connected under API Gateway',
           cells: [gateway.label || gateway.provider, cloud[0], 'API gateway',
-                  num(gateway.routes), '—',
+                  num(gateway.routes), '—', '—',
                   badge(gateway.reachable ? 'Connected' : 'Unreachable')],
         });
       }

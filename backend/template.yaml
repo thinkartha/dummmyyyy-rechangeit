@@ -499,6 +499,20 @@ Resources:
                   - cloudwatch:GetMetricData
                   - cloudwatch:ListMetrics
                 Resource: "*"
+              # Every cross-account read starts here: shared/aws/lambda_service._session()
+              # assumes the roleArn the tenant saved on their AWS connection, and
+              # inventory.py then assumes onward into each member account using *that*
+              # role's credentials — so the second hop is the customer's permission to
+              # grant, not ours. Without this statement the first hop is AccessDenied and
+              # every AWS page reports "connected" while returning zeros.
+              #
+              # Not scopeable: the target ARN is supplied by the tenant at connect time,
+              # so the account id is unknown when this stack is deployed. The control
+              # that matters is on the other side — the customer's role trust policy
+              # names this role, and the connector sends their externalId with it.
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource: !Sub arn:${AWS::Partition}:iam::*:role/*
               # Used only when an AWS gateway connection leaves api_name blank and
               # asks Loveheartbeat to discover REST/HTTP APIs in this account.
               - Effect: Allow

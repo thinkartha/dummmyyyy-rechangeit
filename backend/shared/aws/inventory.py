@@ -118,6 +118,10 @@ class IamUser(BaseModel):
 class AccountInventory(BaseModel):
     account_id: str = Field(alias="accountId")
     name: str | None = None
+    # The account whose credential this tenant saved, as opposed to one reached by
+    # assuming a role. The page labels them differently because they fail differently:
+    # a member account with no cross-account role is the common setup mistake.
+    connected: bool = False
     hosted_zones: list[HostedZone] = Field(default_factory=list, alias="hostedZones")
     domains: list[Domain] = Field(default_factory=list)
     distributions: list[Distribution] = Field(default_factory=list)
@@ -325,11 +329,13 @@ def _org_accounts(session) -> list[dict]:
         return []
 
 
-def _collect(session, account_id: str, name: str | None, region: str) -> AccountInventory:
+def _collect(session, account_id: str, name: str | None, region: str,
+             connected: bool = False) -> AccountInventory:
     errors: dict[str, str] = {}
     return AccountInventory(
         accountId=account_id,
         name=name,
+        connected=connected,
         hostedZones=_guard(errors, "route53", lambda: _hosted_zones(session)),
         domains=_guard(errors, "route53domains", lambda: _domains(session)),
         distributions=_guard(errors, "cloudfront", lambda: _distributions(session)),
@@ -368,7 +374,7 @@ def inventory(tenant_id: str, role_name: str | None = None) -> AwsInventoryRepor
         if account_id == connected_id:
             # The management account already has the credential; assuming a role into
             # itself would fail, and OrganizationAccountAccessRole usually is not there.
-            return _collect(base, account_id, name, cfg.region)
+            return _collect(base, account_id, name, cfg.region, connected=True)
         try:
             member = _assume(base, account_id, role_name, cfg.region)
         except Exception as exc:

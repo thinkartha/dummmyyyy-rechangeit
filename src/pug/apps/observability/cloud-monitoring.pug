@@ -12,16 +12,16 @@ append variables
 block content
   +ObsPageHeader({
     title: 'Cloud Monitoring',
-    subtitle: 'Health and inventory across AWS, GCP, and Azure — accounts are connected under Orchestration, and their functions and anomalies surface here',
+    subtitle: 'Every AWS account your connected credential reaches, with what it owns, what is alarming, and what it has cost this month',
     action: 'Refresh',
     actionKey: 'refreshData'
   })
 
   +ObsStatCards([
-    { label: 'Linked accounts', value: '18', delta: '3 clouds', badge: 'info' },
-    { label: 'Resources watched', value: '12.4k', delta: '+320', badge: 'success' },
-    { label: 'Open cloud alerts', value: '7', delta: '2 critical', badge: 'danger' },
-    { label: 'Regions', value: '26', delta: 'global', badge: 'primary' }
+    { key: 'linkedAccounts', label: 'Linked accounts', value: '18', delta: '3 clouds', badge: 'info' },
+    { key: 'resources', label: 'Resources watched', value: '12.4k', delta: '+320', badge: 'success' },
+    { key: 'openAlarms', label: 'Open cloud alarms', value: '7', delta: '2 critical', badge: 'danger' },
+    { key: 'mtdSpend', label: 'Spend month to date', value: 'USD 42,180.00', delta: 'since 2026-09-01', badge: 'primary' }
   ])
 
   .card.mb-4
@@ -61,25 +61,23 @@ block content
 
   +ObsToolTable({
     title: 'Linked accounts',
-    live: 'cloudLambda',
-    subtitle: 'All environments monitored together',
+    live: 'cloudAccounts',
+    subtitle: 'From organizations:ListAccounts on the connected credential — nothing is registered here',
     searchPlaceholder: 'Search accounts',
+    pageSize: 8,
     columns: [
       { label: 'Account', className: 'ps-3' },
       { label: 'Cloud' },
       { label: 'Type' },
       { label: 'Resources' },
-      { label: 'Alerts' },
+      { label: 'Open alarms' },
+      { label: 'Cost (MTD)' },
       { label: 'Status' }
     ],
     rows: [
-      { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'warning', meta: '111122223333', cells: ['prod-root (org)', 'AWS', 'Organizations', '4,820', '3', { text: 'Healthy', badge: 'success' }] },
-      { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'warning', meta: '444455556666', cells: ['prod-workloads', 'AWS', 'Member account', '2,140', '2', { text: 'Watch', badge: 'info' }] },
-      { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'warning', meta: '777788889999', cells: ['dev-sandbox', 'AWS', 'Member account', '680', '0', { text: 'Healthy', badge: 'success' }] },
-      { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'warning', meta: '121212121212', cells: ['data-platform', 'AWS', 'Member account', '910', '1', { text: 'Healthy', badge: 'success' }] },
-      { iconSet: 'fa-brands', icon: 'fa-google', iconColor: 'danger', meta: 'acme-prod', cells: ['acme-prod', 'GCP', 'Project', '1,250', '1', { text: 'Healthy', badge: 'success' }] },
-      { iconSet: 'fa-brands', icon: 'fa-google', iconColor: 'danger', meta: 'acme-analytics', cells: ['acme-analytics', 'GCP', 'Project', '540', '0', { text: 'Healthy', badge: 'success' }] },
-      { iconSet: 'fa-brands', icon: 'fa-microsoft', iconColor: 'info', meta: 'sub-prod', cells: ['Contoso Prod', 'Azure', 'Subscription', '1,480', '0', { text: 'Healthy', badge: 'success' }] },
-      { iconSet: 'fa-brands', icon: 'fa-microsoft', iconColor: 'info', meta: 'sub-shared', cells: ['Contoso Shared', 'Azure', 'Subscription', '620', '0', { text: 'Healthy', badge: 'success' }] }
+      { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'success', meta: '111122223333', cells: ['prod-root', 'AWS', 'Connected account', '482', '0', 'USD 18,220.14', { text: 'Healthy', badge: 'success' }] },
+      { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'warning', meta: '444455556666', cells: ['prod-workloads', 'AWS', 'Member account', '214', '2', 'USD 15,904.77', { text: 'Alarm', badge: 'warning' }] },
+      { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'success', meta: '777788889999', cells: ['dev-sandbox', 'AWS', 'Member account', '68', '0', 'USD 1,142.03', { text: 'Healthy', badge: 'success' }] },
+      { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'danger', meta: 'ClientError: not authorized to perform sts:AssumeRole', cells: ['data-platform', 'AWS', 'Member account', '—', '—', 'USD 6,913.44', { text: 'Unreachable', badge: 'danger' }] }
     ]
   })

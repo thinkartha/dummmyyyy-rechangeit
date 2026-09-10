@@ -176,3 +176,9 @@ jobs:
         run: |
           node integration/check-actions.mjs
           node integration/check-auth.mjs
+
+      - name: Check the live-data row builders
+        # These asserted the payload shapes the pages depend on and were only ever run
+        # by hand, so a rename on either side of the API boundary passed CI green.
+        run: |
+          for t in integration/test/*.test.mjs; do node "$t"; done

@@ -66,7 +66,7 @@ export default function Page() {
               Cloud Monitoring
             </h2>
             <h5 className="text-body-tertiary fw-semibold mb-0">
-              Health and inventory across AWS, GCP, and Azure — accounts are connected under Orchestration, and their functions and anomalies surface here
+              Every AWS account your connected credential reaches, with what it owns, what is alarming, and what it has cost this month
             </h5>
           </div>
           <div className="col-auto">
@@ -85,11 +85,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Linked accounts
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="linkedAccounts">
                     18
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta">
+                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="linkedAccounts">
                   3 clouds
                 </span>
               </div>
@@ -104,11 +104,11 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Resources watched
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="resources">
                     12.4k
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
+                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="resources">
                   +320
                 </span>
               </div>
@@ -121,13 +121,13 @@ export default function Page() {
               <div className="d-flex justify-content-between align-items-start">
                 <div>
                   <h6 className="text-body-tertiary mb-2">
-                    Open cloud alerts
+                    Open cloud alarms
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="openAlarms">
                     7
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-danger" data-obs-stat-delta="data-obs-stat-delta">
+                <span className="badge badge-phoenix badge-phoenix-danger" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="openAlarms">
                   2 critical
                 </span>
               </div>
@@ -140,14 +140,14 @@ export default function Page() {
               <div className="d-flex justify-content-between align-items-start">
                 <div>
                   <h6 className="text-body-tertiary mb-2">
-                    Regions
+                    Spend month to date
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
-                    26
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="mtdSpend">
+                    USD 42,180.00
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-primary" data-obs-stat-delta="data-obs-stat-delta">
-                  global
+                <span className="badge badge-phoenix badge-phoenix-primary" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="mtdSpend">
+                  since 2026-09-01
                 </span>
               </div>
             </div>
@@ -240,7 +240,7 @@ export default function Page() {
           </div>
         </div>
       </div>
-      <div className="obs-list-root" data-list={"{\"valueNames\":[\"col0\",\"col1\",\"col2\",\"col3\",\"col4\",\"col5\"],\"page\":5,\"filter\":{\"key\":\"col5\"}}"} data-live-table="cloudLambda">
+      <div className="obs-list-root" data-list={"{\"valueNames\":[\"col0\",\"col1\",\"col2\",\"col3\",\"col4\",\"col5\",\"col6\"],\"page\":8,\"filter\":{\"key\":\"col6\"}}"} data-live-table="cloudAccounts">
         <div className="card">
           <div className="card-header border-bottom border-translucent py-3">
             <div className="row align-items-center g-2 mb-3">
@@ -249,7 +249,7 @@ export default function Page() {
                   Linked accounts
                 </h4>
                 <p className="text-body-tertiary fs-9 mb-0">
-                  All environments monitored together
+                  From organizations:ListAccounts on the connected credential — nothing is registered here
                 </p>
               </div>
             </div>
@@ -270,8 +270,11 @@ export default function Page() {
                   <option value="Healthy">
                     Healthy
                   </option>
-                  <option value="Watch">
-                    Watch
+                  <option value="Alarm">
+                    Alarm
+                  </option>
+                  <option value="Unreachable">
+                    Unreachable
                   </option>
                 </select>
               </div>
@@ -293,9 +296,12 @@ export default function Page() {
                     Resources
                   </option>
                   <option value="col4">
-                    Alerts
+                    Open alarms
                   </option>
                   <option value="col5">
+                    Cost (MTD)
+                  </option>
+                  <option value="col6">
                     Status
                   </option>
                 </select>
@@ -320,9 +326,12 @@ export default function Page() {
                       Resources
                     </th>
                     <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col4">
-                      Alerts
+                      Open alarms
                     </th>
                     <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col5">
+                      Cost (MTD)
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col6">
                       Status
                     </th>
                   </tr>
@@ -331,10 +340,10 @@ export default function Page() {
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
                       <div className="d-flex align-items-center">
-                        <span className="me-2 fa-brands fa-aws text-warning"></span>
+                        <span className="me-2 fa-brands fa-aws text-success"></span>
                         <div>
                           <h6 className="mb-0">
-                            prod-root (org)
+                            prod-root
                           </h6>
                           <p className="text-body-tertiary fs-10 mb-0">
                             111122223333
@@ -346,15 +355,18 @@ export default function Page() {
                       AWS
                     </td>
                     <td className="align-middle col2">
-                      Organizations
+                      Connected account
                     </td>
                     <td className="align-middle col3">
-                      4,820
+                      482
                     </td>
                     <td className="align-middle col4">
-                      3
+                      0
                     </td>
                     <td className="align-middle col5">
+                      USD 18,220.14
+                    </td>
+                    <td className="align-middle col6">
                       <span className="badge badge-phoenix badge-phoenix-success">
                         Healthy
                       </span>
@@ -381,21 +393,24 @@ export default function Page() {
                       Member account
                     </td>
                     <td className="align-middle col3">
-                      2,140
+                      214
                     </td>
                     <td className="align-middle col4">
                       2
                     </td>
                     <td className="align-middle col5">
-                      <span className="badge badge-phoenix badge-phoenix-info">
-                        Watch
+                      USD 15,904.77
+                    </td>
+                    <td className="align-middle col6">
+                      <span className="badge badge-phoenix badge-phoenix-warning">
+                        Alarm
                       </span>
                     </td>
                   </tr>
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
                       <div className="d-flex align-items-center">
-                        <span className="me-2 fa-brands fa-aws text-warning"></span>
+                        <span className="me-2 fa-brands fa-aws text-success"></span>
                         <div>
                           <h6 className="mb-0">
                             dev-sandbox
@@ -413,12 +428,15 @@ export default function Page() {
                       Member account
                     </td>
                     <td className="align-middle col3">
-                      680
+                      68
                     </td>
                     <td className="align-middle col4">
                       0
                     </td>
                     <td className="align-middle col5">
+                      USD 1,142.03
+                    </td>
+                    <td className="align-middle col6">
                       <span className="badge badge-phoenix badge-phoenix-success">
                         Healthy
                       </span>
@@ -427,13 +445,13 @@ export default function Page() {
                   <tr>
                     <td className="align-middle ps-3 py-3 col0">
                       <div className="d-flex align-items-center">
-                        <span className="me-2 fa-brands fa-aws text-warning"></span>
+                        <span className="me-2 fa-brands fa-aws text-danger"></span>
                         <div>
                           <h6 className="mb-0">
                             data-platform
                           </h6>
                           <p className="text-body-tertiary fs-10 mb-0">
-                            121212121212
+                            ClientError: not authorized to perform sts:AssumeRole
                           </p>
                         </div>
                       </div>
@@ -445,142 +463,17 @@ export default function Page() {
                       Member account
                     </td>
                     <td className="align-middle col3">
-                      910
+                      —
                     </td>
                     <td className="align-middle col4">
-                      1
+                      —
                     </td>
                     <td className="align-middle col5">
-                      <span className="badge badge-phoenix badge-phoenix-success">
-                        Healthy
-                      </span>
+                      USD 6,913.44
                     </td>
-                  </tr>
-                  <tr>
-                    <td className="align-middle ps-3 py-3 col0">
-                      <div className="d-flex align-items-center">
-                        <span className="me-2 fa-brands fa-google text-danger"></span>
-                        <div>
-                          <h6 className="mb-0">
-                            acme-prod
-                          </h6>
-                          <p className="text-body-tertiary fs-10 mb-0">
-                            acme-prod
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="align-middle col1">
-                      GCP
-                    </td>
-                    <td className="align-middle col2">
-                      Project
-                    </td>
-                    <td className="align-middle col3">
-                      1,250
-                    </td>
-                    <td className="align-middle col4">
-                      1
-                    </td>
-                    <td className="align-middle col5">
-                      <span className="badge badge-phoenix badge-phoenix-success">
-                        Healthy
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="align-middle ps-3 py-3 col0">
-                      <div className="d-flex align-items-center">
-                        <span className="me-2 fa-brands fa-google text-danger"></span>
-                        <div>
-                          <h6 className="mb-0">
-                            acme-analytics
-                          </h6>
-                          <p className="text-body-tertiary fs-10 mb-0">
-                            acme-analytics
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="align-middle col1">
-                      GCP
-                    </td>
-                    <td className="align-middle col2">
-                      Project
-                    </td>
-                    <td className="align-middle col3">
-                      540
-                    </td>
-                    <td className="align-middle col4">
-                      0
-                    </td>
-                    <td className="align-middle col5">
-                      <span className="badge badge-phoenix badge-phoenix-success">
-                        Healthy
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="align-middle ps-3 py-3 col0">
-                      <div className="d-flex align-items-center">
-                        <span className="me-2 fa-brands fa-microsoft text-info"></span>
-                        <div>
-                          <h6 className="mb-0">
-                            Contoso Prod
-                          </h6>
-                          <p className="text-body-tertiary fs-10 mb-0">
-                            sub-prod
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="align-middle col1">
-                      Azure
-                    </td>
-                    <td className="align-middle col2">
-                      Subscription
-                    </td>
-                    <td className="align-middle col3">
-                      1,480
-                    </td>
-                    <td className="align-middle col4">
-                      0
-                    </td>
-                    <td className="align-middle col5">
-                      <span className="badge badge-phoenix badge-phoenix-success">
-                        Healthy
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="align-middle ps-3 py-3 col0">
-                      <div className="d-flex align-items-center">
-                        <span className="me-2 fa-brands fa-microsoft text-info"></span>
-                        <div>
-                          <h6 className="mb-0">
-                            Contoso Shared
-                          </h6>
-                          <p className="text-body-tertiary fs-10 mb-0">
-                            sub-shared
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="align-middle col1">
-                      Azure
-                    </td>
-                    <td className="align-middle col2">
-                      Subscription
-                    </td>
-                    <td className="align-middle col3">
-                      620
-                    </td>
-                    <td className="align-middle col4">
-                      0
-                    </td>
-                    <td className="align-middle col5">
-                      <span className="badge badge-phoenix badge-phoenix-success">
-                        Healthy
+                    <td className="align-middle col6">
+                      <span className="badge badge-phoenix badge-phoenix-danger">
+                        Unreachable
                       </span>
                     </td>
                   </tr>
