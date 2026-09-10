@@ -1169,9 +1169,7 @@ export default function AppLayout({
                   <a className={'nav-link lh-1 pe-0'} id="navbarDropdownUser" href="#!" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-haspopup={true} aria-expanded={false}>
                     <div className="avatar avatar-l" data-lhb-avatar="data-lhb-avatar">
                       <div className="avatar-name rounded-circle">
-                        <span>
-                          V
-                        </span>
+                        <span className="fa-solid fa-user"></span>
                       </div>
                     </div>
                   </a>
@@ -1181,9 +1179,7 @@ export default function AppLayout({
                         <div className="text-center pt-4 pb-3">
                           <div className="avatar avatar-xl" data-lhb-avatar="data-lhb-avatar">
                             <div className="avatar-name rounded-circle">
-                              <span>
-                                V
-                              </span>
+                              <span className="fa-solid fa-user"></span>
                             </div>
                           </div>
                           <h6 className="mt-2 text-body-emphasis" data-lhb-user="data-lhb-user">

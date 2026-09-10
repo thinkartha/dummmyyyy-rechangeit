@@ -385,11 +385,12 @@ const ROLE_LABELS = {
  * to live tenant data is worse than showing nothing — it reads as the signed-in user.
  */
 /**
- * The letter to put in the avatar.
+ * The letter to put in the avatar: the first letter of the first name.
  *
- * Taken from the display name, falling back to the address — `alice@example.com` gives
- * "A". Non-letters are skipped rather than rendered: an account whose name starts with
- * a quote or a digit would otherwise get a circle with punctuation in it.
+ * The display name leads, the address is the fallback — `alice@example.com` gives "A",
+ * which is what every product that does this falls back to. The first *letter* rather
+ * than the first character, so a name stored as `"Tejas"` or ` tejas` still gives "T"
+ * instead of a circle with a quote mark in it.
  */
 function initialOf(session) {
   if (!session) return '';
@@ -398,8 +399,18 @@ function initialOf(session) {
   return letter ? letter[0].toUpperCase() : '';
 }
 
+/* Test seam. paint() reads the live session; this lets the avatar rules be exercised
+   with a session pushed in, which is the only part of paint() with branches worth
+   pinning. Not used by the app. */
+export function __paintForTest(session) {
+  paintWith(session);
+}
+
 function paint() {
-  const session = getSession();
+  paintWith(getSession());
+}
+
+function paintWith(session) {
 
   for (const el of document.querySelectorAll('[data-lhb-user]')) {
     /* A name slot wants a name. The address is the fallback for an account that has
@@ -409,12 +420,20 @@ function paint() {
   for (const el of document.querySelectorAll('[data-lhb-role]')) {
     el.textContent = session ? (ROLE_LABELS[session.role] || session.role) : '—';
   }
-  /* The avatar is the account's own initial, taken from the same name slot above so the
-     letter and the name can never disagree. Signed out it keeps the brand letter the
-     markup ships with, rather than a stranger's photograph or an empty circle. */
+  /* The avatar is the account's own initial, taken from the same source as the name
+     slot above so the letter and the name can never disagree. Signed out it falls back
+     to a generic person: any letter there would be a claim about somebody. */
+  const initial = initialOf(session);
   for (const el of document.querySelectorAll('[data-lhb-avatar] .avatar-name span')) {
-    const initial = initialOf(session);
-    if (initial) el.textContent = initial;
+    if (initial) {
+      el.className = '';
+      el.textContent = initial;
+    } else {
+      /* Back to the icon — the same element is reused rather than rebuilt, so a sign-out
+         after a sign-in does not leave the previous person's letter on screen. */
+      el.textContent = '';
+      el.className = 'fa-solid fa-user';
+    }
   }
   /* Platform-admin-only links stay hidden for everyone else. The backend enforces this
      regardless; hiding is so the page does not advertise a 403. */

@@ -293,7 +293,7 @@ mixin NavbarIcons(config)
       a#navbarDropdownUser.nav-link.lh-1.pe-0(href='#!' role='button' data-bs-toggle='dropdown' data-bs-auto-close="outside" aria-haspopup='true' aria-expanded='false')
         .avatar.avatar-l(data-lhb-avatar)
           .avatar-name.rounded-circle
-            span V
+            span.fa-solid.fa-user
       +ProfileDropdown
 mixin NavbarIconsSlim
   ul.navbar-nav.navbar-nav-icons.flex-row
@@ -340,13 +340,14 @@ mixin ProfileDropdown
     .card.position-relative.border-0
       .card-body.p-0
         .text-center.pt-4.pb-3
-          //- An initial, not a stock photograph. The theme shipped a stranger's face
-          //- here, which sat beside the signed-in name and read as that person.
-          //- integration/auth.js replaces the letter with the account's own initial;
-          //- "V" is what shows before a session loads, not a claim about anybody.
+          //- The account's own initial, the way Google does it — not a stock
+          //- photograph, and not a hardcoded letter either. The markup ships a generic
+          //- person; integration/auth.js swaps in the first letter of the signed-in
+          //- name once there is one. Signed out, a letter would be a claim about
+          //- somebody, so the icon stays.
           .avatar.avatar-xl(data-lhb-avatar)
             .avatar-name.rounded-circle
-              span V
+              span.fa-solid.fa-user
           //- Filled from the cached session by integration/auth.js. The placeholder name
           //- the theme shipped read as the signed-in user next to live tenant data.
           h6.mt-2.text-body-emphasis(data-lhb-user) Not signed in
