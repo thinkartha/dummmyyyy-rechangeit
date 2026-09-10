@@ -506,7 +506,12 @@ export const api = {
     deleteBudget: (id) => del(`/finops/budgets/${id}`)
   },
   slo: { list: () => get('/slo') },
-  drift: { list: () => get('/drift') },
+  drift: {
+    list: () => get('/drift'),
+    /* Pins "normal". Admin-only server-side, so the button can legitimately 403. */
+    pinBaseline: () => post('/drift/baseline'),
+    observe: (features) => post('/drift/observations', { features })
+  },
   correlation: {
     incidents: (params) => get('/correlated-incidents', params),
     /* Same correlation, recomputed from the live event spine rather than the store. */
@@ -523,6 +528,20 @@ export const api = {
     invoke: (body) => post('/integrations/aws/lambda/invoke', body),
     retry: (id) => post(`/integrations/aws/lambda/invocations/${id}/retry`),
     poll: () => post('/integrations/aws/lambda/poll')
+  },
+
+  /* The other two clouds are cost-only: no collector, just the credential that lets
+     /finops/cloud-cost include their projects and subscriptions. */
+  gcpBilling: {
+    config: () => get('/integrations/gcp/billing/config'),
+    saveConfig: (body) => put('/integrations/gcp/billing/config', body),
+    /* What the credential can reach, independent of any billing export. */
+    projects: () => get('/integrations/gcp/projects')
+  },
+  azureCost: {
+    config: () => get('/integrations/azure/cost/config'),
+    saveConfig: (body) => put('/integrations/azure/cost/config', body),
+    subscriptions: () => get('/integrations/azure/subscriptions')
   },
 
   /* ELK — logs, metrics, traces */

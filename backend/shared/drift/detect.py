@@ -47,6 +47,10 @@ class DriftReport(BaseModel):
     categorical: list[CategoricalDrift]
     config: ConfigDrift
     any_drift: bool
+    # Without a baseline there is nothing to compare against, and an empty report has
+    # to be readable as "not watching yet" rather than "watched, and all clear".
+    baseline_pinned: bool = False
+    baseline_at: str | None = None
 
 
 def ks_two_sample(baseline: list[float], current: list[float], alpha: float = 0.05) -> tuple[float, float, bool]:

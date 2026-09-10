@@ -9,7 +9,7 @@ from shared.core.request_spans import record_request_span
 from handlers.routers import (
     health, rca, ingest, finops, slo, auth, correlation, drift, stream, etl, aws, elk,
     admin, observability, databricks, gateways, databases, ai_models, alerts,
-    data_observability, automation, alert_management, tenant, otlp,
+    data_observability, automation, alert_management, tenant, otlp, cloud,
 )
 from shared.pipeline import runtime
 from shared.pipeline import stream as stream_consumer
@@ -64,7 +64,7 @@ app.include_router(gateways.telemetry_router)
 
 for _router in (rca, ingest, finops, slo, admin, correlation, drift, stream, etl, aws, elk,
                 observability, databricks, gateways, databases, ai_models, alerts,
-                data_observability, automation, alert_management, otlp):
+                data_observability, automation, alert_management, otlp, cloud):
     app.include_router(_router.router, dependencies=_auth)
 
 

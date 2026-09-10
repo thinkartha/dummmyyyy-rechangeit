@@ -204,10 +204,10 @@ export default function Page() {
                     Primary model
                   </option>
                   <option value="col3">
-                    Fallback
+                    Other routes
                   </option>
                   <option value="col4">
-                    RPM
+                    Requests
                   </option>
                   <option value="col5">
                     Status
@@ -231,10 +231,10 @@ export default function Page() {
                       Primary model
                     </th>
                     <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col3">
-                      Fallback
+                      Other routes
                     </th>
                     <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col4">
-                      RPM
+                      Requests
                     </th>
                     <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col5">
                       Status

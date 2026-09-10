@@ -71,7 +71,7 @@ export default function Page() {
               Cloud accounts
             </h2>
             <h5 className="text-body-tertiary fw-semibold mb-0">
-              One AWS connection per organization — its credentials feed Cloud Monitoring, Orchestration, and the Lambda job stream
+              One connection per cloud per organization — AWS feeds Cloud Monitoring, Orchestration and the Lambda job stream; GCP and Azure feed Cloud Cost
             </h5>
           </div>
           <div className="col-auto">
@@ -104,9 +104,9 @@ export default function Page() {
                 Google Cloud
               </h6>
               <p className="text-body-tertiary fs-9 mb-3">
-                No collector yet. Apigee is readable today as an API gateway — connect it under Integrations → API gateway.
+                Per-project spend, read from your BigQuery billing export — one export covers every project its billing account pays for. No resource collector yet; Apigee is readable as an API gateway.
               </p>
-              <button className="btn btn-sm btn-phoenix-secondary" type="button" data-lhb-action="connectGcp">
+              <button className="btn btn-sm btn-primary" type="button" data-lhb-action="connectGcp">
                 Connect GCP
               </button>
             </div>
@@ -119,9 +119,9 @@ export default function Page() {
                 Microsoft Azure
               </h6>
               <p className="text-body-tertiary fs-9 mb-3">
-                No subscription-wide collector yet. Azure API Management is readable today as an API gateway.
+                Per-subscription spend from Cost Management — scope it at a billing account to see every subscription. No resource collector yet; API Management is readable as an API gateway.
               </p>
-              <button className="btn btn-sm btn-phoenix-secondary" type="button" data-lhb-action="connectAzure">
+              <button className="btn btn-sm btn-primary" type="button" data-lhb-action="connectAzure">
                 Connect Azure
               </button>
             </div>
@@ -137,7 +137,7 @@ export default function Page() {
                   Linked accounts
                 </h4>
                 <p className="text-body-tertiary fs-9 mb-0">
-                  What this organization has connected — the AWS collector, plus any managed cloud gateway in use
+                  What this organization has connected — the AWS collector, the GCP and Azure cost connectors, plus any managed cloud gateway in use
                 </p>
               </div>
             </div>

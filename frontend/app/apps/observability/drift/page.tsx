@@ -85,12 +85,12 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Features tracked
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
-                    214
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="featuresTracked">
+                    —
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta">
-                  +18
+                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="featuresTracked">
+                  no data
                 </span>
               </div>
             </div>
@@ -104,12 +104,12 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Drifting
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
-                    9
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="driftingCount">
+                    —
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
-                  4 significant
+                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="driftingCount">
+                  no data
                 </span>
               </div>
             </div>
@@ -123,12 +123,12 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Baseline age
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
-                    14d
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="baselineAge">
+                    —
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-primary" data-obs-stat-delta="data-obs-stat-delta">
-                  rolling
+                <span className="badge badge-phoenix badge-phoenix-primary" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="baselineAge">
+                  no data
                 </span>
               </div>
             </div>
@@ -140,14 +140,14 @@ export default function Page() {
               <div className="d-flex justify-content-between align-items-start">
                 <div>
                   <h6 className="text-body-tertiary mb-2">
-                    Models affected
+                    Connector changes
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
-                    3
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="configChanges">
+                    —
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-danger" data-obs-stat-delta="data-obs-stat-delta">
-                  retrain suggested
+                <span className="badge badge-phoenix badge-phoenix-danger" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="configChanges">
+                  no data
                 </span>
               </div>
             </div>
@@ -162,7 +162,11 @@ export default function Page() {
                 How drift is measured
               </h4>
               <p className="text-body-tertiary fs-9">
-                Two tests, chosen by what the feature is:
+                The baseline is pinned, not rolling:
+                <strong>
+                  Rebaseline
+                </strong>
+                snapshots the current 24 hours as normal, and everything after is judged against it. Two tests, chosen by what the feature is:
               </p>
               <ul className="fs-9">
                 <li>
@@ -175,7 +179,7 @@ export default function Page() {
                   <strong>
                     Categorical
                   </strong>
-                  — population stability index over the category mix
+                  — Chi-square over the category mix
                 </li>
               </ul>
               <p className="text-body-tertiary fs-9 mb-0">
@@ -281,7 +285,7 @@ export default function Page() {
                   Tracked features
                 </h4>
                 <p className="text-body-tertiary fs-9 mb-0">
-                  Compared against a rolling 14-day baseline, recomputed nightly per organization
+                  Last 24 hours against the baseline you pinned — request latency and status mix per route, per-model LLM latency, and any features you push
                 </p>
               </div>
             </div>

@@ -18,6 +18,9 @@ class DatabaseRequest(BaseModel):
     name: str = Field(min_length=1, max_length=64)
     # e.g. postgresql://user:pass@host:5432/dbname
     dsn: str = Field(min_length=1, max_length=2048)
+    # Free text on purpose: an org's environment names are its own, and a fixed enum
+    # here would reject the third one they have.
+    environment: str | None = Field(default=None, max_length=64)
 
 
 class DsnRequest(BaseModel):
@@ -63,7 +66,7 @@ def add_database(
     _: Principal = Depends(_require_admin),
 ) -> dict:
     """Register a database by connection string."""
-    return _guard(dbmon.add_database, tenant_id, body.name, body.dsn)
+    return _guard(dbmon.add_database, tenant_id, body.name, body.dsn, body.environment)
 
 
 @router.delete("/{database_id}", status_code=status.HTTP_204_NO_CONTENT)
