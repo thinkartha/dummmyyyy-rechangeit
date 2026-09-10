@@ -134,11 +134,15 @@ append variables
                 path: 'apps/observability/cloud-monitoring',
                 pathName: 'obs-cloud-monitoring',
               },
-              {
-                name: 'cloud-cost',
-                path: 'apps/observability/cloud-cost',
-                pathName: 'obs-cloud-cost',
-              },
+              // Cloud Cost is hidden from the nav. The page still compiles and its
+              // endpoints are untouched — uncomment this entry (and the matching line
+              // in frontend/scripts/port-html.mjs) to put it back, the same way Email
+              // and Events are parked below.
+              // {
+              //   name: 'cloud-cost',
+              //   path: 'apps/observability/cloud-cost',
+              //   pathName: 'obs-cloud-cost',
+              // },
               {
                 name: 'AI-cost-usage',
                 path: 'apps/observability/ai-cost-usage',

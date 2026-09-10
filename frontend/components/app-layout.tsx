@@ -17,7 +17,6 @@ const NAV_GROUPS: Record<string, string[]> = {
     "/apps/observability/etl-monitoring/",
     "/apps/observability/alerts/",
     "/apps/observability/cloud-monitoring/",
-    "/apps/observability/cloud-cost/",
     "/apps/observability/ai-cost-usage/",
     "/apps/observability/ai-models/",
     "/apps/observability/orchestration-monitoring/",
@@ -214,16 +213,6 @@ export default function AppLayout({
                               <div className="d-flex align-items-center">
                                 <span className="nav-link-text">
                                   Cloud monitoring
-                                </span>
-                              </div>
-                            </a>
-                            {/* more inner pages */}
-                          </li>
-                          <li className="nav-item">
-                            <a className={'nav-link' + (path === '/apps/observability/cloud-cost/' ? ' active' : '')} href="/apps/observability/cloud-cost/">
-                              <div className="d-flex align-items-center">
-                                <span className="nav-link-text">
-                                  Cloud cost
                                 </span>
                               </div>
                             </a>
