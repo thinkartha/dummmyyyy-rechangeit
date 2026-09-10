@@ -15,7 +15,9 @@ block content
     title: 'Cloud accounts',
     subtitle: 'One connection per cloud per organization — AWS credentials feed Cloud Monitoring, Orchestration, and the Lambda job stream; GCP and Azure store the account for the gateway readers',
     action: 'Connect AWS account',
-    actionKey: 'connectAwsAccount'
+    actionKey: 'connectAwsAccount',
+    secondaryAction: 'Finish setup & test',
+    secondaryActionKey: 'cloudSetup'
   })
 
   .row.g-4.mb-4
@@ -23,8 +25,11 @@ block content
       .card.h-100
         .card-body
           h6.mb-2 AWS
-          p.text-body-tertiary.fs-9.mb-3 Region, credentials (default chain, access keys, or an assumed role), function prefixes, log groups, and the thresholds that raise an anomaly.
-          button.btn.btn-sm.btn-primary(type='button' data-lhb-action='connectAwsAccount') Connect AWS account
+          p.text-body-tertiary.fs-9.mb-3 Regions, credentials (default chain, access keys, or an assumed role), the member-account role, and the thresholds that raise an anomaly.
+          p.text-body-tertiary.fs-10.mb-3 The credential is only half of it: <strong>Finish setup &amp; test</strong> shows the ARN your role must trust, the metric-stream endpoint and key, and probes what the credential can actually do.
+          .d-flex.gap-2.flex-wrap
+            button.btn.btn-sm.btn-primary(type='button' data-lhb-action='connectAwsAccount') Connect AWS account
+            button.btn.btn-sm.btn-phoenix-secondary(type='button' data-lhb-action='cloudSetup') Finish setup &amp; test
     .col-md-4
       .card.h-100
         .card-body
@@ -55,5 +60,28 @@ block content
     ],
     rows: [
       { icon: 'fa-cloud', iconColor: 'secondary', meta: 'nothing connected yet', cells: ['—', '—', '—', '0', '0', '—', { text: 'Not connected', badge: 'secondary' }] }
+    ]
+  })
+
+  +ObsToolTable({
+    title: 'Streamed resources',
+    live: 'cloudResources',
+    subtitle: 'Everything the CloudWatch metric stream has described — one row per resource, across every service you selected',
+    searchPlaceholder: 'Search resources',
+    pageSize: 10,
+    secondaryAction: 'Rotate stream key',
+    secondaryActionKey: 'rotateMetricStreamKey',
+    columns: [
+      { label: 'Resource', className: 'ps-3' },
+      { label: 'Service' },
+      { label: 'Account' },
+      { label: 'Region' },
+      { label: 'Metrics' },
+      { label: 'Last seen' },
+      { label: 'Freshness' }
+    ],
+    rows: [
+      { icon: 'fa-cube', iconColor: 'info', meta: 'InstanceId=i-0abc123', cells: ['i-0abc123', 'EC2', '111122223333', 'us-east-1', '14', '2026-09-10T10:04:00Z', { text: 'Live', badge: 'success' }] },
+      { icon: 'fa-cube', iconColor: 'info', meta: 'QueueName=orders', cells: ['orders', 'SQS', '444455556666', 'us-east-1', '9', '2026-09-10T10:03:00Z', { text: 'Live', badge: 'success' }] }
     ]
   })

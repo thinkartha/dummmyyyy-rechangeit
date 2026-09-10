@@ -7,6 +7,9 @@ export default function Page() {
           "code": "\n          (function() {\n            document.querySelectorAll('[data-obs-sort]').forEach(function(select) {\n              if (select.dataset.bound === '1') return;\n              select.dataset.bound = '1';\n              select.addEventListener('change', function() {\n                var key = select.value;\n                if (!key) return;\n                var root = select.closest('[data-list]');\n                if (!root) return;\n                var header = root.querySelector('th[data-sort=\"' + key + '\"]');\n                if (header) header.click();\n              });\n            });\n          })();\n        "
         },
         {
+          "code": "\n          (function() {\n            document.querySelectorAll('[data-obs-sort]').forEach(function(select) {\n              if (select.dataset.bound === '1') return;\n              select.dataset.bound = '1';\n              select.addEventListener('change', function() {\n                var key = select.value;\n                if (!key) return;\n                var root = select.closest('[data-list]');\n                if (!root) return;\n                var header = root.querySelector('th[data-sort=\"' + key + '\"]');\n                if (header) header.click();\n              });\n            });\n          })();\n        "
+        },
+        {
           "code": "\n        var navbarTopStyle = window.config.config.phoenixNavbarTopStyle;\n        var navbarTop = document.querySelector('.navbar-top');\n        if (navbarTopStyle === 'darker') {\n          navbarTop.setAttribute('data-navbar-appearance', 'darker');\n        }\n\n        var navbarVerticalStyle = window.config.config.phoenixNavbarVerticalStyle;\n        var navbarVertical = document.querySelector('.navbar-vertical');\n        if (navbarVertical && navbarVerticalStyle === 'darker') {\n          navbarVertical.setAttribute('data-navbar-appearance', 'darker');\n        }\n      "
         },
         {
@@ -74,7 +77,10 @@ export default function Page() {
               One connection per cloud per organization — AWS credentials feed Cloud Monitoring, Orchestration, and the Lambda job stream; GCP and Azure store the account for the gateway readers
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
+            <button className="btn btn-phoenix-secondary" type="button" data-lhb-action="cloudSetup">
+              Finish setup & test
+            </button>
             <button className="btn btn-primary" type="button" data-lhb-action="connectAwsAccount">
               Connect AWS account
             </button>
@@ -89,11 +95,23 @@ export default function Page() {
                 AWS
               </h6>
               <p className="text-body-tertiary fs-9 mb-3">
-                Region, credentials (default chain, access keys, or an assumed role), function prefixes, log groups, and the thresholds that raise an anomaly.
+                Regions, credentials (default chain, access keys, or an assumed role), the member-account role, and the thresholds that raise an anomaly.
               </p>
-              <button className="btn btn-sm btn-primary" type="button" data-lhb-action="connectAwsAccount">
-                Connect AWS account
-              </button>
+              <p className="text-body-tertiary fs-10 mb-3">
+                The credential is only half of it:
+                <strong>
+                  Finish setup & test
+                </strong>
+                shows the ARN your role must trust, the metric-stream endpoint and key, and probes what the credential can actually do.
+              </p>
+              <div className="d-flex gap-2 flex-wrap">
+                <button className="btn btn-sm btn-primary" type="button" data-lhb-action="connectAwsAccount">
+                  Connect AWS account
+                </button>
+                <button className="btn btn-sm btn-phoenix-secondary" type="button" data-lhb-action="cloudSetup">
+                  Finish setup & test
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -251,6 +269,203 @@ export default function Page() {
                     <td className="align-middle col6">
                       <span className="badge badge-phoenix badge-phoenix-secondary">
                         Not connected
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div className="text-center p-3 fallback d-none">
+              <p className="mb-0 text-body-tertiary">
+                No matching results
+              </p>
+            </div>
+          </div>
+          <div className="card-footer border-top border-translucent">
+            <div className="row align-items-center g-2">
+              <div className="pagination d-none"></div>
+              <div className="col d-flex fs-9 flex-wrap">
+                <p className="mb-0 d-none d-sm-block me-3 fw-semibold text-body" data-list-info="data-list-info"></p>
+                <a className="fw-semibold" href="#!" data-list-view="*">
+                  View all
+                  <span className="fas fa-angle-right ms-1" data-fa-transform="down-1"></span>
+                </a>
+                <a className="fw-semibold d-none" href="#!" data-list-view="less">
+                  View less
+                </a>
+              </div>
+              <div className="col-auto d-flex">
+                <button className="btn btn-link px-1 me-1" type="button" title="Previous" data-list-pagination="prev">
+                  <span className="fas fa-chevron-left me-2"></span>
+                  Previous
+                </button>
+                <button className="btn btn-link px-1 ms-1" type="button" title="Next" data-list-pagination="next">
+                  Next
+                  <span className="fas fa-chevron-right ms-2"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="obs-list-root" data-list={"{\"valueNames\":[\"col0\",\"col1\",\"col2\",\"col3\",\"col4\",\"col5\",\"col6\"],\"page\":10,\"filter\":{\"key\":\"col6\"}}"} data-live-table="cloudResources">
+        <div className="card">
+          <div className="card-header border-bottom border-translucent py-3">
+            <div className="row align-items-center g-2 mb-3">
+              <div className="col">
+                <h4 className="mb-0">
+                  Streamed resources
+                </h4>
+                <p className="text-body-tertiary fs-9 mb-0">
+                  Everything the CloudWatch metric stream has described — one row per resource, across every service you selected
+                </p>
+              </div>
+            </div>
+            <div className="row align-items-center g-2">
+              <div className="col-12 col-md">
+                <div className="search-box w-100">
+                  <form className="position-relative">
+                    <input className="form-control search-input search form-control-sm" type="search" placeholder="Search resources" aria-label="Search" />
+                    <span className="fas fa-search search-box-icon"></span>
+                  </form>
+                </div>
+              </div>
+              <div className="col-6 col-md-auto">
+                <select className="form-select form-select-sm" data-list-filter="data-list-filter" aria-label="Filter">
+                  <option value="">
+                    Filter: All
+                  </option>
+                  <option value="Live">
+                    Live
+                  </option>
+                </select>
+              </div>
+              <div className="col-6 col-md-auto">
+                <select className="form-select form-select-sm" aria-label="Sort by" data-obs-sort="data-obs-sort">
+                  <option value="">
+                    Sort by
+                  </option>
+                  <option value="col0">
+                    Resource
+                  </option>
+                  <option value="col1">
+                    Service
+                  </option>
+                  <option value="col2">
+                    Account
+                  </option>
+                  <option value="col3">
+                    Region
+                  </option>
+                  <option value="col4">
+                    Metrics
+                  </option>
+                  <option value="col5">
+                    Last seen
+                  </option>
+                  <option value="col6">
+                    Freshness
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div className="card-body p-0">
+            <div className="table-responsive scrollbar">
+              <table className="table table-sm fs-9 mb-0">
+                <thead>
+                  <tr>
+                    <th className="sort align-middle white-space-nowrap text-uppercase ps-3" scope="col" data-sort="col0">
+                      Resource
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col1">
+                      Service
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col2">
+                      Account
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col3">
+                      Region
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col4">
+                      Metrics
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col5">
+                      Last seen
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col6">
+                      Freshness
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="list" data-sample-rows="data-sample-rows">
+                  <tr>
+                    <td className="align-middle ps-3 py-3 col0">
+                      <div className="d-flex align-items-center">
+                        <span className="me-2 fa-solid fa-cube text-info"></span>
+                        <div>
+                          <h6 className="mb-0">
+                            i-0abc123
+                          </h6>
+                          <p className="text-body-tertiary fs-10 mb-0">
+                            InstanceId=i-0abc123
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="align-middle col1">
+                      EC2
+                    </td>
+                    <td className="align-middle col2">
+                      111122223333
+                    </td>
+                    <td className="align-middle col3">
+                      us-east-1
+                    </td>
+                    <td className="align-middle col4">
+                      14
+                    </td>
+                    <td className="align-middle col5">
+                      2026-09-10T10:04:00Z
+                    </td>
+                    <td className="align-middle col6">
+                      <span className="badge badge-phoenix badge-phoenix-success">
+                        Live
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="align-middle ps-3 py-3 col0">
+                      <div className="d-flex align-items-center">
+                        <span className="me-2 fa-solid fa-cube text-info"></span>
+                        <div>
+                          <h6 className="mb-0">
+                            orders
+                          </h6>
+                          <p className="text-body-tertiary fs-10 mb-0">
+                            QueueName=orders
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="align-middle col1">
+                      SQS
+                    </td>
+                    <td className="align-middle col2">
+                      444455556666
+                    </td>
+                    <td className="align-middle col3">
+                      us-east-1
+                    </td>
+                    <td className="align-middle col4">
+                      9
+                    </td>
+                    <td className="align-middle col5">
+                      2026-09-10T10:03:00Z
+                    </td>
+                    <td className="align-middle col6">
+                      <span className="badge badge-phoenix badge-phoenix-success">
+                        Live
                       </span>
                     </td>
                   </tr>

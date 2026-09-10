@@ -81,3 +81,73 @@ block content
       { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'danger', meta: 'ClientError: not authorized to perform sts:AssumeRole', cells: ['data-platform', 'AWS', 'Member account', '—', '—', 'USD 6,913.44', { text: 'Unreachable', badge: 'danger' }] }
     ]
   })
+
+  +ObsToolTable({
+    title: 'Streamed services',
+    live: 'cloudServices',
+    subtitle: 'Every AWS service your CloudWatch metric stream is delivering — no per-service integration behind any of these',
+    searchPlaceholder: 'Search services',
+    pageSize: 8,
+    action: 'Set up metric streaming',
+    actionKey: 'cloudSetup',
+    columns: [
+      { label: 'Service', className: 'ps-3' },
+      { label: 'Account' },
+      { label: 'Regions' },
+      { label: 'Resources' },
+      { label: 'Metrics' },
+      { label: 'Last seen' },
+      { label: 'Freshness' }
+    ],
+    rows: [
+      { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'warning', meta: 'AWS/EC2', cells: ['EC2', '111122223333', 'us-east-1', '42', '18', '2026-09-10T10:04:00Z', { text: 'Live', badge: 'success' }] },
+      { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'warning', meta: 'AWS/RDS', cells: ['RDS', '111122223333', 'us-east-1, eu-west-1', '6', '24', '2026-09-10T10:04:00Z', { text: 'Live', badge: 'success' }] },
+      { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'warning', meta: 'AWS/SQS', cells: ['SQS', '444455556666', 'us-east-1', '11', '9', '2026-09-10T09:12:00Z', { text: 'Lagging', badge: 'warning' }] }
+    ]
+  })
+
+  .row.g-4.mb-4
+    .col-12
+      +ObsToolTable({
+        title: 'Metric alert conditions',
+        live: 'metricConditions',
+        subtitle: 'Evaluated as each delivery lands, so a breach is about a minute old — not a poll interval old',
+        searchPlaceholder: 'Search conditions',
+        pageSize: 5,
+        rowAction: true,
+        action: 'Add condition',
+        actionKey: 'addMetricCondition',
+        columns: [
+          { label: 'Condition', className: 'ps-3' },
+          { label: 'Metric' },
+          { label: 'For' },
+          { label: 'Watching' },
+          { label: 'Firing' },
+          { label: 'Status' }
+        ],
+        rows: [
+          { icon: 'fa-bell', iconColor: 'danger', meta: 'AWS/EC2 · avg > 80', cells: ['EC2 CPU above 80%', 'CPUUtilization', '2m', '42', '3', { text: 'Firing', badge: 'danger' }] },
+          { icon: 'fa-bell-slash', iconColor: 'success', meta: 'AWS/SQS · max > 1000', cells: ['Order queue backing up', 'ApproximateNumberOfMessagesVisible', '3m', '11', '0', { text: 'OK', badge: 'success' }] }
+        ]
+      })
+
+  +ObsToolTable({
+    title: 'Resource changes',
+    live: 'cloudChanges',
+    subtitle: 'What appeared, vanished or changed between inventory snapshots',
+    searchPlaceholder: 'Search changes',
+    pageSize: 5,
+    action: 'Scan for changes',
+    actionKey: 'scanCloudChanges',
+    columns: [
+      { label: 'Resource', className: 'ps-3' },
+      { label: 'Kind' },
+      { label: 'Account' },
+      { label: 'Seen' },
+      { label: 'Change' }
+    ],
+    rows: [
+      { icon: 'fa-plus', iconColor: 'success', meta: '111122223333', cells: ['assets-staging', 'S3 bucket', 'prod-root', '2026-09-10T08:00:00Z', { text: 'Added', badge: 'success' }] },
+      { icon: 'fa-trash', iconColor: 'danger', meta: '444455556666', cells: ['legacy-exports', 'S3 bucket', 'prod-workloads', '2026-09-09T18:20:00Z', { text: 'Removed', badge: 'danger' }] }
+    ]
+  })

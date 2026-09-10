@@ -48,6 +48,45 @@ block content
     rows: []
   })
 
+  //- Spend grouped by something other than the account paying for it. The table above
+  //- answers "which account", which cannot answer "which service" or "which team" — a
+  //- tag grouping is the only way to get the second. The tag options here are the two
+  //- conventional keys; any tag key works through the API, and this list is where to
+  //- add one a customer actually uses.
+  .card.mb-4
+    .card-header.border-bottom.border-translucent.py-3
+      .row.align-items-center.g-2
+        .col
+          h4.mb-0 Spend breakdown
+          p.text-body-tertiary.fs-9.mb-0 Month to date, grouped. Untagged spend is shown rather than dropped — it is usually why you opened this.
+        .col-auto
+          label.form-label.fs-9.mb-1(for='cost-group-by') Group by
+          select#cost-group-by.form-select.form-select-sm(data-lhb-refresh)
+            option(value='SERVICE') Service
+            option(value='REGION') Region
+            option(value='USAGE_TYPE') Usage type
+            option(value='team') Tag: team
+            option(value='environment') Tag: environment
+    .card-body.pt-0
+      +ObsToolTable({
+        live: 'costBreakdown',
+        title: 'By group',
+        subtitle: 'One Cost Explorer request per grouping, cached six hours — the source updates daily',
+        searchPlaceholder: 'Search groups',
+        pageSize: 8,
+        columns: [
+          { label: 'Group', className: 'ps-3' },
+          { label: 'Spend (MTD)' },
+          { label: 'Share' },
+          { label: 'Weight' }
+        ],
+        rows: [
+          { icon: 'fa-tag', iconColor: 'info', cells: ['Amazon Elastic Compute Cloud', 'USD 18,220.14', '46.8%', { text: 'Major', badge: 'danger' }] },
+          { icon: 'fa-tag', iconColor: 'info', cells: ['Amazon Relational Database Service', 'USD 9,140.02', '23.5%', { text: 'Notable', badge: 'warning' }] },
+          { icon: 'fa-tag', iconColor: 'info', cells: ['untagged', 'USD 1,004.55', '2.6%', { text: 'Minor', badge: 'info' }] }
+        ]
+      })
+
   //- Rightsizing recommendations from /api/v1/finops/recommendations. Kept separate
   //- from spend-by-account above: that table answers "where did the money go", this
   //- one answers "what would you change", and they have different shapes.

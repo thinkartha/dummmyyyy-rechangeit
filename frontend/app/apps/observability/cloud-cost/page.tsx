@@ -7,6 +7,9 @@ export default function Page() {
           "code": "\n          (function() {\n            document.querySelectorAll('[data-obs-sort]').forEach(function(select) {\n              if (select.dataset.bound === '1') return;\n              select.dataset.bound = '1';\n              select.addEventListener('change', function() {\n                var key = select.value;\n                if (!key) return;\n                var root = select.closest('[data-list]');\n                if (!root) return;\n                var header = root.querySelector('th[data-sort=\"' + key + '\"]');\n                if (header) header.click();\n              });\n            });\n          })();\n        "
         },
         {
+          "code": "\n              (function() {\n                document.querySelectorAll('[data-obs-sort]').forEach(function(select) {\n                  if (select.dataset.bound === '1') return;\n                  select.dataset.bound = '1';\n                  select.addEventListener('change', function() {\n                    var key = select.value;\n                    if (!key) return;\n                    var root = select.closest('[data-list]');\n                    if (!root) return;\n                    var header = root.querySelector('th[data-sort=\"' + key + '\"]');\n                    if (header) header.click();\n                  });\n                });\n              })();\n            "
+        },
+        {
           "code": "\n          (function() {\n            document.querySelectorAll('[data-obs-sort]').forEach(function(select) {\n              if (select.dataset.bound === '1') return;\n              select.dataset.bound = '1';\n              select.addEventListener('change', function() {\n                var key = select.value;\n                if (!key) return;\n                var root = select.closest('[data-list]');\n                if (!root) return;\n                var header = root.querySelector('th[data-sort=\"' + key + '\"]');\n                if (header) header.click();\n              });\n            });\n          })();\n        "
         },
         {
@@ -269,6 +272,228 @@ export default function Page() {
                   Next
                   <span className="fas fa-chevron-right ms-2"></span>
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="card mb-4">
+        <div className="card-header border-bottom border-translucent py-3">
+          <div className="row align-items-center g-2">
+            <div className="col">
+              <h4 className="mb-0">
+                Spend breakdown
+              </h4>
+              <p className="text-body-tertiary fs-9 mb-0">
+                Month to date, grouped. Untagged spend is shown rather than dropped — it is usually why you opened this.
+              </p>
+            </div>
+            <div className="col-auto">
+              <label className="form-label fs-9 mb-1" htmlFor="cost-group-by">
+                Group by
+              </label>
+              <select className="form-select form-select-sm" id="cost-group-by" data-lhb-refresh="data-lhb-refresh">
+                <option value="SERVICE">
+                  Service
+                </option>
+                <option value="REGION">
+                  Region
+                </option>
+                <option value="USAGE_TYPE">
+                  Usage type
+                </option>
+                <option value="team">
+                  Tag: team
+                </option>
+                <option value="environment">
+                  Tag: environment
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div className="card-body pt-0">
+          <div className="obs-list-root" data-list={"{\"valueNames\":[\"col0\",\"col1\",\"col2\",\"col3\"],\"page\":8,\"filter\":{\"key\":\"col3\"}}"} data-live-table="costBreakdown">
+            <div className="card">
+              <div className="card-header border-bottom border-translucent py-3">
+                <div className="row align-items-center g-2 mb-3">
+                  <div className="col">
+                    <h4 className="mb-0">
+                      By group
+                    </h4>
+                    <p className="text-body-tertiary fs-9 mb-0">
+                      One Cost Explorer request per grouping, cached six hours — the source updates daily
+                    </p>
+                  </div>
+                </div>
+                <div className="row align-items-center g-2">
+                  <div className="col-12 col-md">
+                    <div className="search-box w-100">
+                      <form className="position-relative">
+                        <input className="form-control search-input search form-control-sm" type="search" placeholder="Search groups" aria-label="Search" />
+                        <span className="fas fa-search search-box-icon"></span>
+                      </form>
+                    </div>
+                  </div>
+                  <div className="col-6 col-md-auto">
+                    <select className="form-select form-select-sm" data-list-filter="data-list-filter" aria-label="Filter">
+                      <option value="">
+                        Filter: All
+                      </option>
+                      <option value="Major">
+                        Major
+                      </option>
+                      <option value="Notable">
+                        Notable
+                      </option>
+                      <option value="Minor">
+                        Minor
+                      </option>
+                    </select>
+                  </div>
+                  <div className="col-6 col-md-auto">
+                    <select className="form-select form-select-sm" aria-label="Sort by" data-obs-sort="data-obs-sort">
+                      <option value="">
+                        Sort by
+                      </option>
+                      <option value="col0">
+                        Group
+                      </option>
+                      <option value="col1">
+                        Spend (MTD)
+                      </option>
+                      <option value="col2">
+                        Share
+                      </option>
+                      <option value="col3">
+                        Weight
+                      </option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div className="card-body p-0">
+                <div className="table-responsive scrollbar">
+                  <table className="table table-sm fs-9 mb-0">
+                    <thead>
+                      <tr>
+                        <th className="sort align-middle white-space-nowrap text-uppercase ps-3" scope="col" data-sort="col0">
+                          Group
+                        </th>
+                        <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col1">
+                          Spend (MTD)
+                        </th>
+                        <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col2">
+                          Share
+                        </th>
+                        <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col3">
+                          Weight
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="list" data-sample-rows="data-sample-rows">
+                      <tr>
+                        <td className="align-middle ps-3 py-3 col0">
+                          <div className="d-flex align-items-center">
+                            <span className="me-2 fa-solid fa-tag text-info"></span>
+                            <div>
+                              <h6 className="mb-0">
+                                Amazon Elastic Compute Cloud
+                              </h6>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="align-middle col1">
+                          USD 18,220.14
+                        </td>
+                        <td className="align-middle col2">
+                          46.8%
+                        </td>
+                        <td className="align-middle col3">
+                          <span className="badge badge-phoenix badge-phoenix-danger">
+                            Major
+                          </span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="align-middle ps-3 py-3 col0">
+                          <div className="d-flex align-items-center">
+                            <span className="me-2 fa-solid fa-tag text-info"></span>
+                            <div>
+                              <h6 className="mb-0">
+                                Amazon Relational Database Service
+                              </h6>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="align-middle col1">
+                          USD 9,140.02
+                        </td>
+                        <td className="align-middle col2">
+                          23.5%
+                        </td>
+                        <td className="align-middle col3">
+                          <span className="badge badge-phoenix badge-phoenix-warning">
+                            Notable
+                          </span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="align-middle ps-3 py-3 col0">
+                          <div className="d-flex align-items-center">
+                            <span className="me-2 fa-solid fa-tag text-info"></span>
+                            <div>
+                              <h6 className="mb-0">
+                                untagged
+                              </h6>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="align-middle col1">
+                          USD 1,004.55
+                        </td>
+                        <td className="align-middle col2">
+                          2.6%
+                        </td>
+                        <td className="align-middle col3">
+                          <span className="badge badge-phoenix badge-phoenix-info">
+                            Minor
+                          </span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div className="text-center p-3 fallback d-none">
+                  <p className="mb-0 text-body-tertiary">
+                    No matching results
+                  </p>
+                </div>
+              </div>
+              <div className="card-footer border-top border-translucent">
+                <div className="row align-items-center g-2">
+                  <div className="pagination d-none"></div>
+                  <div className="col d-flex fs-9 flex-wrap">
+                    <p className="mb-0 d-none d-sm-block me-3 fw-semibold text-body" data-list-info="data-list-info"></p>
+                    <a className="fw-semibold" href="#!" data-list-view="*">
+                      View all
+                      <span className="fas fa-angle-right ms-1" data-fa-transform="down-1"></span>
+                    </a>
+                    <a className="fw-semibold d-none" href="#!" data-list-view="less">
+                      View less
+                    </a>
+                  </div>
+                  <div className="col-auto d-flex">
+                    <button className="btn btn-link px-1 me-1" type="button" title="Previous" data-list-pagination="prev">
+                      <span className="fas fa-chevron-left me-2"></span>
+                      Previous
+                    </button>
+                    <button className="btn btn-link px-1 ms-1" type="button" title="Next" data-list-pagination="next">
+                      Next
+                      <span className="fas fa-chevron-right ms-2"></span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

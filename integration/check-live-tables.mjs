@@ -26,13 +26,25 @@ function* pugFiles(dir) {
   }
 }
 
+/**
+ * The text of the one table that declared `live:` here, and nothing after it.
+ *
+ * Bounded at the next ObsToolTable because a table can legitimately ship `rows: []` —
+ * "Spend by account" does — and an unbounded search then runs into the *next* table's
+ * rows and compares two unrelated things. That produced a confident false positive.
+ */
+function tableSlice(text, from) {
+  const next = text.indexOf('+ObsToolTable(', from);
+  return next === -1 ? text.slice(from) : text.slice(from, next);
+}
+
 /** The `columns: [...]` array belonging to the ObsToolTable that declared `live:`. */
-function columnCount(text, from) {
-  const start = text.indexOf('columns: [', from);
+function columnCount(slice) {
+  const start = slice.indexOf('columns: [');
   if (start === -1) return null;
-  const end = text.indexOf(']', start);
+  const end = slice.indexOf(']', start);
   if (end === -1) return null;
-  return text.slice(start, end).split('{ label:').length - 1 || null;
+  return slice.slice(start, end).split('{ label:').length - 1 || null;
 }
 
 const problems = [];
@@ -52,10 +64,11 @@ for (const file of pugFiles(new URL('../src/pug', import.meta.url).pathname)) {
     /* The static rows are the same shape the source emits — the mixin renders them and
        live-data replaces them — so the page's own first row is a faithful stand-in for
        a real one, and needs no network call to count. */
-    const columns = columnCount(text, m.index);
-    const cells = /cells: \[/.test(text.slice(m.index))
-      ? text.slice(text.indexOf('cells: [', m.index)).match(/cells: \[([\s\S]*?)\]/)
-      : null;
+    const slice = tableSlice(text, m.index);
+    const columns = columnCount(slice);
+    // A table with `rows: []` has no sample row to count, which is not a problem —
+    // live-data fills it. Only a row that exists can disagree with the header.
+    const cells = slice.match(/cells: \[([\s\S]*?)\]/);
     if (columns && cells) {
       /* Split on top-level commas only, and only outside quotes. A badge cell is an
          object with a comma in it, and plenty of cells are strings with a comma in

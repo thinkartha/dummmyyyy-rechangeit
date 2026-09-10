@@ -163,6 +163,32 @@ const money = (v, currency = 'USD') =>
  * likely to be a finding, and leaving them out makes an account of nothing but users
  * read as empty.
  */
+/**
+ * How fresh a streamed signal is, as one word.
+ *
+ * A metric stream delivers about once a minute, so silence for ten is not "quiet", it is
+ * a stream that stopped — which looks identical to a healthy idle service unless the
+ * page says so. The thresholds are generous because Firehose buffering and a sparse
+ * metric both legitimately stretch the gap.
+ */
+const staleness = (lastSeen) => {
+  if (!lastSeen) return 'No data';
+  const age = Date.now() - Date.parse(lastSeen);
+  if (!Number.isFinite(age)) return 'No data';
+  if (age < 10 * 60 * 1000) return 'Live';
+  if (age < 60 * 60 * 1000) return 'Lagging';
+  return 'Stale';
+};
+
+const COMPARISON_WORDS = { gt: '>', gte: '\u2265', lt: '<', lte: '\u2264' };
+
+/** Which grouping the Cost breakdown table is showing; the selector is on the page. */
+function costGroupBy() {
+  const el = document.getElementById('cost-group-by');
+  const value = el && el.value ? el.value.trim() : '';
+  return value || 'SERVICE';
+}
+
 const countResources = (account) =>
   ['hostedZones', 'domains', 'distributions', 'buckets', 'users']
     .reduce((total, key) => total + ((account && account[key]) || []).length, 0);
@@ -894,6 +920,124 @@ export const SOURCES = {
         });
       }
       return rows;
+    },
+  },
+
+  /**
+   * Columns: Service · Account · Regions · Resources · Metrics · Last seen · Status.
+   *
+   * What a CloudWatch Metric Stream is actually delivering. This is the coverage answer
+   * the product could not give before: every namespace the customer selected shows up
+   * here without a per-service integration behind it, so "is RDS being watched?" stops
+   * being a question about what we built and becomes one about what they streamed.
+   *
+   * A tenant with no stream gets no rows and the honest empty state — the setup lives on
+   * Integrations → Cloud accounts, and inventing rows here would hide that it is unset.
+   */
+  cloudServices: {
+    stats: (data) => {
+      const services = (data && data.services) || [];
+      const resources = services.reduce((t, s) => t + (Number(s.resources) || 0), 0);
+      const metrics = services.reduce((t, s) => t + (Number(s.metrics) || 0), 0);
+      return {
+        streamedServices: {
+          value: num(services.length),
+          delta: services.length ? 'reporting' : 'no stream yet',
+        },
+        streamedResources: { value: num(resources), delta: `${num(metrics)} metrics` },
+        streamedRegions: {
+          value: num(((data && data.regions) || []).length),
+          delta: ((data && data.accounts) || []).length
+            ? `${num(data.accounts.length)} accounts` : 'no data',
+        },
+        datapoints: { value: num((data && data.datapoints) || 0), delta: 'last 3h' },
+      };
+    },
+    load: (api) => api.cloudMetrics.summary(),
+    rows: (data) =>
+      ((data && data.services) || []).map((s) => ({
+        iconSet: 'fa-brands',
+        icon: 'fa-aws',
+        iconColor: 'warning',
+        meta: s.namespace,
+        cells: [s.service, s.account || '—', (s.regions || []).join(', ') || '—',
+                num(s.resources), num(s.metrics), s.last_seen || '—',
+                badge(staleness(s.last_seen))],
+      })),
+  },
+
+  /* One row per distinct resource the stream has described — the closest thing to a
+     live inventory, and unlike the API-based one it covers every streamed service
+     rather than the five somebody wrote a reader for. */
+  cloudResources: {
+    load: (api) => api.cloudMetrics.resources(),
+    rows: (data) =>
+      (data || []).map((r) => ({
+        icon: 'fa-cube',
+        iconColor: 'info',
+        meta: Object.entries(r.dimensions || {}).map(([k, v]) => `${k}=${v}`).join(' · ') || null,
+        cells: [r.name, r.service, r.account || '—', r.region || '—',
+                num(r.metrics), r.last_seen || '—', badge(staleness(r.last_seen))],
+      })),
+  },
+
+  /* Threshold rules on streamed metrics. Evaluated on the ingest path, so "firing" here
+     is at most a minute behind the data rather than behind a poll. */
+  metricConditions: {
+    load: (api) => api.cloudMetrics.conditions(),
+    rows: (data) =>
+      (data || []).map((c) => ({
+        icon: c.firing ? 'fa-bell' : 'fa-bell-slash',
+        iconColor: c.firing ? 'danger' : c.enabled ? 'success' : 'secondary',
+        meta: `${c.namespace} · ${c.statistic} ${COMPARISON_WORDS[c.comparison] || c.comparison} ${c.threshold}`,
+        cells: [c.name, c.metric, `${c.for_periods}m`, num(c.watching),
+                num(c.firing),
+                /* Three states, not two: a rule nothing has matched is neither firing
+                   nor healthy, and showing it as healthy hides a rule watching a metric
+                   that never arrives. */
+                badge(!c.enabled ? 'Disabled'
+                  : c.firing ? 'Firing'
+                  : c.watching ? 'OK' : 'No data')],
+        action: { key: 'deleteMetricCondition', arg: c.id, label: 'Remove' },
+      })),
+  },
+
+  /* Resources added, removed or modified between inventory snapshots. */
+  cloudChanges: {
+    load: (api) => api.awsLambda.changes({ limit: 100 }),
+    rows: (data) =>
+      (data || []).map((c) => ({
+        icon: c.change === 'removed' ? 'fa-trash'
+          : c.change === 'added' ? 'fa-plus' : 'fa-pen',
+        iconColor: c.change === 'removed' ? 'danger'
+          : c.change === 'added' ? 'success' : 'warning',
+        meta: Object.entries(c.fields || {})
+          .map(([field, v]) => `${field}: ${v.from} → ${v.to}`).join(' · ') || c.account,
+        cells: [c.name, c.label, c.account_name || c.account, c.at || '—',
+                badge(c.change === 'removed' ? 'Removed'
+                  : c.change === 'added' ? 'Added' : 'Modified')],
+      })),
+  },
+
+  /* MTD spend grouped by something other than the account paying — service by default.
+     The account rollup on the same page cannot answer "what does this team spend". */
+  costBreakdown: {
+    load: (api) => api.finops.costBreakdown({ groupBy: costGroupBy() }),
+    rows: (data) => {
+      if (data && data.error) {
+        return [{
+          icon: 'fa-triangle-exclamation', iconColor: 'danger', meta: data.error,
+          cells: ['Cost Explorer', '—', '—', badge('Unavailable')],
+        }];
+      }
+      const currency = (data && data.currency) || 'USD';
+      return ((data && data.entries) || []).map((e) => ({
+        icon: 'fa-tag',
+        iconColor: 'info',
+        meta: null,
+        cells: [e.key, money(e.mtd, currency), pct((e.share || 0) * 100, 1),
+                badge(e.share > 0.25 ? 'Major' : e.share > 0.05 ? 'Notable' : 'Minor')],
+      }));
     },
   },
 

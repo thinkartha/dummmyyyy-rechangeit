@@ -40,12 +40,19 @@ on which organization a request belongs to.
 
 `/health` · `/api/v1/tenant` · `/organizations` · `/auth` · `/observability` ·
 `/observability/agents` · `/gateways` · `/integrations/etl` · `/integrations/aws/lambda` ·
-`/alerts` · `/alert-management` · `/automation` · `/ai-models` · `/databases` ·
-`/data-observability` · `/databricks` · `/finops` · `/slo` · `/drift` ·
+`/integrations/aws/metrics` · `/integrations/aws/inventory` · `/integrations/aws/changes` ·
+`/integrations/cloud` · `/alerts` · `/alert-management` · `/automation` · `/ai-models` ·
+`/databases` · `/data-observability` · `/databricks` · `/finops` · `/slo` · `/drift` ·
 `/correlated-incidents` · `/incidents/{id}/rca` · `/logs` · `/metrics` · `/traces` ·
 `/ingest` · `/admin`
 
 Full list at `/docs` when running locally.
+
+Two routes are deliberately outside the app-wide auth dependency, because their callers
+cannot present a session and authenticate with their own credential instead:
+`/gateways/telemetry/apisix` (an enrolled customer gateway) and
+`/integrations/aws/metrics/stream` (Kinesis Firehose). Both are registered separately in
+`handlers/api.py` rather than exempted per route, so the set is readable in one place.
 
 ## AWS connector IAM policy
 
