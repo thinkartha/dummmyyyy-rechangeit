@@ -205,8 +205,16 @@ const pageHref = (name) => {
   if (typeof window === 'undefined' || !window.location) return '';
   const path = window.location.pathname || '';
   const dot = path.endsWith('.html');
-  const dir = path.slice(0, path.lastIndexOf('/') + 1);
-  return `${dir}${name}${dot ? '.html' : ''}`;
+  /* next.config sets trailingSlash, so the deployed page is
+     `/apps/observability/cloud-monitoring/` — and taking the directory from that
+     without dropping the slash first makes the *page* the directory, which is how a
+     sibling link became `/cloud-monitoring/cloud-account` and 404ed. The slash is
+     stripped to find the directory and put back on the result, because the same
+     setting means `/cloud-account` without one is not where the page lives either. */
+  const trailing = !dot && path.endsWith('/');
+  const clean = trailing ? path.slice(0, -1) : path;
+  const dir = clean.slice(0, clean.lastIndexOf('/') + 1);
+  return `${dir}${name}${dot ? '.html' : trailing ? '/' : ''}`;
 };
 
 /** Which account a drill-down page is about. */

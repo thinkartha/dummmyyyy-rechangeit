@@ -209,15 +209,23 @@ assert.deepEqual(SOURCES.accountAlarms.rows({ account: null }), []);
   assert.match(rows[0].href, /cloud-account\.html\?account=111122223333$/);
 }
 
-// The link form follows the page it was rendered on: the Next app has no .html.
-{
-  globalThis.window.location.pathname = '/apps/observability/cloud-monitoring';
+/* The link form follows the page it was rendered on, and there are three shapes the
+   app is actually served under. The trailing-slash one is the deployed default
+   (next.config sets trailingSlash) and is the one that shipped broken: taking the
+   directory without dropping the slash made the page its own parent, so the link came
+   out as /cloud-monitoring/cloud-account and 404ed. */
+for (const [pathname, expected] of [
+  ['/apps/observability/cloud-monitoring.html', '/apps/observability/cloud-account.html?account=111122223333'],
+  ['/apps/observability/cloud-monitoring', '/apps/observability/cloud-account?account=111122223333'],
+  ['/apps/observability/cloud-monitoring/', '/apps/observability/cloud-account/?account=111122223333'],
+]) {
+  globalThis.window.location.pathname = pathname;
   const rows = SOURCES.cloudAccounts.rows({
     report: { organization: true, accounts: [ACCOUNT] },
     cost: null,
   });
-  assert.match(rows[0].href, /\/apps\/observability\/cloud-account\?account=111122223333$/);
-  globalThis.window.location.pathname = '/apps/observability/cloud-account.html';
+  assert.equal(rows[0].href, expected, `wrong link from ${pathname}`);
 }
+globalThis.window.location.pathname = '/apps/observability/cloud-account.html';
 
 console.log('account-drilldown: ok');
