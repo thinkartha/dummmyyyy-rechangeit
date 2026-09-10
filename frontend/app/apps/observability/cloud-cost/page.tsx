@@ -166,7 +166,7 @@ export default function Page() {
                   Spend by account
                 </h4>
                 <p className="text-body-tertiary fs-9 mb-0">
-                  Month-to-date AWS spend from Cost Explorer, against the budgets you have set
+                  Month-to-date spend across AWS, GCP and Azure, against the budgets you have set
                 </p>
               </div>
             </div>

@@ -17,11 +17,15 @@ block content
     actionKey: 'rebaseline'
   })
 
+  //- All four are published by the `drift` source from the same report that fills the
+  //- table. They carried invented figures (214 features, 9 drifting, a 14d baseline)
+  //- and no `key`, so nothing ever replaced them — the page quoted those numbers to
+  //- every tenant, including one with no baseline at all.
   +ObsStatCards([
-    { label: 'Features tracked', value: '214', delta: '+18', badge: 'info' },
-    { label: 'Drifting', value: '9', delta: '4 significant', badge: 'warning' },
-    { label: 'Baseline age', value: '14d', delta: 'rolling', badge: 'primary' },
-    { label: 'Models affected', value: '3', delta: 'retrain suggested', badge: 'danger' }
+    { label: 'Features tracked', key: 'featuresTracked', value: '—', delta: 'no data', badge: 'info' },
+    { label: 'Drifting', key: 'driftingCount', value: '—', delta: 'no data', badge: 'warning' },
+    { label: 'Baseline age', key: 'baselineAge', value: '—', delta: 'no data', badge: 'primary' },
+    { label: 'Connector changes', key: 'configChanges', value: '—', delta: 'no data', badge: 'danger' }
   ])
 
   .row.g-4.mb-4
@@ -29,14 +33,14 @@ block content
       .card.h-100
         .card-body
           h4.mb-3 How drift is measured
-          p.text-body-tertiary.fs-9 Two tests, chosen by what the feature is:
+          p.text-body-tertiary.fs-9 The baseline is pinned, not rolling: #[strong Rebaseline] snapshots the current 24 hours as normal, and everything after is judged against it. Two tests, chosen by what the feature is:
           ul.fs-9
             li
               strong Numeric
               |  — Kolmogorov–Smirnov against the baseline distribution
             li
               strong Categorical
-              |  — population stability index over the category mix
+              |  — Chi-square over the category mix
           p.text-body-tertiary.fs-9.mb-0 Drift is a warning, not a failure. A p95 that shifted because traffic doubled is real drift and entirely fine; a feature that shifted because an upstream schema changed is not. The evidence column is there so you can tell them apart.
     .col-12.col-lg-7
       .card.h-100(data-mock-block)
@@ -75,7 +79,7 @@ block content
   +ObsToolTable({
     live: 'drift',
     title: 'Tracked features',
-    subtitle: 'Compared against a rolling 14-day baseline, recomputed nightly per organization',
+    subtitle: 'Last 24 hours against the baseline you pinned — request latency and status mix per route, per-model LLM latency, and any features you push',
     searchPlaceholder: 'Search features or models',
     pageSize: 8,
     columns: [

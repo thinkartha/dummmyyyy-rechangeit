@@ -507,6 +507,10 @@ def ai_gateway_stats(tenant_id: str | None = None) -> dict[str, Any]:
         model = _model(span)
         row = models.setdefault(model, {
             "model": model,
+            # The AI Gateway table has always had a Provider column and this row has
+            # never carried one, so it rendered "—" for every model even though
+            # _provider() resolves it from the span (or infers it from the model name).
+            "provider": _provider(span),
             "prompt_tokens": 0,
             "completion_tokens": 0,
             "requests": 0,
@@ -527,6 +531,7 @@ def ai_gateway_stats(tenant_id: str | None = None) -> dict[str, Any]:
         requests = row["requests"]
         rows.append({
             "model": row["model"],
+            "provider": row["provider"],
             "prompt_tokens": row["prompt_tokens"],
             "completion_tokens": row["completion_tokens"],
             "total_tokens": row["prompt_tokens"] + row["completion_tokens"],

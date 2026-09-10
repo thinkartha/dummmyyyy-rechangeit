@@ -39,6 +39,9 @@ function badge(text) {
 
 /* /summary answers with display names ("Dell Boomi"), while every write route is keyed
    by slug ("boomi"). Lowercasing the name is not enough for that one. */
+/* Font Awesome brand glyphs, by the `cloud` field /finops/cloud-cost stamps on each row. */
+const CLOUD_ICON = { AWS: 'fa-aws', GCP: 'fa-google', Azure: 'fa-microsoft' };
+
 const ETL_SLUGS = { 'dell boomi': 'boomi', boomi: 'boomi', talend: 'talend', databricks: 'databricks' };
 /* Which form configures each ETL platform. Anything unmapped falls back to the chooser. */
 const ETL_CONFIG = { talend: 'connectTalend', boomi: 'connectBoomi', databricks: 'connectDatabricks' };
@@ -167,9 +170,43 @@ export const SOURCES = {
   },
 
   drift: {
-    // The drift endpoint splits numeric (KS) from categorical (PSI); the table shows
-    // both, because "which test" is a property of the feature, not of the page.
+    /* The endpoint splits numeric (KS) from categorical (Chi-square); the table shows
+       both, because "which test" is a property of the feature, not of the page. */
     load: (api) => api.drift.list(),
+    stats: (data) => {
+      const numeric = data?.numeric || [];
+      const categorical = data?.categorical || [];
+      const cfg = data?.config || {};
+      const tracked = numeric.length + categorical.length;
+      const drifting = numeric.filter((d) => d.drift).length
+        + categorical.filter((d) => d.drift).length;
+      const configChanges = (cfg.added || []).length + (cfg.removed || []).length
+        + (cfg.changed || []).length;
+      /* Age of the *pinned* baseline, not of a rolling window: how stale the definition
+         of "normal" is, which is the number that says whether to re-pin. */
+      const pinnedAt = data?.baseline_at ? Date.parse(data.baseline_at) : NaN;
+      const days = Number.isFinite(pinnedAt)
+        ? Math.floor((Date.now() - pinnedAt) / 86400000) : null;
+      const pinned = Boolean(data?.baseline_pinned);
+      return {
+        featuresTracked: {
+          value: pinned ? num(tracked) : '—',
+          delta: pinned ? 'compared against baseline' : 'no baseline pinned',
+        },
+        driftingCount: {
+          value: pinned ? num(drifting) : '—',
+          delta: pinned ? `of ${num(tracked)} tracked` : 'nothing is being compared',
+        },
+        baselineAge: {
+          value: days == null ? '—' : days === 0 ? 'today' : `${num(days)}d`,
+          delta: pinned ? 'pinned' : 'press Rebaseline to start',
+        },
+        configChanges: {
+          value: pinned ? num(configChanges) : '—',
+          delta: configChanges ? 'since baseline' : 'connectors unchanged',
+        },
+      };
+    },
     rows: (data) => {
       const numeric = (data?.numeric || []).map((d) => ({
         icon: 'fa-wave-square',
@@ -178,14 +215,43 @@ export const SOURCES = {
         cells: [d.feature, 'metric', 'KS', num(d.ks_statistic, 3),
                 num(d.critical, 3), badge(d.drift ? 'Drifting' : 'Stable')],
       }));
+      /* `chi_square`, not `psi`: the backend runs a Chi-square test and never had a psi
+         field, so this column rendered "NaN" for every categorical feature. */
       const categorical = (data?.categorical || []).map((d) => ({
         icon: 'fa-chart-simple',
         iconColor: d.drift ? 'danger' : 'success',
         meta: 'categorical',
-        cells: [d.feature, 'category mix', 'PSI', num(d.psi, 3),
-                num(d.critical ?? 0.25, 3), badge(d.drift ? 'Drifting' : 'Stable')],
+        cells: [d.feature, 'category mix', 'Chi\u00b2', num(d.chi_square, 3),
+                num(d.critical, 3), badge(d.drift ? 'Drifting' : 'Stable')],
       }));
-      return numeric.concat(categorical);
+      /* A connector whose settings changed since the baseline is drift too, and it has
+         no feature row of its own to show up in. */
+      const config = [
+        ...(data?.config?.changed || []).map((k) => [k, 'changed']),
+        ...(data?.config?.added || []).map((k) => [k, 'added']),
+        ...(data?.config?.removed || []).map((k) => [k, 'removed']),
+      ].map(([key, what]) => ({
+        icon: 'fa-sliders',
+        iconColor: 'warning',
+        meta: 'config',
+        cells: [key, 'connector setting', 'diff', what, '\u2014', badge('Changed')],
+      }));
+      const rows = numeric.concat(categorical, config);
+      if (rows.length) return rows;
+      /* An empty table renders "Nothing here yet", which reads as "no feature drifted" —
+         a reassurance nothing has earned when the real state is that no baseline exists
+         to compare against. Say which of the two it is. */
+      return [{
+        icon: 'fa-circle-info',
+        iconColor: 'secondary',
+        meta: data?.baseline_pinned
+          ? 'baseline is pinned, but no feature has enough samples in the last 24h yet'
+          : 'press Rebaseline to pin the current window as normal',
+        cells: [data?.baseline_pinned
+          ? 'Waiting for enough samples to compare'
+          : 'No baseline pinned yet', '\u2014', '\u2014', '\u2014', '\u2014',
+          badge(data?.baseline_pinned ? 'Warming up' : 'Not monitored')],
+      }];
     },
   },
 
@@ -239,15 +305,34 @@ export const SOURCES = {
   },
 
   databases: {
-    load: (api) => api.databases.list(),
+    /* /databases/health, not /databases: the plain registry route returns what was
+       registered — id, engine, host — and no status at all, so every row rendered
+       "unknown" and a database that was refusing connections looked exactly like a
+       healthy one. The health route is the same list with the probe result attached,
+       which is the entire point of a monitoring table. */
+    load: (api) => api.databases.health(),
     rows: (data) =>
       (data?.databases || data || []).map((d) => ({
         icon: 'fa-database',
         iconColor: d.status === 'down' ? 'danger' : d.status === 'degraded' ? 'warning' : 'info',
-        meta: d.host || d.database_id,
-        cells: [d.name || d.database_id, d.engine || '—', d.environment || '—',
-                d.connections != null ? num(d.connections) : '—',
-                d.replication_lag_seconds != null ? `${num(d.replication_lag_seconds, 1)}s` : '—',
+        /* Why it is down beats repeating the host, which is already in the name column
+           for anything registered by DSN. */
+        meta: d.error || (d.latency_ms != null ? `${d.host} · ${num(d.latency_ms, 1)}ms` : d.host) || d.database_id,
+        /* `replica_lag_s` and `connections`/`max_connections` are what dbmon's probe
+           actually returns. This read `replication_lag_seconds`, a name nothing has
+           ever produced, so the column was blank even for a replica an hour behind.
+           Connections show against max: 180 means nothing, 180/200 is an incident. */
+        cells: [d.name || d.database_id, d.engine_label || d.engine || '—',
+                d.environment || '—',
+                d.connections == null ? '—'
+                  : d.max_connections ? `${num(d.connections)} / ${num(d.max_connections)}`
+                  : num(d.connections),
+                /* The probe only sets replica_lag_s when pg_is_in_recovery() is true,
+                   so a reachable full-depth database without it is the primary. Saying
+                   so beats a dash that could equally mean "not measured". */
+                d.replica_lag_s != null ? `${num(d.replica_lag_s, 1)}s`
+                  : d.depth !== 'full' ? 'n/a'
+                  : d.reachable ? 'primary' : '—',
                 badge(d.status || 'unknown')],
         action: { key: 'removeDatabase', arg: d.id || d.database_id, label: 'Remove' },
       })),
@@ -650,17 +735,17 @@ export const SOURCES = {
          render "Nothing here yet", which reads as a $0 bill rather than a missing
          permission — and `ce:GetCostAndUsage` missing from the role is the single most
          likely reason this table is empty. */
-      if (cost && cost.error) {
-        return [{
+      const problems = Object.entries((cost && cost.errors) || (cost && cost.error ? { AWS: cost.error } : {}))
+        .map(([cloud, message]) => ({
           icon: 'fa-triangle-exclamation',
           iconColor: 'danger',
-          meta: cost.error,
-          cells: ['AWS Cost Explorer', 'AWS', '—', '—', '—',
-                  badge('Unavailable')],
-        }];
-      }
+          meta: message,
+          cells: [cloud === 'currency' ? 'Mixed currencies' : `${cloud} billing`,
+                  cloud === 'currency' ? '—' : cloud, '—', '—', '—',
+                  badge(cloud === 'currency' ? 'Partial total' : 'Unavailable')],
+        }));
       const currency = (cost && cost.currency) || 'USD';
-      return ((cost && cost.accounts) || []).map((a) => {
+      return problems.concat(((cost && cost.accounts) || []).map((a) => {
         const budget = (budgets || []).find((b) => b.target === a.account)
           || (budgets || []).find((b) => b.target === '*');
         const limit = budget ? Number(budget.monthly_limit) : null;
@@ -668,7 +753,7 @@ export const SOURCES = {
         const over = variance != null && variance > 0;
         return {
           iconSet: 'fa-brands',
-          icon: 'fa-aws',
+          icon: CLOUD_ICON[a.cloud] || 'fa-aws',
           iconColor: over ? 'danger' : 'warning',
           meta: a.account,
           cells: [a.account, a.cloud || 'AWS',
@@ -678,7 +763,7 @@ export const SOURCES = {
                   badge(limit == null ? 'Untracked' : over ? 'Over' : 'On track')],
           actions: budget ? [{ key: 'deleteBudget', arg: budget.id, label: 'Clear budget' }] : [],
         };
-      });
+      }));
     },
   },
 
@@ -693,6 +778,7 @@ export const SOURCES = {
                 (m.routes || []).slice(1).join(', ') || 'none',
                 num(m.requests),
                 badge(m.requests ? 'Serving' : 'Idle')],
+        // ponytail: no per-model drill-down page exists; the row is the whole answer.
       })),
   },
 
@@ -740,14 +826,29 @@ export const SOURCES = {
          — Apigee has an org, Azure a resource id, AWS only a region and an API name —
          so each column takes the first field of its provider that answers it. */
       const fields = data.fields || {};
-      const account = fields.org || fields.resource_id || fields.api_name || fields.metrics_url || '—';
-      const region = fields.region || fields.environment || '—';
+      /* Only three of the eight supported gateways are managed by a cloud. The rest run
+         wherever the tenant put them, so this column said "apisix" under a heading that
+         reads Cloud — a provider id pretending to be a hosting answer. */
+      const CLOUD_OF = { aws: 'AWS', azure: 'Azure', apigee: 'GCP' };
+      const cloud = CLOUD_OF[data.provider] || 'Self-hosted';
+      /* A self-hosted gateway has no account or project; the host it answers on is the
+         only thing that identifies which instance this is. The full scrape URL with its
+         path is noise in a table cell. */
+      let account = fields.org || fields.resource_id || fields.api_name;
+      if (!account && fields.metrics_url) {
+        try {
+          account = new URL(fields.metrics_url).host;
+        } catch {
+          account = fields.metrics_url;
+        }
+      }
+      const region = fields.region || fields.environment || (CLOUD_OF[data.provider] ? '—' : 'n/a');
       return [{
         icon: 'fa-plug',
         iconColor: data.reachable ? 'success' : 'danger',
-        meta: data.error || null,
-        cells: [data.label || data.provider, data.provider || '—',
-                account, region,
+        meta: data.error || `${data.provider} · ${fields.metrics_url || 'managed API'}`,
+        cells: [data.label || data.provider, cloud,
+                account || '—', region,
                 num(data.routes),
                 badge(data.reachable ? 'Connected' : 'Unreachable')],
       }];
@@ -766,8 +867,20 @@ export const SOURCES = {
     load: async (api) => ({
       lambda: await api.awsLambda.overview().catch(() => null),
       gateway: await api.gateways.status().catch(() => null),
+      /* The other two clouds are cost-only, so their "is it connected" answer is the
+         config route and their resource count is how many billable children the cost
+         roll-up found. That call is cached server-side for six hours, so asking here
+         costs nothing extra. */
+      gcp: await api.gcpBilling.config().catch(() => null),
+      azure: await api.azureCost.config().catch(() => null),
+      /* Reach, not spend. A tenant with credentials but no billing export yet still has
+         a real project/subscription count, and this call is free where reading the cost
+         roll-up scans BigQuery. */
+      gcpReach: await api.gcpBilling.projects().catch(() => null),
+      azureReach: await api.azureCost.subscriptions().catch(() => null),
+      cost: await api.finops.cloudCost().catch(() => null),
     }),
-    rows: ({ lambda, gateway }) => {
+    rows: ({ lambda, gateway, gcp, azure, gcpReach, azureReach, cost }) => {
       const rows = [];
       /* An account whose credentials AWS rejected is the case this row kept getting
          wrong: it counted zero functions and still said Healthy. `error` is why the
@@ -787,6 +900,32 @@ export const SOURCES = {
                   badge(!lambda.configured ? 'Not connected'
                     : failed ? 'Auth failed'
                     : lambda.errorRate > 0.05 ? 'Degraded' : 'Healthy')],
+        });
+      }
+      /* GCP and Azure carry no collector, so there is no error rate or alarm count to
+         report — the honest row is "connected, and here is what it can see". A cloud
+         whose credential the provider refused says so instead of showing zero
+         projects, which would read as an empty but working account. */
+      for (const [payload, reach, cloud, icon, label, unit] of [
+        [gcp, gcpReach, 'GCP', 'fa-google', 'Google Cloud', 'projects'],
+        [azure, azureReach, 'Azure', 'fa-microsoft', 'Microsoft Azure', 'subscriptions'],
+      ]) {
+        if (!payload || !payload.configured) continue;
+        const costError = cost && cost.errors && cost.errors[cloud];
+        const reachError = reach && reach.error;
+        /* Reach is the better count when the provider gave one: it is what the
+           credential can see, rather than only what has been billed. */
+        const seen = reach && reach.accounts && reach.accounts.length
+          ? reach.accounts.length
+          : ((cost && cost.accounts) || []).filter((a) => a.cloud === cloud).length;
+        rows.push({
+          icon,
+          iconSet: 'fa-brands',
+          iconColor: reachError || costError ? 'danger' : 'warning',
+          meta: reachError || costError || `cost only · ${num(seen)} ${unit} in reach`,
+          cells: [label, cloud, 'Cost', num(seen), '—',
+                  badge(reachError ? 'Auth failed'
+                    : costError ? 'Billing unavailable' : 'Connected')],
         });
       }
       /* Only the managed gateways say anything about a cloud account. A self-hosted
@@ -833,20 +972,44 @@ export const SOURCES = {
   },
 
   orchestration: {
-    // Orchestration and ETL share one connector surface in the backend; this table is
-    // the execution stream rather than the per-platform rollup on `etl`.
-    load: (api) => api.etl.executions({ limit: 50 }),
+    /* The job-run stream, not the per-platform rollup on `etl`.
+       Reads /etl/events rather than /etl/executions: `record_execution` is only called
+       when *this product* launches a job, so /executions holds manual kickoffs and
+       nothing a connected Talend/Boomi/Databricks reported on its own — which is
+       almost every run. Both paths emit an event, so the events feed is the one that
+       covers the whole stream.
+       It also carries the columns this table has always claimed: records processed,
+       duration, and the failure message, none of which exist on the execution DTO. */
+    load: (api) => api.etl.events({ limit: 50 }),
     rows: (data) =>
-      (data || []).map((e) => ({
-        icon: 'fa-wind',
-        iconColor: e.status === 'failed' ? 'danger' : e.status === 'running' ? 'info' : 'success',
-        meta: e.platform || null,
-        cells: [e.job_name || e.name || e.execution_id, num(e.records ?? e.rows),
-                e.duration_seconds != null ? `${num(e.duration_seconds, 1)}s` : '—',
-                e.error || '—', e.started_at || e.finished_at || '—',
-                badge(e.status || 'unknown')],
-        action: e.status === 'failed' ? { key: 'retryEtlExecution', arg: e.execution_id || e.id, label: 'Retry' } : undefined,
-      })),
+      (data || []).map((event) => {
+        const d = event.data || {};
+        const status = String(d.status || '').toLowerCase();
+        const failed = status.includes('fail') || status.includes('error');
+        const running = status.includes('running') || status.includes('started');
+        const started = d.started_at ? Date.parse(d.started_at) : NaN;
+        const ended = d.ended_at || d.finished_at ? Date.parse(d.ended_at || d.finished_at) : NaN;
+        const seconds = Number.isFinite(started) && Number.isFinite(ended)
+          ? (ended - started) / 1000 : d.duration_seconds;
+        return {
+          icon: 'fa-wind',
+          iconColor: failed ? 'danger' : running ? 'info' : 'success',
+          meta: d.platform || event.source || null,
+          cells: [d.job_name || d.execution_id || event.id,
+                  d.records_processed != null ? num(d.records_processed) : '—',
+                  seconds != null && Number.isFinite(seconds) ? `${num(seconds, 1)}s` : '—',
+                  d.error_message || '—',
+                  d.started_at || d.ended_at || event.timestamp || '—',
+                  badge(d.status || 'unknown')],
+          /* Retry re-launches through the provider client, which needs the execution
+             record only `_execute` writes. Offering it on a platform-reported run
+             would 404, so it is offered only on runs this product launched — those
+             are the ones carrying `dry_run`. */
+          action: failed && d.dry_run !== undefined
+            ? { key: 'retryEtlExecution', arg: d.execution_id || event.id, label: 'Retry' }
+            : undefined,
+        };
+      }),
   },
 
   /* --- alerts, platform, org --------------------------------------------- */
@@ -1088,6 +1251,8 @@ export const SOURCES = {
     load: async (api) => {
       const probes = [
         ['AWS Lambda', 'Cloud', () => api.awsLambda.config()],
+        ['Google Cloud', 'Cloud', () => api.gcpBilling.config()],
+        ['Microsoft Azure', 'Cloud', () => api.azureCost.config()],
         ['API gateway', 'Gateway', () => api.gateways.status()],
         ['Databricks', 'Data', () => api.databricks.status()],
         ['Elasticsearch', 'Telemetry', () => api.elk.esHealth()],
@@ -1111,6 +1276,8 @@ export const SOURCES = {
          the table lists them all, this is the shortcut from the row that is broken. */
       const CONFIGURE = {
         'AWS Lambda': 'connectAwsAccount',
+        'Google Cloud': 'connectGcp',
+        'Microsoft Azure': 'connectAzure',
         'API gateway': 'connectGateway',
         Databricks: 'connectDatabricks',
       };

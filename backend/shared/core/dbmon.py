@@ -142,6 +142,10 @@ def masked(entry: dict[str, Any]) -> dict[str, Any]:
         "database": parts["database"],
         "user": parts["user"],
         "dsn": _masked_dsn(entry["dsn"]),
+        # The Database Monitoring table has always had an Environment column and the
+        # register form has always sent one; nothing in between stored it, so the column
+        # rendered "—" for every row.
+        "environment": entry.get("environment") or None,
     }
 
 
@@ -149,7 +153,7 @@ def list_databases(tenant_id: str) -> list[dict[str, Any]]:
     return [masked(e) for e in _load(tenant_id)]
 
 
-def add_database(tenant_id: str, name: str, dsn: str) -> dict[str, Any]:
+def add_database(tenant_id: str, name: str, dsn: str, environment: str | None = None) -> dict[str, Any]:
     """Register a database. Raises InvalidDsn if the URI does not parse."""
     parse_dsn(dsn)  # validate before persisting a credential we can never use
     name = (name or "").strip()
@@ -158,7 +162,8 @@ def add_database(tenant_id: str, name: str, dsn: str) -> dict[str, Any]:
     databases = _load(tenant_id)
     if any(e["name"].lower() == name.lower() for e in databases):
         raise InvalidDsn(f"A database named '{name}' is already registered")
-    entry = {"id": uuid.uuid4().hex[:12], "name": name, "dsn": dsn.strip()}
+    entry = {"id": uuid.uuid4().hex[:12], "name": name, "dsn": dsn.strip(),
+             "environment": (environment or "").strip() or None}
     databases.append(entry)
     _store(tenant_id, databases)
     return masked(entry)

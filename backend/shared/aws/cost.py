@@ -58,6 +58,10 @@ class CloudCostReport(BaseModel):
     configured: bool = False
     # Same contract as the Lambda overview: zeros with a reason beat invented numbers.
     error: str | None = None
+    # Per-cloud refusals, keyed by cloud name, set when several providers are rolled up
+    # into one report (shared.cloudcost). One broken credential must not blank the
+    # clouds that answered, and `error` is a single string with nowhere to say which.
+    errors: dict[str, str] = Field(default_factory=dict)
 
 
 def _month_window(today: date) -> tuple[date, date, date]:

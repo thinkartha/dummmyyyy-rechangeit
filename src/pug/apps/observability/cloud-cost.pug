@@ -28,14 +28,17 @@ block content
     { label: 'Savings opportunities', value: '—', delta: 'no data', badge: 'success' }
   ])
 
-  //- Month-to-date spend from AWS Cost Explorer for the account connected under
-  //- Integrations → Cloud accounts, joined against the budgets stored for this tenant.
-  //- A payer account lists every member account it settles for; a standalone account is
-  //- one row. GCP and Azure have no cost connector yet, so neither appears.
+  //- Month-to-date spend for every cloud connected under Integrations → Cloud accounts,
+  //- joined against the budgets stored for this tenant. One row per billable child:
+  //- AWS linked accounts (Cost Explorer), GCP projects (BigQuery billing export) and
+  //- Azure subscriptions (Cost Management). Connect the payer — AWS org management
+  //- account, GCP billing account, Azure billing account — and one credential covers
+  //- the fleet; connect a child and you see that child alone. A cloud that refused
+  //- gets its own row saying which, rather than blanking the ones that answered.
   +ObsToolTable({
     title: 'Spend by account',
     live: 'cloudCost',
-    subtitle: 'Month-to-date AWS spend from Cost Explorer, against the budgets you have set',
+    subtitle: 'Month-to-date spend across AWS, GCP and Azure, against the budgets you have set',
     searchPlaceholder: 'Search accounts',
     columns: [
       { label: 'Account', className: 'ps-3' },

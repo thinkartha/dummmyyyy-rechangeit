@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
-from shared.aws.cost import CloudCostReport, cloud_cost
+from shared.aws.cost import CloudCostReport
+from shared.cloudcost import multi_cloud_cost
 from shared.core import budgets as budget_store
 from shared.core.auth import ROLE_ORG_ADMIN, ROLE_PLATFORM_ADMIN, Principal, get_current_principal
 from shared.core import mock_data
@@ -29,13 +30,15 @@ def finops_recommendations(tenant_id: str = Depends(get_tenant_id)) -> FinopsRes
 
 @router.get("/finops/cloud-cost", response_model=CloudCostReport)
 def finops_cloud_cost(tenant_id: str = Depends(get_tenant_id)) -> CloudCostReport:
-    """Month-to-date AWS spend per linked account, from Cost Explorer.
+    """Month-to-date spend per account, across every cloud this tenant connected.
 
-    The spend half of the Cloud Cost page. Budgets are fetched separately and joined in
-    the browser, the same way the AI cost table does it — the ceiling and the spend come
-    from different places and a tenant with no budgets is the normal case, not an error.
+    AWS linked accounts (Cost Explorer), GCP projects (BigQuery billing export) and
+    Azure subscriptions (Cost Management) in one list. The spend half of the Cloud Cost
+    page: budgets are fetched separately and joined in the browser, the same way the AI
+    cost table does it — the ceiling and the spend come from different places and a
+    tenant with no budgets is the normal case, not an error.
     """
-    return cloud_cost(tenant_id)
+    return multi_cloud_cost(tenant_id)
 
 
 # --- budgets ----------------------------------------------------------------

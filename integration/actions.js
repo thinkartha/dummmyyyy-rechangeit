@@ -1291,6 +1291,11 @@ export const ACTIONS = {
       { name: 'dsn', label: 'Connection string', required: true,
         placeholder: 'postgresql://user:pass@host:5432/dbname',
         help: 'Stored server-side; never returned by the API once saved.' },
+      /* The table has an Environment column and nothing ever filled it, because the
+         form did not ask and the backend did not store it. Free text, not a select:
+         an org's environment names are its own. */
+      { name: 'environment', label: 'Environment', width: 'half',
+        placeholder: 'production', help: 'Shown in the Environment column.' },
     ],
     aux: { label: 'Test connection', run: (api, body) => testDsn(api, body.dsn) },
     run: (api, body) => api.databases.add(body),
@@ -1568,6 +1573,8 @@ export const ACTIONS = {
       { label: 'ETL tool', action: 'connectEtl', help: 'Talend, Boomi or Databricks.' },
       { label: 'Database', action: 'addDatabase', help: 'Register by connection string.' },
       { label: 'AWS account', action: 'connectAwsAccount', help: 'Lambda and CloudWatch collection.' },
+      { label: 'Google Cloud', action: 'connectGcp', help: 'Per-project spend from the BigQuery billing export.' },
+      { label: 'Microsoft Azure', action: 'connectAzure', help: 'Per-subscription spend from Cost Management.' },
       { label: 'AI tool agent', action: 'connectAiTool', help: 'Registers the agent that pushes AI telemetry, and mints its key.' },
     ],
   },
@@ -1746,6 +1753,27 @@ export const ACTIONS = {
     run: (api, body) => api.aiModels.register(body),
   },
 
+  /**
+   * "Rebaseline" on Drift Detection.
+   *
+   * Pins the current 24h window as the new normal, which is the only way to clear a
+   * drift finding you have accepted. Destructive in the sense that matters here: doing
+   * it while a regression is live is how the regression stops being reported, so it
+   * confirms first, and the backend restricts it to admins.
+   */
+  rebaseline: {
+    direct: true,
+    confirm: 'Pin the last 24 hours as the new baseline? Current drift findings will clear, '
+      + 'and future drift is measured against this window.',
+    run: async (api) => {
+      const pinned = await api.drift.pinBaseline();
+      const features = (pinned.numeric_features || []).length
+        + (pinned.categorical_features || []).length;
+      return `Baseline pinned — ${features} feature(s) and ${pinned.config_keys || 0} `
+        + 'config key(s) are the new normal.';
+    },
+  },
+
   unregisterModel: {
     direct: true,
     confirm: 'Stop declaring this model? Recorded inferences are kept.',
@@ -1768,6 +1796,60 @@ export const ACTIONS = {
     prefill: (api) => api.awsLambda.config().then((s) => (s && s.fields) || {}).catch(() => ({})),
     fields: (current = {}) => AWS_FIELDS(current),
     run: (api, body) => api.awsLambda.saveConfig(body),
+  },
+
+  /**
+   * "Connect GCP" points at the BigQuery billing export.
+   *
+   * GCP has no Cost Explorer: the export is the only authoritative per-project spend,
+   * so the form asks where it is rather than pretending an API exists. One export
+   * covers every project its billing account pays for.
+   */
+  connectGcp: {
+    title: 'Connect Google Cloud',
+    submit: 'Save connection',
+    success: 'GCP connected — project spend appears on Cloud Cost.',
+    prefill: (api) => api.gcpBilling.config().then((s) => (s && s.fields) || {}).catch(() => ({})),
+    fields: (current = {}) => [
+      { name: 'billingExportTable', label: 'Billing export table', required: true,
+        value: current.billing_export_table,
+        placeholder: 'my-project.billing.gcp_billing_export_v1_01ABCD_2FEEEE_3F1234',
+        help: 'project.dataset.table — Billing → Billing export → BigQuery export.' },
+      { name: 'billingProject', label: 'Query project', width: 'half',
+        value: current.billing_project,
+        help: 'Where the query runs and is billed. Blank uses the key file\u2019s project.' },
+      { name: 'serviceAccountJson', label: 'Service account key (JSON)', type: 'textarea',
+        help: 'Needs BigQuery Job User on the query project and Data Viewer on the export. Left blank keeps the stored key.' },
+    ],
+    run: (api, body) => api.gcpBilling.saveConfig(body),
+  },
+
+  /**
+   * "Connect Azure" is an app registration plus a scope.
+   *
+   * Scope is the whole question the page exists to answer: a billing account reports
+   * every subscription under it, a single subscription reports only itself.
+   */
+  connectAzure: {
+    title: 'Connect Microsoft Azure',
+    submit: 'Save connection',
+    success: 'Azure connected — subscription spend appears on Cloud Cost.',
+    prefill: (api) => api.azureCost.config().then((s) => (s && s.fields) || {}).catch(() => ({})),
+    fields: (current = {}) => [
+      { name: 'directoryId', label: 'Directory (tenant) ID', required: true, width: 'half',
+        value: current.directory_id },
+      { name: 'clientId', label: 'Application (client) ID', required: true, width: 'half',
+        value: current.client_id },
+      { name: 'clientSecret', label: 'Client secret', type: 'password', width: 'half',
+        help: 'Left blank keeps the stored secret.' },
+      { name: 'billingAccountId', label: 'Billing account ID', width: 'half',
+        value: current.billing_account_id,
+        help: 'Every subscription it pays for. Preferred over a single subscription.' },
+      { name: 'subscriptionId', label: 'Subscription ID', width: 'half',
+        value: current.subscription_id,
+        help: 'Only if you have no billing account access — reports this one subscription.' },
+    ],
+    run: (api, body) => api.azureCost.saveConfig(body),
   },
 
   /**
@@ -2156,10 +2238,7 @@ export const ACTIONS = {
 /* Buttons whose endpoint does not exist yet. Listed rather than omitted so the gap is
  * visible in one place instead of being rediscovered page by page. */
 export const UNSUPPORTED = {
-  connectGcp: 'No GCP collector yet — the backend collects AWS (Lambda, CloudWatch) and reads Apigee if you connect it as your API gateway.',
-  connectAzure: 'No Azure collector yet — Azure API Management is readable as an API gateway, but there is no subscription-wide collector.',
   addAiRoute: 'AI gateway routes come from the APISIX config, not the API — edit infrastructure/apisix/apisix.yaml.',
-  rebaseline: 'No drift rebaseline endpoint yet.',
   defineSlo: 'No SLO definition endpoint yet — slo is read-only.',
   acknowledgeAll: 'No bulk acknowledge endpoint yet.',
   saveAuthSettings: 'No organization authentication-settings endpoint yet — Cognito policy is set in the stack.',

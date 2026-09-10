@@ -33,8 +33,11 @@ block content
       { label: 'Route / tool', className: 'ps-3' },
       { label: 'Provider' },
       { label: 'Primary model' },
-      { label: 'Fallback' },
-      { label: 'RPM' },
+      /* Neither of these could ever be what they said: nothing in the product
+         configures a fallback model, and the gateway stats carry no time window, so
+         this number is a cumulative request count and not a rate. */
+      { label: 'Other routes' },
+      { label: 'Requests' },
       { label: 'Status' }
     ],
     rows: [
