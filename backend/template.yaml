@@ -633,3 +633,11 @@ Outputs:
   AppSecretsArn:
     Description: Secrets Manager ARN for runtime secrets
     Value: !Ref AppSecrets
+  ConnectorPrincipalArn:
+    Description: >
+      The identity a customer's cross-account role must trust. Paste this into the
+      Principal of that role's trust policy — see "AWS connector IAM policy" in
+      backend/README.md. The role is not given a fixed name (a named IAM role forces
+      a replacement on some stack updates), so this Output is the only place to read
+      it: without it the customer cannot write the trust policy at all.
+    Value: !GetAtt LoveHeartBeatLambdaRole.Arn

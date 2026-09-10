@@ -116,8 +116,30 @@ Notes:
   already covers it; a hand-rolled replacement needs these actions.
 - `organizations:ListAccounts` only works from the organization's management account. A
   member-account credential returns its own account only, which is a valid answer.
-- The trust policy on the role should name our account as principal and require the
-  `externalId` the tenant entered, so the ARN alone is not enough to assume it.
+- The permissions above say what the role may *do*. They do not say who may assume it,
+  which is the other half and the usual reason a correct-looking connection returns
+  zeros. Attach this as the role's **trust policy**:
+
+  ```json
+  {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Principal": { "AWS": "<ConnectorPrincipalArn from the backend stack outputs>" },
+        "Action": "sts:AssumeRole",
+        "Condition": { "StringEquals": { "sts:ExternalId": "<the externalId they type into the connect form>" } }
+      }
+    ]
+  }
+  ```
+
+  `ConnectorPrincipalArn` is a stack Output (`aws cloudformation describe-stacks
+  --stack-name loveheartbeat-backend --query
+  'Stacks[0].Outputs[?OutputKey==\`ConnectorPrincipalArn\`].OutputValue' --output text`).
+  The `externalId` must match the connect form character for character — it is what stops
+  one tenant from entering another tenant's role ARN and reading an account that is not
+  theirs, since this Lambda is trusted by both.
 - AWS has **no public API for payment methods or billing contacts** — card details are
   console-only, so no policy grants access to them and no endpoint here reports them.
 
