@@ -15,118 +15,152 @@ append variables
     ];
 
 block content
-  +ObsPageHeader({
-    title: 'Account detail',
-    subtitle: 'Everything this AWS account is reporting — alarms, streamed metrics, spend and changes',
-    linkHref: `${CWD}${paths['obs-cloud-monitoring']}`,
-    linkText: 'All accounts'
-  })
+  //- The account's own name is an API answer, so the page heading is painted by
+  //- live-data rather than written here — a heading showing the twelve-digit id while
+  //- the tables below say "prod-workloads" reads as two different accounts.
+  .d-flex.flex-wrap.align-items-start.justify-content-between.gap-3.mb-3(data-account-heading)
+    div
+      h2.mb-1(data-account-name) —
+      p.text-body-tertiary.fs-9.mb-0(data-account-meta) Loading account…
+    .d-flex.align-items-center.gap-2
+      a.btn.btn-phoenix-secondary.btn-sm(href=`${CWD}${paths['obs-cloud-monitoring']}`)
+        span.fa-solid.fa-arrow-left.me-2
+        | All accounts
+      button.btn.btn-phoenix-secondary.btn-sm(type='button' data-lhb-action='refreshData')
+        span.fa-solid.fa-arrows-rotate.me-2
+        | Update
 
-  //- Filled by live-data from the account row, so the page says which account it is
-  //- rather than making the reader read the query string.
-  .mb-4(data-account-heading)
-    h3.mb-1(data-account-name) —
-    p.text-body-tertiary.fs-9.mb-0(data-account-meta) Loading account…
-
-  +ObsStatCards([
-    { key: 'accountAlarms', label: 'Open alarms', value: '—', delta: 'no data', badge: 'danger' },
-    { key: 'accountResources', label: 'Resources', value: '—', delta: 'no data', badge: 'info' },
-    { key: 'accountServices', label: 'Streamed services', value: '—', delta: 'no data', badge: 'success' },
-    { key: 'accountSpend', label: 'Spend month to date', value: '—', delta: 'no data', badge: 'primary' }
+  +ObsTabs([
+    { id: 'account-dashboard', label: 'Dashboard', icon: 'fa-chart-simple' },
+    { id: 'account-inventory', label: 'Resource list', icon: 'fa-list' }
   ])
 
-  //- One filter row above everything it scopes, rather than a picker tucked inside each
-  //- card. Range first — it is the control every reader reaches for.
-  //-
-  //- The range scopes the windowed things below it: the metric chart and the streamed-
-  //- resources table. Alarms are current state and spend is month-to-date by
-  //- definition, so neither can honour a range; the row says which is which rather than
-  //- leaving a control that appears to govern them and silently does not.
-  .card.mb-4
-    .card-body.py-3
-      .row.g-3.align-items-end
-        .col-6.col-sm-3.col-lg-2
-          label.form-label.fs-9.mb-1(for='account-range') Range
-          select#account-range.form-select.form-select-sm(data-lhb-chart-control data-lhb-refresh aria-label='Time range')
-            option(value='3') Last 3h
-            option(value='12') Last 12h
-            option(value='24') Last 24h
-            option(value='168') Last 7d
-        .col-12.col-sm-6.col-lg-4
-          label.form-label.fs-9.mb-1(for='account-metric') Metric
-          select#account-metric.form-select.form-select-sm(data-lhb-chart-control aria-label='Metric to chart')
-        .col.text-sm-end
-          span.text-body-tertiary.fs-10 Range scopes the metric chart and streamed resources. Alarms are current state; spend is month to date.
+  .tab-content
+    #account-dashboard.tab-pane.fade.show.active(role='tabpanel' aria-labelledby='account-dashboard-tab')
 
-  .row.g-4.mb-4
-    .col-12.col-xl-7
-      .card.h-100
-        .card-header.border-bottom.border-translucent.py-3
-          h4.mb-0 Metric over time
-          p.text-body-tertiary.fs-9.mb-0 One line per resource, the five highest by peak. Anything beyond folds into “Other” rather than being dropped.
-        .card-body
-          //- The height is on the element because echarts measures its container: a
-          //- chart in a box with no height initialises at zero and draws nothing. The
-          //- axis labels live inside this box (grid containLabel), so nothing is clipped.
-          div(data-lhb-chart='accountMetric' style='height:320px;width:100%')
-    .col-12.col-xl-5
-      .card.h-100
-        .card-header.border-bottom.border-translucent.py-3
-          h4.mb-0 Spend by service
-          p.text-body-tertiary.fs-9.mb-0 Month to date for this account, largest first. Every bar is labelled with its value.
-        .card-body
-          div(data-lhb-chart='accountSpend' style='height:320px;width:100%')
+      //- One filter row above everything it scopes. Range first — it is the control
+      //- every reader reaches for.
+      //-
+      //- The range scopes the windowed things: the metric chart and the resource list.
+      //- Alarms are current state and spend is month-to-date by definition, so neither
+      //- can honour a range; the tiles say which is which rather than leaving a control
+      //- that appears to govern them and silently does not.
+      .card.mb-4
+        .card-body.py-3
+          .row.g-2.align-items-end
+            .col-12.col-lg
+              label.form-label.fs-10.text-uppercase.text-body-tertiary.mb-1(for='account-search') Search
+              .position-relative
+                span.fa-solid.fa-magnifying-glass.position-absolute.text-body-tertiary.fs-10(style='left:.75rem;top:50%;transform:translateY(-50%)')
+                input#account-search.form-control.form-control-sm(type='search' data-lhb-refresh placeholder='Search resources by name, service or dimension' style='padding-left:2rem')
+            .col-6.col-lg-auto
+              label.form-label.fs-10.text-uppercase.text-body-tertiary.mb-1(for='account-range') Range
+              select#account-range.form-select.form-select-sm(data-lhb-chart-control data-lhb-refresh aria-label='Time range')
+                option(value='3') Last 3h
+                option(value='12') Last 12h
+                option(value='24') Last 24h
+                option(value='168') Last 7d
+            .col-6.col-lg-auto
+              label.form-label.fs-10.text-uppercase.text-body-tertiary.mb-1(for='account-metric') Metric
+              select#account-metric.form-select.form-select-sm(data-lhb-chart-control aria-label='Metric to chart')
+            .col-6.col-lg-auto
+              label.form-label.fs-10.text-uppercase.text-body-tertiary.mb-1(for='account-group-by') Group spend by
+              select#account-group-by.form-select.form-select-sm(data-lhb-chart-control aria-label='Spend grouping')
+                option(value='SERVICE') Service
+                option(value='REGION') Region
+                option(value='USAGE_TYPE') Usage type
+                option(value='team') Tag: team
+                option(value='environment') Tag: environment
 
-  +ObsToolTable({
-    title: 'Open alarms',
-    live: 'accountAlarms',
-    subtitle: 'CloudWatch alarms currently in ALARM, across every region this connector reads',
-    searchPlaceholder: 'Search alarms',
-    pageSize: 5,
-    columns: [
-      { label: 'Alarm', className: 'ps-3' },
-      { label: 'Metric' },
-      { label: 'Region' },
-      { label: 'Since' },
-      { label: 'State' }
-    ],
-    rows: [
-      { icon: 'fa-bell', iconColor: 'danger', meta: 'threshold crossed', cells: ['cpu-high-prod', 'CPUUtilization', 'us-east-1', '2026-09-10T09:40:00Z', { text: 'In alarm', badge: 'danger' }] }
-    ]
-  })
+      +ObsKpiRow([
+        { key: 'accountAlarms', label: 'Open alarms', value: '\u2014', delta: 'no data', badge: 'danger',
+          help: 'CloudWatch alarms in ALARM right now, across every region this connector reads.' },
+        { key: 'accountResources', label: 'Resources', value: '\u2014', delta: 'no data', badge: 'info',
+          help: 'Route 53 zones, domains, CloudFront distributions, S3 buckets and IAM users found in this account.' },
+        { key: 'accountStreamed', label: 'Streamed', value: '\u2014', delta: 'no data', badge: 'success',
+          help: 'Distinct resources the CloudWatch metric stream has described in the selected range.' },
+        { key: 'accountServices', label: 'Services', value: '\u2014', delta: 'no data', badge: 'primary',
+          help: 'AWS services reporting through the metric stream. No per-service integration sits behind these.' },
+        { key: 'accountRegions', label: 'Regions', value: '\u2014', delta: 'no data', badge: 'secondary',
+          help: 'Regions this connector is configured to read. Alarms outside them are not visible here.' },
+        { key: 'accountSpend', label: 'Spend MTD', value: '\u2014', delta: 'no data', badge: 'warning',
+          help: 'Month-to-date unblended cost for this linked account, from Cost Explorer. Lags about a day.' }
+      ])
 
-  +ObsToolTable({
-    title: 'Streamed resources',
-    live: 'accountResources',
-    subtitle: 'Every resource this account’s metric stream has described',
-    searchPlaceholder: 'Search resources',
-    pageSize: 10,
-    columns: [
-      { label: 'Resource', className: 'ps-3' },
-      { label: 'Service' },
-      { label: 'Region' },
-      { label: 'Metrics' },
-      { label: 'Last seen' },
-      { label: 'Freshness' }
-    ],
-    rows: [
-      { icon: 'fa-cube', iconColor: 'info', meta: 'InstanceId=i-0abc123', cells: ['i-0abc123', 'EC2', 'us-east-1', '14', '2026-09-10T10:04:00Z', { text: 'Live', badge: 'success' }] }
-    ]
-  })
+      .row.g-4.mb-4
+        .col-12.col-xl-7
+          +ObsChartCard({
+            title: 'Metric over time',
+            chart: 'accountMetric',
+            height: '300px',
+            help: 'One line per resource, the five highest by peak. Anything beyond folds into \u201cOther\u201d rather than being dropped.'
+          })
+        .col-12.col-xl-5
+          +ObsChartCard({
+            title: 'Daily spend',
+            chart: 'accountCost',
+            height: '300px',
+            help: 'Last 30 days. A month-to-date total only ever rises, so it cannot show whether spend is accelerating.'
+          })
 
-  +ObsToolTable({
-    title: 'Recent changes',
-    live: 'accountChanges',
-    subtitle: 'What appeared, vanished or changed in this account between inventory snapshots',
-    searchPlaceholder: 'Search changes',
-    pageSize: 5,
-    columns: [
-      { label: 'Resource', className: 'ps-3' },
-      { label: 'Kind' },
-      { label: 'Seen' },
-      { label: 'Change' }
-    ],
-    rows: [
-      { icon: 'fa-plus', iconColor: 'success', meta: 'assets-staging', cells: ['assets-staging', 'S3 bucket', '2026-09-10T08:00:00Z', { text: 'Added', badge: 'success' }] }
-    ]
-  })
+      +ObsChartCard({
+        title: 'Spend breakdown',
+        chart: 'accountSpendTreemap',
+        height: '380px',
+        help: 'Tile area is the amount. Ordered and shaded by value, so the darkest tile is also the largest. Untagged spend is shown rather than dropped.'
+      })
+
+    #account-inventory.tab-pane.fade(role='tabpanel' aria-labelledby='account-inventory-tab')
+      +ObsToolTable({
+        title: 'Open alarms',
+        live: 'accountAlarms',
+        subtitle: 'CloudWatch alarms currently in ALARM, across every region this connector reads',
+        searchPlaceholder: 'Search alarms',
+        pageSize: 5,
+        columns: [
+          { label: 'Alarm', className: 'ps-3' },
+          { label: 'Metric' },
+          { label: 'Region' },
+          { label: 'Since' },
+          { label: 'State' }
+        ],
+        rows: [
+          { icon: 'fa-bell', iconColor: 'danger', meta: 'threshold crossed', cells: ['cpu-high-prod', 'CPUUtilization', 'us-east-1', '2026-09-10T09:40:00Z', { text: 'In alarm', badge: 'danger' }] }
+        ]
+      })
+
+      +ObsToolTable({
+        title: 'Streamed resources',
+        live: 'accountResources',
+        subtitle: 'Every resource this account\u2019s metric stream has described in the selected range',
+        searchPlaceholder: 'Search resources',
+        pageSize: 10,
+        columns: [
+          { label: 'Resource', className: 'ps-3' },
+          { label: 'Service' },
+          { label: 'Region' },
+          { label: 'Metrics' },
+          { label: 'Last seen' },
+          { label: 'Freshness' }
+        ],
+        rows: [
+          { icon: 'fa-cube', iconColor: 'info', meta: 'InstanceId=i-0abc123', cells: ['i-0abc123', 'EC2', 'us-east-1', '14', '2026-09-10T10:04:00Z', { text: 'Live', badge: 'success' }] }
+        ]
+      })
+
+      +ObsToolTable({
+        title: 'Recent changes',
+        live: 'accountChanges',
+        subtitle: 'What appeared, vanished or changed in this account between inventory snapshots',
+        searchPlaceholder: 'Search changes',
+        pageSize: 5,
+        columns: [
+          { label: 'Resource', className: 'ps-3' },
+          { label: 'Kind' },
+          { label: 'Seen' },
+          { label: 'Change' }
+        ],
+        rows: [
+          { icon: 'fa-plus', iconColor: 'success', meta: 'assets-staging', cells: ['assets-staging', 'S3 bucket', '2026-09-10T08:00:00Z', { text: 'Added', badge: 'success' }] }
+        ]
+      })

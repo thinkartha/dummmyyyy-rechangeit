@@ -43,6 +43,75 @@ mixin ObsStatCards(stats)
                 h3.mb-0(data-obs-stat data-obs-stat-key=stat.key)= stat.value
               span.badge.badge-phoenix(class=`badge-phoenix-${stat.badge || 'primary'}` data-obs-stat-delta data-obs-stat-delta-key=stat.key)= stat.delta
 
+//- A KPI strip in the shape monitoring products use: a small uppercase label with an
+//- info affordance, one large number, and a delta chip beside it. Distinct from
+//- ObsStatCards, which is the wider four-up card used on the list pages — this one packs
+//- six figures into one row and scrolls sideways rather than wrapping to a second row,
+//- because a KPI strip that reflows moves the number somebody was looking at.
+//-
+//- Same data contract as ObsStatCards: `key` names a figure a live source publishes,
+//- `data-obs-stat` is what live-data blanks before the first measurement lands.
+mixin ObsKpiRow(stats)
+  .obs-kpi-row.d-flex.gap-3.mb-4.pb-1(style='overflow-x:auto;scrollbar-width:thin')
+    each stat in stats
+      .card.flex-shrink-0(style='min-width:11.5rem;flex:1 1 0')
+        .card-body.py-3.px-3
+          .d-flex.align-items-center.gap-1.mb-2
+            h6.text-body-tertiary.text-uppercase.fs-10.fw-semibold.mb-0.lh-1(style='letter-spacing:.04em')= stat.label
+            //- The help text is the tooltip, not a second line of body copy: these tiles
+            //- are read at a glance and a sentence under each one defeats that.
+            if stat.help
+              span.text-body-quaternary.fs-10(data-bs-toggle='tooltip' data-bs-placement='top' title=stat.help)
+                span.fa-solid.fa-circle-info
+          .d-flex.align-items-baseline.gap-2.flex-wrap
+            //- Proportional figures, not tabular: at this size equal-width digits make a
+            //- number like 121 look loose. Tabular is for columns that must align.
+            h2.mb-0.fw-semibold.lh-1(data-obs-stat data-obs-stat-key=stat.key)= stat.value
+            span.badge.badge-phoenix.fs-10(class=`badge-phoenix-${stat.badge || 'secondary'}` data-obs-stat-delta data-obs-stat-delta-key=stat.key)= stat.delta
+
+//- A chart in a card, with the header treatment the KPI row uses so the two read as one
+//- system. `chart` names an entry in integration/charts.js.
+mixin ObsChartCard(config)
+  .card.h-100
+    .card-header.border-bottom.border-translucent.py-3
+      .d-flex.align-items-center.justify-content-between.gap-2
+        .d-flex.align-items-center.gap-1
+          h6.text-body-tertiary.text-uppercase.fs-10.fw-semibold.mb-0.lh-1(style='letter-spacing:.04em')= config.title
+          if config.help
+            span.text-body-quaternary.fs-10(data-bs-toggle='tooltip' data-bs-placement='top' title=config.help)
+              span.fa-solid.fa-circle-info
+        if config.action
+          button.btn.btn-link.btn-sm.p-0.text-body-tertiary(type='button' data-lhb-action=config.actionKey title=config.action)
+            span.fa-solid.fa-arrows-rotate
+    .card-body
+      //- The height is on the element because echarts measures its container: a chart in
+      //- a box with no height initialises at zero and draws nothing. Axis labels sit
+      //- inside this box (grid containLabel), so none of them are clipped by it.
+      div(data-lhb-chart=config.chart style=`height:${config.height || '300px'};width:100%`)
+
+//- Tabs over one page's worth of content. Bootstrap's tab JS is already loaded by the
+//- layout; nothing here needs its own script.
+//-
+//- Charts must live in the tab that is active on load — echarts sizes itself against its
+//- container, and a container inside a hidden pane measures zero. charts.js listens for
+//- Bootstrap's shown.bs.tab and resizes, which covers the way back.
+mixin ObsTabs(tabs)
+  ul.nav.nav-underline.mb-4(role='tablist')
+    each tab, i in tabs
+      li.nav-item(role='presentation')
+        button.nav-link.d-flex.align-items-center.gap-2(
+          class=(i === 0 ? 'active' : '')
+          id=`${tab.id}-tab`
+          data-bs-toggle='tab'
+          data-bs-target=`#${tab.id}`
+          type='button'
+          role='tab'
+          aria-controls=tab.id
+          aria-selected=(i === 0 ? 'true' : 'false'))
+          if tab.icon
+            span(class=`fa-solid ${tab.icon} fs-10`)
+          = tab.label
+
 mixin ObsToolTable(config)
   -
     var pageSize = config.pageSize || 5;

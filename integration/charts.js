@@ -39,6 +39,23 @@ const isDark = () => document.documentElement.getAttribute('data-bs-theme') === 
 const ink = () => INK[isDark() ? 'dark' : 'light'];
 const seriesColors = () => (isDark() ? SERIES_DARK : SERIES_LIGHT);
 
+/* One hue, light to dark. Used only by the treemap, and the distinction from a bar
+   chart is deliberate: a bar already encodes magnitude as length, so shading it too
+   spends the free channel twice. A treemap encodes magnitude as *area*, which is the
+   thing people read badly — so here the ramp does real work, giving the eye a second
+   cue and separating tiles that share an edge. Ordered by value: darker is bigger. */
+const SEQUENTIAL_LIGHT = ['#0d366b', '#184f95', '#256abf', '#2a78d6', '#3987e5',
+                          '#5598e7', '#6da7ec', '#86b6ef', '#9ec5f4', '#b7d3f6'];
+const SEQUENTIAL_DARK = ['#cde2fb', '#b7d3f6', '#9ec5f4', '#86b6ef', '#6da7ec',
+                         '#5598e7', '#3987e5', '#2a78d6', '#256abf', '#184f95'];
+const sequential = () => (isDark() ? SEQUENTIAL_DARK : SEQUENTIAL_LIGHT);
+
+/** Which grouping the spend treemap is showing. */
+const spendGroupBy = () => {
+  const el = document.getElementById('account-group-by');
+  return (el && el.value) || 'SERVICE';
+};
+
 /** Which account this page is about, from the query string. */
 export function accountParam() {
   return new URLSearchParams(window.location.search).get('account') || '';
@@ -185,63 +202,131 @@ export const CHARTS = {
   },
 
   /**
-   * Spend by service for this account. The job is comparing magnitude, so: ranked bars.
+   * Daily spend for this account — the second time series beside the metric chart.
    *
-   * Horizontal because AWS service names are long ("Amazon Elastic Compute Cloud") and
-   * rotated x-labels are unreadable. Deliberately not a treemap — a treemap asks the
-   * reader to compare areas, which people do badly, and it has nowhere to put a value
-   * for the small slices that are usually the interesting ones.
-   *
-   * Every bar is the same colour on purpose. Shading them darker-where-bigger looks
-   * considered and is a mistake: services are a nominal set with no natural order, so a
-   * ramp would encode the bar's length a second time in hue and spend the only free
-   * channel on something the length already says. One series, one colour.
+   * A month-to-date total only ever rises, so it cannot answer "is this getting worse".
+   * One series, so no legend: the card title names it, and a legend box for a single
+   * line is chrome with nothing to disambiguate.
    */
-  accountSpend: {
-    load: (api) => api.finops.costBreakdown({ groupBy: 'SERVICE', account: accountParam() }),
-    empty: 'No Cost Explorer data for this account.',
+  accountCost: {
+    load: (api) => api.finops.costDaily({ days: 30, account: accountParam() }),
+    empty: 'No Cost Explorer history for this account.',
     option: (data) => {
-      if (!data || data.error || !(data.entries || []).length) return null;
+      if (!data || data.error || !(data.points || []).length) return null;
       const c = ink();
       const currency = data.currency || 'USD';
-      // Ranked ascending because ECharts draws a horizontal category axis bottom-up,
-      // so the largest ends on top where the eye starts.
-      const entries = [...data.entries].sort((a, b) => a.mtd - b.mtd).slice(-10);
       const fill = seriesColors()[0];
       return {
         ...base(),
         tooltip: {
           ...base().tooltip,
-          trigger: 'item',
-          formatter: (p) => `${esc(p.name)}<br/>${esc(money(p.value, currency))}`,
+          formatter: (points) => {
+            const p = points[0];
+            return `${esc(p.axisValue)}<br/>${esc(money(p.data, currency))}`;
+          },
         },
-        grid: { left: 8, right: 72, top: 8, bottom: 8, containLabel: true },
+        grid: { left: 8, right: 16, top: 8, bottom: 8, containLabel: true },
         xAxis: {
+          type: 'category',
+          data: data.points.map((p) => p.date),
+          boundaryGap: false,
+          axisLine: { lineStyle: { color: c.axis } },
+          axisTick: { show: false },
+          axisLabel: { color: c.muted, fontSize: 11, hideOverlap: true },
+        },
+        yAxis: {
           type: 'value',
+          name: currency,
+          nameTextStyle: { color: c.muted, fontSize: 11, align: 'left' },
           splitLine: { lineStyle: { color: c.grid } },
           axisLabel: { color: c.muted, fontSize: 11 },
         },
-        yAxis: {
-          type: 'category',
-          data: entries.map((e) => e.key),
-          axisLine: { lineStyle: { color: c.axis } },
-          axisTick: { show: false },
-          axisLabel: { color: c.secondary, fontSize: 11, width: 180, overflow: 'truncate' },
+        series: [{
+          type: 'line',
+          data: data.points.map((p) => p.amount),
+          smooth: false,
+          showSymbol: false,
+          symbolSize: 8,
+          lineStyle: { width: 2, color: fill },
+          itemStyle: { color: fill },
+          /* A single series is the one case where an area fill is right: nothing is
+             hidden behind it, and the fill makes the shape readable at this height. */
+          areaStyle: { color: fill, opacity: 0.12 },
+        }],
+      };
+    },
+  },
+
+  /**
+   * Spend as a treemap — tile area is the amount.
+   *
+   * A ranked bar chart compares magnitude more accurately and is what shipped first.
+   * This is the shape that was asked for, and it does earn its place on one thing a bar
+   * list does badly: it shows the *shape* of a bill at a glance — whether one service
+   * is most of it, or thirty services are all of it — without the reader adding up rows.
+   *
+   * The mitigations for what treemaps get wrong are all here: one hue ordered by value
+   * so darker is reliably bigger, a 2px surface gap so adjacent tiles never merge, and
+   * labels truncated rather than clipped mid-word, with the tooltip carrying the rest.
+   */
+  accountSpendTreemap: {
+    load: (api) => api.finops.costBreakdown({
+      groupBy: spendGroupBy(), account: accountParam(),
+    }),
+    empty: 'No Cost Explorer data for this account.',
+    option: (data) => {
+      if (!data || data.error || !(data.entries || []).length) return null;
+      const c = ink();
+      const currency = data.currency || 'USD';
+      const ramp = sequential();
+      /* Descending, so the ramp index and the tile order agree and the darkest tile is
+         also the largest. Credits and refunds are negative and have no area — drawing
+         them would make the layout meaningless, so they leave the map rather than
+         becoming zero-size tiles. The total above still includes them. */
+      const entries = [...data.entries]
+        .filter((e) => Number(e.mtd) > 0)
+        .sort((a, b) => b.mtd - a.mtd)
+        .slice(0, 24);
+      if (!entries.length) return null;
+      const total = entries.reduce((t, e) => t + e.mtd, 0);
+      return {
+        ...base(),
+        tooltip: {
+          ...base().tooltip,
+          trigger: 'item',
+          formatter: (p) => `${esc(p.name)}<br/>${esc(money(p.value, currency))}`
+            + `<br/>${esc(((p.value / total) * 100).toFixed(1))}% of shown`,
         },
         series: [{
-          type: 'bar',
-          data: entries.map((e) => e.mtd),
-          barMaxWidth: 18,
-          // 4px rounded data-ends, square where they meet the baseline.
-          itemStyle: { color: fill, borderRadius: [0, 4, 4, 0] },
-          /* Explicit rather than relying on the library default: the hovered bar has
-             to visibly respond, and a bar whose colour is pinned in itemStyle is
-             exactly the case where a default emphasis can end up a no-op. */
-          emphasis: { itemStyle: { color: fill, opacity: 0.82 } },
+          type: 'treemap',
+          roam: false,
+          nodeClick: false,
+          breadcrumb: { show: false },
+          top: 0, left: 0, right: 0, bottom: 0,
+          /* The gap is the surface showing through, which is how tiles are separated —
+             never a border drawn around each mark. */
+          itemStyle: { borderColor: c.surface, borderWidth: 2, gapWidth: 2 },
           label: {
-            show: true, position: 'right', color: c.secondary, fontSize: 11,
-            formatter: (p) => money(p.value, currency),
+            show: true,
+            /* Truncate, never clip: a treemap of thirty services otherwise guarantees
+               half-words inside the small tiles. */
+            overflow: 'truncate',
+            fontSize: 12,
+            lineHeight: 16,
+            formatter: (p) => `${p.name}\n${money(p.value, currency)}`,
           },
+          /* A dark tile needs light text and a pale one needs dark text, and the ramp
+             spans both — so the label colour is decided per tile rather than once. */
+          data: entries.map((e, i) => {
+            const step = ramp[Math.min(i, ramp.length - 1)];
+            const paleEnd = isDark() ? i < ramp.length / 2 : i >= ramp.length / 2;
+            return {
+              name: e.key,
+              value: e.mtd,
+              itemStyle: { color: step },
+              label: { color: paleEnd ? '#0b0b0b' : '#ffffff' },
+            };
+          }),
         }],
       };
     },
@@ -339,6 +424,14 @@ export async function hydrateCharts(api, polled = false) {
       }
       instances.clear();
       hydrateCharts(api);
+    });
+    /* A chart inside a hidden tab pane measures zero, so one drawn there has no size
+       until the pane is shown. Charts live in the tab that is active on load, which
+       covers the first paint; this covers coming back to it. */
+    document.body.addEventListener('shown.bs.tab', () => {
+      for (const chart of instances.values()) {
+        if (!chart.isDisposed()) chart.resize();
+      }
     });
     /* Changing the metric or the range changes what to fetch, not just how to draw it. */
     document.addEventListener('change', (event) => {

@@ -1089,23 +1089,37 @@ export const SOURCES = {
   accountAlarms: {
     stats: ({ account, streamed, cost }) => {
       const currency = (cost && cost.currency) || 'USD';
+      const services = (streamed && streamed.services) || [];
+      /* A resource is one dimension set, so the streamed count sums the per-service
+         figures rather than counting services — an account with one service and forty
+         instances is not "1". */
+      const streamedResources = services.reduce((t, s) => t + (Number(s.resources) || 0), 0);
       return {
         accountAlarms: {
           value: account ? num((account.alarms || []).length) : '—',
           delta: account && (account.regions || []).length
-            ? `across ${num(account.regions.length)} regions` : 'no data',
+            ? `${num(account.regions.length)} regions` : 'no data',
         },
         accountResources: {
           value: account ? num(countResources(account)) : '—',
-          delta: account && account.error ? 'unreachable' : 'from inventory',
+          delta: account && account.error ? 'unreachable' : 'inventory',
+        },
+        accountStreamed: {
+          value: streamed ? num(streamedResources) : '—',
+          delta: streamedResources ? 'in range' : 'no stream yet',
         },
         accountServices: {
-          value: streamed ? num((streamed.services || []).length) : '—',
-          delta: streamed && (streamed.services || []).length ? 'streaming' : 'no stream yet',
+          value: streamed ? num(services.length) : '—',
+          delta: services.length ? 'reporting' : 'no stream yet',
+        },
+        accountRegions: {
+          value: account ? num((account.regions || []).length) : '—',
+          delta: account && (account.regions || []).length
+            ? account.regions[0] : 'no data',
         },
         accountSpend: {
           value: cost && !cost.error ? money(cost.total, currency) : '—',
-          delta: cost && cost.error ? 'Cost Explorer denied'
+          delta: cost && cost.error ? 'CE denied'
             : cost && cost.period_start ? `since ${cost.period_start}` : 'no data',
         },
       };
@@ -1152,6 +1166,18 @@ export const SOURCES = {
       account: accountParam(),
       hours: Number((document.getElementById('account-range') || {}).value) || 3,
     }),
+    /* The page's own search box, applied on top of the table's. Filtering here rather
+       than server-side because the endpoint returns one row per resource for the range
+       already in memory — a query parameter would be a second filter over the same
+       rows, and the table's built-in search would then disagree with it. */
+    filter: (rows) => {
+      const el = document.getElementById('account-search');
+      const term = el && el.value ? el.value.trim().toLowerCase() : '';
+      if (!term) return rows;
+      return rows.filter((r) =>
+        [r.name, r.service, r.region, ...Object.entries(r.dimensions || {}).flat()]
+          .some((v) => String(v ?? '').toLowerCase().includes(term)));
+    },
     rows: (data) =>
       (data || []).map((r) => ({
         icon: 'fa-cube',
@@ -1883,7 +1909,11 @@ async function sweepTables(api, polled) {
     if (!polled) mark(root, 'Loading…', 'info');
     try {
       const payload = await source.load(api);
-      const rows = source.rows(payload);
+      /* `filter` is optional and applied after `rows`, so a page-level search box can
+         narrow a table without the source having to know the row shape twice. Applied
+         here rather than inside `rows` so the registry entry stays one job per key. */
+      const built = source.rows(payload);
+      const rows = source.filter ? source.filter(built) : built;
       if (!rows.length) {
         // The call succeeded and the tenant genuinely has nothing registered yet. On a
         // repeat pass the table may still be holding the previous rows, so it is
