@@ -56,13 +56,14 @@ def finops_cost_breakdown(
 @router.get("/finops/cloud-cost/daily", response_model=CostSeries)
 def finops_cost_daily(
     days: int = Query(default=30, ge=2, le=365),
+    account: str | None = Query(default=None, max_length=64),
     tenant_id: str = Depends(get_tenant_id),
 ) -> CostSeries:
     """Daily spend, so the page can show whether spend is accelerating.
 
     A month-to-date total only ever rises; it cannot answer that question on its own.
     """
-    return daily(tenant_id, days)
+    return daily(tenant_id, days, account=account)
 
 
 # --- budgets ----------------------------------------------------------------

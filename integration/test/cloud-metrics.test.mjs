@@ -150,7 +150,7 @@ const ACCOUNT = {
 {
   const payload = {
     account: ACCOUNT,
-    streamed: { services: [{ service: 'EC2' }, { service: 'SQS' }] },
+    streamed: { services: [{ service: 'EC2', resources: 20 }, { service: 'SQS', resources: 5 }] },
     cost: { currency: 'USD', total: 18220.5, period_start: '2026-09-01', entries: [] },
   };
   const rows = SOURCES.accountAlarms.rows(payload);
@@ -161,10 +161,13 @@ const ACCOUNT = {
 
   const stats = SOURCES.accountAlarms.stats(payload);
   assert.equal(stats.accountAlarms.value, '1');
-  assert.equal(stats.accountAlarms.delta, 'across 2 regions');
+  assert.equal(stats.accountAlarms.delta, '2 regions');
   assert.equal(stats.accountResources.value, '3');
   assert.equal(stats.accountServices.value, '2');
+  assert.equal(stats.accountRegions.value, '2');
   assert.equal(stats.accountSpend.value, 'USD 18,220.50');
+  // Streamed counts resources, not services: one service with forty instances is 40.
+  assert.equal(stats.accountStreamed.value, '25');
 }
 
 // An account the credential cannot reach says so instead of showing zero alarms —

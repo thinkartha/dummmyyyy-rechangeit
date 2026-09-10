@@ -18,6 +18,17 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { SOURCES } from './live-data.js';
 
+/* charts.js touches `document` at module scope for the theme, so this check gives it
+   the two globals it reads before importing. Same silent failure as a table: a page
+   naming a chart that is not in the registry renders an empty box and no error. */
+globalThis.document ??= {
+  documentElement: { getAttribute: () => null },
+  getElementById: () => null,
+  querySelector: () => null,
+};
+globalThis.window ??= { location: { search: '', pathname: '/' } };
+const { CHARTS } = await import('./charts.js');
+
 function* pugFiles(dir) {
   for (const name of readdirSync(dir)) {
     const path = join(dir, name);
@@ -92,6 +103,25 @@ for (const file of pugFiles(new URL('../src/pug', import.meta.url).pathname)) {
   }
 }
 
+/* Charts opt in the same way tables do, and fail the same way: the sweep skips a
+   `data-lhb-chart` it cannot resolve, leaving an empty box with no request behind it. */
+let charts = 0;
+for (const file of pugFiles(new URL('../src/pug', import.meta.url).pathname)) {
+  const text = readFileSync(file, 'utf8');
+  /* Scoped to ObsChartCard rather than any `chart:` key: the inherited Phoenix stock
+     mixins use that property name for their own element classes, and matching it
+     everywhere reported 28 theme demos as broken. */
+  for (const call of text.matchAll(/\+ObsChartCard\(\{([\s\S]*?)\}\)/g)) {
+    const named = /\bchart: '([^']+)'/.exec(call[1]);
+    if (!named) {
+      problems.push(`${file}: an ObsChartCard names no chart`);
+      continue;
+    }
+    charts++;
+    if (!CHARTS[named[1]]) problems.push(`${file}: no CHARTS entry named '${named[1]}'`);
+  }
+}
+
 const orphans = Object.keys(SOURCES).filter((k) => !referenced.has(k));
 
 if (problems.length) {
@@ -99,7 +129,7 @@ if (problems.length) {
   process.exit(1);
 }
 
-console.log(`ok — ${used} live table(s) across the pages, all resolved`);
+console.log(`ok — ${used} live table(s) and ${charts} chart(s) across the pages, all resolved`);
 if (orphans.length) {
   // Not a failure: a source can legitimately land before the page that reads it.
   console.log(`   ${orphans.length} source(s) no page reads yet: ${orphans.join(', ')}`);

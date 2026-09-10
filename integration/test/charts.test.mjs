@@ -94,46 +94,72 @@ assert.ok(CHARTS.accountMetric.empty, 'an empty chart has to say why');
   assert.deepEqual(option.series[1].data, [null, 2, null]);
 }
 
-// --- accountSpend ----------------------------------------------------------
+// --- accountCost (daily spend) ---------------------------------------------
 
-assert.equal(CHARTS.accountSpend.option({ error: 'AccessDenied' }), null);
-assert.equal(CHARTS.accountSpend.option({ entries: [] }), null);
+assert.equal(CHARTS.accountCost.option({ error: 'AccessDenied' }), null);
+assert.equal(CHARTS.accountCost.option({ points: [] }), null);
 
 {
-  const option = CHARTS.accountSpend.option({
+  const option = CHARTS.accountCost.option({
     currency: 'USD',
-    entries: [
-      { key: 'EC2', mtd: 100 }, { key: 'RDS', mtd: 300 }, { key: 'S3', mtd: 200 },
-    ],
+    points: [{ date: '2026-09-01', amount: 10 }, { date: '2026-09-02', amount: 20 }],
   });
-  // Ranked ascending: a horizontal category axis draws bottom-up, so the largest
-  // finishes on top.
-  assert.deepEqual(option.yAxis.data, ['EC2', 'S3', 'RDS']);
-  assert.deepEqual(option.series[0].data, [100, 200, 300]);
-
-  // Nominal categories get ONE colour. A ramp here would encode bar length twice and
-  // burn the only free channel on what the length already says.
-  const bar = option.series[0];
-  assert.equal(typeof bar.itemStyle.color, 'string');
-  assert.ok(bar.data.every((d) => typeof d === 'number'),
-    'no per-bar itemStyle — that is how a value-ramp sneaks back in');
-  assert.equal(bar.itemStyle.color, '#2a78d6');
-  // Values are labelled, so the tooltip is not the only way to read one.
-  assert.equal(bar.label.show, true);
-  // The hovered bar has to visibly respond.
-  assert.ok(bar.emphasis.itemStyle);
+  assert.equal(option.series.length, 1);
+  // A single series needs no legend — the card title names it, and there is nothing
+  // to disambiguate.
+  assert.ok(!option.legend || option.legend.show !== true);
+  // An area fill is right here precisely because one series hides nothing behind it.
+  assert.ok(option.series[0].areaStyle);
+  assert.ok(option.series[0].areaStyle.opacity < 0.2, 'the fill must stay recessive');
+  assert.deepEqual(option.series[0].data, [10, 20]);
+  assert.ok(!Array.isArray(option.yAxis), 'one axis, never two');
 }
 
-// Cost Explorer grouped by tag returns whatever the customer typed. It reaches an
-// HTML tooltip formatter, so it must arrive escaped.
+// --- accountSpendTreemap ----------------------------------------------------
+
+assert.equal(CHARTS.accountSpendTreemap.option({ error: 'AccessDenied' }), null);
+assert.equal(CHARTS.accountSpendTreemap.option({ entries: [] }), null);
+
 {
-  const option = CHARTS.accountSpend.option({
+  const option = CHARTS.accountSpendTreemap.option({
     currency: 'USD',
-    entries: [{ key: '<img src=x onerror=alert(1)>', mtd: 1 }],
+    entries: [
+      { key: 'EC2', mtd: 100 }, { key: 'RDS', mtd: 300 }, { key: 'untagged', mtd: 50 },
+    ],
   });
-  const html = option.tooltip.formatter({ name: '<img src=x onerror=alert(1)>', value: 1 });
-  assert.ok(!html.includes('<img'), 'untrusted label reached the tooltip unescaped');
-  assert.ok(html.includes('&lt;img'));
+  const data = option.series[0].data;
+  // Descending, so the ramp index and the tile order agree: darkest is largest.
+  assert.deepEqual(data.map((d) => d.name), ['RDS', 'EC2', 'untagged']);
+  assert.equal(data[0].itemStyle.color, '#0d366b', 'largest takes the darkest step');
+  assert.ok(data.every((d) => d.label && d.label.color),
+    'each tile picks its own text colour — the ramp spans dark and pale');
+  // Tiles are separated by the surface showing through, never by a drawn border.
+  assert.equal(option.series[0].itemStyle.gapWidth, 2);
+  // A label that will not fit is truncated by the library, never clipped mid-word.
+  assert.equal(option.series[0].label.overflow, 'truncate');
+  assert.ok(data.some((d) => d.name === 'untagged'), 'untagged spend is shown');
+}
+
+// Credits and refunds are negative and have no area. Drawing them would make the
+// layout meaningless, so they leave the map rather than becoming zero-size tiles.
+{
+  const option = CHARTS.accountSpendTreemap.option({
+    currency: 'USD',
+    entries: [{ key: 'EC2', mtd: 100 }, { key: 'Credit', mtd: -40 }],
+  });
+  assert.deepEqual(option.series[0].data.map((d) => d.name), ['EC2']);
+}
+assert.equal(
+  CHARTS.accountSpendTreemap.option({ entries: [{ key: 'Credit', mtd: -40 }] }), null,
+  'nothing positive to draw is an empty state, not an empty box');
+
+// A tag grouping returns customer-typed strings straight into an HTML tooltip.
+{
+  const option = CHARTS.accountSpendTreemap.option({
+    currency: 'USD', entries: [{ key: '<script>x</script>', mtd: 5 }],
+  });
+  const html = option.tooltip.formatter({ name: '<script>x</script>', value: 5 });
+  assert.ok(!html.includes('<script'), 'untrusted tile label reached the tooltip raw');
 }
 
 console.log('charts: ok');

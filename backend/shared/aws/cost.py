@@ -278,7 +278,8 @@ def breakdown(tenant_id: str, group_by: str = "SERVICE",
     return report
 
 
-def daily(tenant_id: str, days: int = 30, today: date | None = None) -> CostSeries:
+def daily(tenant_id: str, days: int = 30, today: date | None = None,
+          account: str | None = None) -> CostSeries:
     """Daily spend for the last `days` days — the trend the MTD number cannot show.
 
     A month-to-date total always rises, so it says nothing about whether spend is
@@ -290,7 +291,7 @@ def daily(tenant_id: str, days: int = 30, today: date | None = None) -> CostSeri
 
     today = today or date.today()
     start = today - timedelta(days=max(1, min(days, 365)))
-    cache_key = f"{tenant_id}|daily|{days}|{today.isoformat()}"
+    cache_key = f"{tenant_id}|daily|{days}|{account or 'all'}|{today.isoformat()}"
     cached = _CACHE.get(cache_key)
     if cached and time.monotonic() - cached[0] < _TTL_SECONDS:
         return cached[1]
@@ -302,6 +303,8 @@ def daily(tenant_id: str, days: int = 30, today: date | None = None) -> CostSeri
             TimePeriod={"Start": start.isoformat(), "End": (today + timedelta(days=1)).isoformat()},
             Granularity="DAILY",
             Metrics=["UnblendedCost"],
+            **({"Filter": {"Dimensions": {"Key": "LINKED_ACCOUNT", "Values": [account]}}}
+               if account else {}),
         )
     except Exception as exc:
         return CostSeries(configured=True, error=f"{type(exc).__name__}: {exc}")

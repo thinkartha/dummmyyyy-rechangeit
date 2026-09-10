@@ -211,3 +211,67 @@ def test_probe_on_a_refused_credential_does_not_repeat_the_error_five_times(monk
 def test_probe_without_a_saved_connection_says_so():
     result = lambda_service.test_connection("t-never-connected")
     assert result["configured"] is False and result["ok"] is False
+
+
+def test_daily_and_breakdown_scope_to_one_account(monkeypatch):
+    """A payer account's spend is every member account's until it is filtered, so the
+    drill-down asking for one account has to narrow at Cost Explorer — not after it,
+    which would still have paid to move every other account's numbers."""
+    tenant = "t-account-cost"
+    lambda_service._IN_MEMORY_CONFIGS[tenant] = AwsLambdaConfig(region="us-east-1")
+    cost.invalidate(tenant)
+    seen: list[dict] = []
+
+    class FakeCe:
+        def get_cost_and_usage(self, **kw):
+            seen.append(kw)
+            return {"ResultsByTime": [{
+                "Groups": [{"Keys": ["Amazon EC2"],
+                            "Metrics": {"UnblendedCost": {"Amount": "10", "Unit": "USD"}}}],
+                "Total": {"UnblendedCost": {"Amount": "10", "Unit": "USD"}},
+                "TimePeriod": {"Start": "2026-09-01"},
+            }]}
+
+    class FakeSession:
+        def client(self, service, **kw):
+            return FakeCe()
+
+    monkeypatch.setattr(lambda_service, "_session", lambda cfg: FakeSession())
+
+    cost.breakdown(tenant, "SERVICE", today=date(2026, 9, 10), account="111122223333")
+    cost.daily(tenant, 30, today=date(2026, 9, 10), account="111122223333")
+    assert len(seen) == 2
+    for call in seen:
+        assert call["Filter"]["Dimensions"]["Values"] == ["111122223333"]
+
+    # And the unfiltered call must not carry a Filter at all, or the whole-org view
+    # would silently become one account's.
+    cost.invalidate(tenant)
+    seen.clear()
+    cost.breakdown(tenant, "SERVICE", today=date(2026, 9, 10))
+    assert "Filter" not in seen[0]
+    cost.invalidate(tenant)
+
+
+def test_account_scoping_is_part_of_the_cost_cache_key(monkeypatch):
+    """Two accounts are two answers; sharing an entry would serve one account's spend
+    for the other for six hours."""
+    tenant = "t-cache-key"
+    lambda_service._IN_MEMORY_CONFIGS[tenant] = AwsLambdaConfig(region="us-east-1")
+    cost.invalidate(tenant)
+    calls = []
+
+    class FakeCe:
+        def get_cost_and_usage(self, **kw):
+            calls.append(kw.get("Filter"))
+            return {"ResultsByTime": []}
+
+    class FakeSession:
+        def client(self, service, **kw):
+            return FakeCe()
+
+    monkeypatch.setattr(lambda_service, "_session", lambda cfg: FakeSession())
+    cost.breakdown(tenant, "SERVICE", today=date(2026, 9, 10), account="111")
+    cost.breakdown(tenant, "SERVICE", today=date(2026, 9, 10), account="222")
+    assert len(calls) == 2, "the second account reused the first account's cache entry"
+    cost.invalidate(tenant)
