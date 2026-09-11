@@ -86,7 +86,7 @@ export default function Page() {
                     Requests
                   </h6>
                   <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="requests">
-                    —
+                    0
                   </h3>
                 </div>
                 <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="requests">
@@ -105,7 +105,7 @@ export default function Page() {
                     Error rate
                   </h6>
                   <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="errorRate">
-                    —
+                    0
                   </h3>
                 </div>
                 <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="errorRate">
@@ -124,7 +124,7 @@ export default function Page() {
                     Slowest route p99
                   </h6>
                   <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="p99Latency">
-                    —
+                    0
                   </h3>
                 </div>
                 <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="p99Latency">
@@ -143,7 +143,7 @@ export default function Page() {
                     Routes
                   </h6>
                   <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="routes">
-                    —
+                    0
                   </h3>
                 </div>
                 <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="routes">

@@ -184,7 +184,7 @@ export default function Page() {
                 </div>
                 <div className="d-flex align-items-baseline gap-2 flex-wrap">
                   <h2 className="mb-0 fw-semibold lh-1" data-obs-stat="data-obs-stat" data-obs-stat-key="accountAlarms">
-                    —
+                    0
                   </h2>
                   <span className="badge badge-phoenix fs-10 badge-phoenix-danger" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountAlarms">
                     awaiting data
@@ -204,7 +204,7 @@ export default function Page() {
                 </div>
                 <div className="d-flex align-items-baseline gap-2 flex-wrap">
                   <h2 className="mb-0 fw-semibold lh-1" data-obs-stat="data-obs-stat" data-obs-stat-key="accountResources">
-                    —
+                    0
                   </h2>
                   <span className="badge badge-phoenix fs-10 badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountResources">
                     awaiting data
@@ -224,7 +224,7 @@ export default function Page() {
                 </div>
                 <div className="d-flex align-items-baseline gap-2 flex-wrap">
                   <h2 className="mb-0 fw-semibold lh-1" data-obs-stat="data-obs-stat" data-obs-stat-key="accountStreamed">
-                    —
+                    0
                   </h2>
                   <span className="badge badge-phoenix fs-10 badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountStreamed">
                     awaiting data
@@ -244,7 +244,7 @@ export default function Page() {
                 </div>
                 <div className="d-flex align-items-baseline gap-2 flex-wrap">
                   <h2 className="mb-0 fw-semibold lh-1" data-obs-stat="data-obs-stat" data-obs-stat-key="accountServices">
-                    —
+                    0
                   </h2>
                   <span className="badge badge-phoenix fs-10 badge-phoenix-primary" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountServices">
                     awaiting data
@@ -264,7 +264,7 @@ export default function Page() {
                 </div>
                 <div className="d-flex align-items-baseline gap-2 flex-wrap">
                   <h2 className="mb-0 fw-semibold lh-1" data-obs-stat="data-obs-stat" data-obs-stat-key="accountRegions">
-                    —
+                    0
                   </h2>
                   <span className="badge badge-phoenix fs-10 badge-phoenix-secondary" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountRegions">
                     awaiting data
@@ -284,7 +284,7 @@ export default function Page() {
                 </div>
                 <div className="d-flex align-items-baseline gap-2 flex-wrap">
                   <h2 className="mb-0 fw-semibold lh-1" data-obs-stat="data-obs-stat" data-obs-stat-key="accountSpend">
-                    —
+                    0
                   </h2>
                   <span className="badge badge-phoenix fs-10 badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountSpend">
                     awaiting data

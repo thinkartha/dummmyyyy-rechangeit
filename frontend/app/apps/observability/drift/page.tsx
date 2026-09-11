@@ -85,12 +85,12 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Features tracked
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
-                    214
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="driftTracked">
+                    0
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta">
-                  +18
+                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="driftTracked">
+                  numeric + categorical
                 </span>
               </div>
             </div>
@@ -104,12 +104,12 @@ export default function Page() {
                   <h6 className="text-body-tertiary mb-2">
                     Drifting
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
-                    9
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="driftDrifting">
+                    0
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
-                  4 significant
+                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="driftDrifting">
+                  over threshold
                 </span>
               </div>
             </div>
@@ -121,14 +121,14 @@ export default function Page() {
               <div className="d-flex justify-content-between align-items-start">
                 <div>
                   <h6 className="text-body-tertiary mb-2">
-                    Baseline age
+                    Numeric (KS)
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
-                    14d
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="driftNumeric">
+                    0
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-primary" data-obs-stat-delta="data-obs-stat-delta">
-                  rolling
+                <span className="badge badge-phoenix badge-phoenix-primary" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="driftNumeric">
+                  distribution shift
                 </span>
               </div>
             </div>
@@ -140,14 +140,14 @@ export default function Page() {
               <div className="d-flex justify-content-between align-items-start">
                 <div>
                   <h6 className="text-body-tertiary mb-2">
-                    Models affected
+                    Categorical (Chi-square)
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
-                    3
+                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="driftCategorical">
+                    0
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-danger" data-obs-stat-delta="data-obs-stat-delta">
-                  retrain suggested
+                <span className="badge badge-phoenix badge-phoenix-secondary" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="driftCategorical">
+                  category mix
                 </span>
               </div>
             </div>
@@ -175,7 +175,7 @@ export default function Page() {
                   <strong>
                     Categorical
                   </strong>
-                  — population stability index over the category mix
+                  — Chi-square over the category mix
                 </li>
               </ul>
               <p className="text-body-tertiary fs-9 mb-0">
@@ -242,7 +242,7 @@ export default function Page() {
                         fraud-scorer country_code
                       </td>
                       <td>
-                        PSI
+                        Chi-square
                       </td>
                       <td className="text-danger">
                         0.31
@@ -256,7 +256,7 @@ export default function Page() {
                         demand-forecast channel
                       </td>
                       <td>
-                        PSI
+                        Chi-square
                       </td>
                       <td className="text-warning">
                         0.19
@@ -445,7 +445,7 @@ export default function Page() {
                       fraud-scorer
                     </td>
                     <td className="align-middle col2">
-                      PSI
+                      Chi-square
                     </td>
                     <td className="align-middle col3">
                       0.31
@@ -477,7 +477,7 @@ export default function Page() {
                       demand-forecast
                     </td>
                     <td className="align-middle col2">
-                      PSI
+                      Chi-square
                     </td>
                     <td className="align-middle col3">
                       0.19
@@ -573,7 +573,7 @@ export default function Page() {
                       churn-predictor
                     </td>
                     <td className="align-middle col2">
-                      PSI
+                      Chi-square
                     </td>
                     <td className="align-middle col3">
                       0.04

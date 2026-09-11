@@ -4,10 +4,16 @@ export default function Page() {
   return (
     <AppLayout scripts={[
         {
+          "code": "\n          (function() {\n            document.querySelectorAll('[data-obs-sort]').forEach(function(select) {\n              if (select.dataset.bound === '1') return;\n              select.dataset.bound = '1';\n              select.addEventListener('change', function() {\n                var key = select.value;\n                if (!key) return;\n                var root = select.closest('[data-list]');\n                if (!root) return;\n                var header = root.querySelector('th[data-sort=\"' + key + '\"]');\n                if (header) header.click();\n              });\n            });\n          })();\n        "
+        },
+        {
           "code": "\n              (function() {\n                document.querySelectorAll('[data-obs-sort]').forEach(function(select) {\n                  if (select.dataset.bound === '1') return;\n                  select.dataset.bound = '1';\n                  select.addEventListener('change', function() {\n                    var key = select.value;\n                    if (!key) return;\n                    var root = select.closest('[data-list]');\n                    if (!root) return;\n                    var header = root.querySelector('th[data-sort=\"' + key + '\"]');\n                    if (header) header.click();\n                  });\n                });\n              })();\n            "
         },
         {
-          "code": "\n            (function() {\n              document.querySelectorAll('[data-obs-sort]').forEach(function(select) {\n                if (select.dataset.bound === '1') return;\n                select.dataset.bound = '1';\n                select.addEventListener('change', function() {\n                  var key = select.value;\n                  if (!key) return;\n                  var root = select.closest('[data-list]');\n                  if (!root) return;\n                  var header = root.querySelector('th[data-sort=\"' + key + '\"]');\n                  if (header) header.click();\n                });\n              });\n            })();\n          "
+          "code": "\n              (function() {\n                document.querySelectorAll('[data-obs-sort]').forEach(function(select) {\n                  if (select.dataset.bound === '1') return;\n                  select.dataset.bound = '1';\n                  select.addEventListener('change', function() {\n                    var key = select.value;\n                    if (!key) return;\n                    var root = select.closest('[data-list]');\n                    if (!root) return;\n                    var header = root.querySelector('th[data-sort=\"' + key + '\"]');\n                    if (header) header.click();\n                  });\n                });\n              })();\n            "
+        },
+        {
+          "code": "\n          (function() {\n            document.querySelectorAll('[data-obs-sort]').forEach(function(select) {\n              if (select.dataset.bound === '1') return;\n              select.dataset.bound = '1';\n              select.addEventListener('change', function() {\n                var key = select.value;\n                if (!key) return;\n                var root = select.closest('[data-list]');\n                if (!root) return;\n                var header = root.querySelector('th[data-sort=\"' + key + '\"]');\n                if (header) header.click();\n              });\n            });\n          })();\n        "
         },
         {
           "code": "\n        var navbarTopStyle = window.config.config.phoenixNavbarTopStyle;\n        var navbarTop = document.querySelector('.navbar-top');\n        if (navbarTopStyle === 'darker') {\n          navbarTop.setAttribute('data-navbar-appearance', 'darker');\n        }\n\n        var navbarVerticalStyle = window.config.config.phoenixNavbarVerticalStyle;\n        var navbarVertical = document.querySelector('.navbar-vertical');\n        if (navbarVertical && navbarVerticalStyle === 'darker') {\n          navbarVertical.setAttribute('data-navbar-appearance', 'darker');\n        }\n      "
@@ -47,880 +53,233 @@ export default function Page() {
           "src": "/vendors/dayjs/dayjs.min.js"
         },
         {
-          "src": "/vendors/leaflet/leaflet.js"
-        },
-        {
-          "src": "/vendors/leaflet.markercluster/leaflet.markercluster.js"
-        },
-        {
-          "src": "/vendors/leaflet.tilelayer.colorfilter/leaflet-tilelayer-colorfilter.min.js"
-        },
-        {
           "src": "/assets/js/phoenix.js"
-        },
-        {
-          "src": "/vendors/echarts/echarts.min.js"
-        },
-        {
-          "src": "/assets/js/dashboards/ecommerce-dashboard.js"
         }
       ]}>
-      <div className="pb-5">
-        <div className="row g-4">
-          <div className="col-12 col-xxl-6">
-            <div className="mb-8">
-              <h2 className="mb-2">
-                Observability Dashboard
+      <div className="mb-5">
+        <h2 className="mb-2">
+          Observability Dashboard
+        </h2>
+        <p className="text-body-tertiary mb-0">
+          LoveHeartBeat — APIs, AI tools, ETL, alerts and multi-cloud cost in one place.
+        </p>
+      </div>
+      <div className="obs-kpi-row d-flex gap-3 mb-4 pb-1" style={{ overflowX: "auto", scrollbarWidth: "thin" }}>
+        <div className="card flex-shrink-0" style={{ minWidth: "11.5rem", flex: "1 1 0" }}>
+          <div className="card-body py-3 px-3">
+            <div className="d-flex align-items-center gap-1 mb-2">
+              <h6 className="text-body-tertiary text-uppercase fs-10 fw-semibold mb-0 lh-1" style={{ letterSpacing: ".04em" }}>
+                Requests
+              </h6>
+              <span className="text-body-quaternary fs-10" data-bs-toggle="tooltip" data-bs-placement="top" title="Requests across every route the collector has spans for, in the stored window.">
+                <span className="fa-solid fa-circle-info"></span>
+              </span>
+            </div>
+            <div className="d-flex align-items-baseline gap-2 flex-wrap">
+              <h2 className="mb-0 fw-semibold lh-1" data-obs-stat="data-obs-stat" data-obs-stat-key="requests">
+                0
               </h2>
-              <h5 className="text-body-tertiary fw-semibold">
-                LoveHeartBeat — APIs, AI tools, ETL, alerts, and multi-cloud cost in one place
-              </h5>
+              <span className="badge badge-phoenix fs-10 badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="requests">
+                from stored spans
+              </span>
             </div>
-            <div className="row align-items-center g-4">
-              <div className="col-12 col-md-auto">
-                <div className="d-flex align-items-center">
-                  <span className="fa-stack" style={{ minHeight: "46px", minWidth: "46px" }}>
-                    <span className="fa-solid fa-square fa-stack-2x dark__text-opacity-50 text-danger-light" data-fa-transform="down-4 rotate--10 left-4"></span>
-                    <span className="fa-solid fa-circle fa-stack-2x stack-circle text-stats-circle-danger" data-fa-transform="up-4 right-3 grow-2"></span>
-                    <span className="fa-stack-1x fa-solid fa-triangle-exclamation text-danger " data-fa-transform="shrink-2 up-8 right-6"></span>
-                  </span>
-                  <div className="ms-3">
-                    <h4 className="mb-0">
-                      12 critical alerts
-                    </h4>
-                    <p className="text-body-secondary fs-9 mb-0">
-                      Across APIs & cloud
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="col-12 col-md-auto">
-                <div className="d-flex align-items-center">
-                  <span className="fa-stack" style={{ minHeight: "46px", minWidth: "46px" }}>
-                    <span className="fa-solid fa-square fa-stack-2x dark__text-opacity-50 text-warning-light" data-fa-transform="down-4 rotate--10 left-4"></span>
-                    <span className="fa-solid fa-circle fa-stack-2x stack-circle text-stats-circle-warning" data-fa-transform="up-4 right-3 grow-2"></span>
-                    <span className="fa-stack-1x fa-solid fa-robot text-warning " data-fa-transform="shrink-2 up-8 right-6"></span>
-                  </span>
-                  <div className="ms-3">
-                    <h4 className="mb-0">
-                      $4.2k AI spend
-                    </h4>
-                    <p className="text-body-secondary fs-9 mb-0">
-                      This billing period
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="col-12 col-md-auto">
-                <div className="d-flex align-items-center">
-                  <span className="fa-stack" style={{ minHeight: "46px", minWidth: "46px" }}>
-                    <span className="fa-solid fa-square fa-stack-2x dark__text-opacity-50 text-info-light" data-fa-transform="down-4 rotate--10 left-4"></span>
-                    <span className="fa-solid fa-circle fa-stack-2x stack-circle text-stats-circle-info" data-fa-transform="up-4 right-3 grow-2"></span>
-                    <span className="fa-stack-1x fa-solid fa-cloud text-info " data-fa-transform="shrink-2 up-8 right-6"></span>
-                  </span>
-                  <div className="ms-3">
-                    <h4 className="mb-0">
-                      18 cloud accounts
-                    </h4>
-                    <p className="text-body-secondary fs-9 mb-0">
-                      AWS · GCP · Azure
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <hr className="bg-body-secondary mb-6 mt-4" />
-            <div className="row flex-between-center mb-4 g-3">
-              <div className="col-auto">
-                <h3>
-                  Platform spend & traffic
-                </h3>
-                <p className="text-body-tertiary lh-sm mb-0">
-                  Cloud cost + AI cost + API volume across the org
-                </p>
-              </div>
-              <div className="col-8 col-sm-4">
-                <select className="form-select form-select-sm" id="select-gross-revenue-month">
-                  <option>
-                    Mar 1 - 31, 2026
-                  </option>
-                  <option>
-                    April 1 - 30, 2026
-                  </option>
-                  <option>
-                    May 1 - 31, 2026
-                  </option>
-                </select>
-              </div>
-            </div>
-            <div className="echart-total-sales-chart" style={{ minHeight: "320px", width: "100%" }}></div>
           </div>
-          <div className="col-12 col-xxl-6">
-            <div className="row g-3">
-              <div className="col-12 col-md-6">
-                <div className="card h-100">
-                  <div className="card-body">
-                    <div className="d-flex justify-content-between">
-                      <div>
-                        <h5 className="mb-1">
-                          API requests
-                          <span className="badge badge-phoenix badge-phoenix-success rounded-pill fs-9 ms-2">
-                            <span className="badge-label">
-                              +12.4%
-                            </span>
-                          </span>
-                        </h5>
-                        <h6 className="text-body-tertiary">
-                          Last 7 days
-                        </h6>
-                      </div>
-                      <h4>
-                        2.4M
-                      </h4>
-                    </div>
-                    <div className="d-flex justify-content-center px-4 py-6">
-                      <div className="echart-total-orders" style={{ height: "85px", width: "115px" }}></div>
-                    </div>
-                    <div className="mt-2">
-                      <div className="d-flex align-items-center mb-2">
-                        <div className="bullet-item bg-primary me-2"></div>
-                        <h6 className="text-body fw-semibold flex-1 mb-0">
-                          Success (2xx)
-                        </h6>
-                        <h6 className="text-body fw-semibold mb-0">
-                          97.2%
-                        </h6>
-                      </div>
-                      <div className="d-flex align-items-center">
-                        <div className="bullet-item bg-primary-subtle me-2"></div>
-                        <h6 className="text-body fw-semibold flex-1 mb-0">
-                          Errors (4xx/5xx)
-                        </h6>
-                        <h6 className="text-body fw-semibold mb-0">
-                          2.8%
-                        </h6>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="col-12 col-md-6">
-                <div className="card h-100">
-                  <div className="card-body">
-                    <div className="d-flex justify-content-between">
-                      <div>
-                        <h5 className="mb-1">
-                          AI tool usage
-                          <span className="badge badge-phoenix badge-phoenix-warning rounded-pill fs-9 ms-2">
-                            <span className="badge-label">
-                              +26.5%
-                            </span>
-                          </span>
-                        </h5>
-                        <h6 className="text-body-tertiary">
-                          Tokens · last 7 days
-                        </h6>
-                      </div>
-                      <h4>
-                        48.2M
-                      </h4>
-                    </div>
-                    <div className="pb-0 pt-4">
-                      <div className="echarts-new-customers" style={{ height: "180px", width: "100%" }}></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="col-12 col-md-6">
-                <div className="card h-100">
-                  <div className="card-body">
-                    <div className="d-flex justify-content-between">
-                      <div>
-                        <h5 className="mb-2">
-                          AI spend mix
-                        </h5>
-                        <h6 className="text-body-tertiary">
-                          ChatGPT · Claude · Cursor · Copilot
-                        </h6>
-                      </div>
-                    </div>
-                    <div className="pb-4 pt-3">
-                      <div className="echart-top-coupons" style={{ height: "115px", width: "100%" }}></div>
-                    </div>
-                    <div>
-                      <div className="d-flex align-items-center mb-2">
-                        <div className="bullet-item bg-primary me-2"></div>
-                        <h6 className="text-body fw-semibold flex-1 mb-0">
-                          ChatGPT / OpenAI
-                        </h6>
-                        <h6 className="text-body fw-semibold mb-0">
-                          34%
-                        </h6>
-                      </div>
-                      <div className="d-flex align-items-center mb-2">
-                        <div className="bullet-item bg-primary-lighter me-2"></div>
-                        <h6 className="text-body fw-semibold flex-1 mb-0">
-                          Claude / Anthropic
-                        </h6>
-                        <h6 className="text-body fw-semibold mb-0">
-                          22%
-                        </h6>
-                      </div>
-                      <div className="d-flex align-items-center">
-                        <div className="bullet-item bg-info-dark me-2"></div>
-                        <h6 className="text-body fw-semibold flex-1 mb-0">
-                          Cursor · Copilot · Grok · others
-                        </h6>
-                        <h6 className="text-body fw-semibold mb-0">
-                          44%
-                        </h6>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="col-12 col-md-6">
-                <div className="card h-100">
-                  <div className="card-body d-flex flex-column">
-                    <div className="d-flex justify-content-between">
-                      <div>
-                        <h5 className="mb-2">
-                          ETL pipeline health
-                        </h5>
-                        <h6 className="text-body-tertiary">
-                          Last 7 days
-                        </h6>
-                      </div>
-                    </div>
-                    <div className="d-flex justify-content-center pt-3 flex-1">
-                      <div className="echarts-paying-customer-chart" style={{ height: "100%", width: "100%" }}></div>
-                    </div>
-                    <div className="mt-3">
-                      <div className="d-flex align-items-center mb-2">
-                        <div className="bullet-item bg-primary me-2"></div>
-                        <h6 className="text-body fw-semibold flex-1 mb-0">
-                          Healthy runs
-                        </h6>
-                        <h6 className="text-body fw-semibold mb-0">
-                          88%
-                        </h6>
-                      </div>
-                      <div className="d-flex align-items-center">
-                        <div className="bullet-item bg-primary-subtle me-2"></div>
-                        <h6 className="text-body fw-semibold flex-1 mb-0">
-                          Failed / delayed
-                        </h6>
-                        <h6 className="text-body fw-semibold mb-0">
-                          12%
-                        </h6>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+        </div>
+        <div className="card flex-shrink-0" style={{ minWidth: "11.5rem", flex: "1 1 0" }}>
+          <div className="card-body py-3 px-3">
+            <div className="d-flex align-items-center gap-1 mb-2">
+              <h6 className="text-body-tertiary text-uppercase fs-10 fw-semibold mb-0 lh-1" style={{ letterSpacing: ".04em" }}>
+                Error rate
+              </h6>
+              <span className="text-body-quaternary fs-10" data-bs-toggle="tooltip" data-bs-placement="top" title="5xx only. A 4xx is the caller's mistake, not the route's, and folding it in here would make a healthy route look broken.">
+                <span className="fa-solid fa-circle-info"></span>
+              </span>
+            </div>
+            <div className="d-flex align-items-baseline gap-2 flex-wrap">
+              <h2 className="mb-0 fw-semibold lh-1" data-obs-stat="data-obs-stat" data-obs-stat-key="errorRate">
+                0
+              </h2>
+              <span className="badge badge-phoenix fs-10 badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="errorRate">
+                0 5xx
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="card flex-shrink-0" style={{ minWidth: "11.5rem", flex: "1 1 0" }}>
+          <div className="card-body py-3 px-3">
+            <div className="d-flex align-items-center gap-1 mb-2">
+              <h6 className="text-body-tertiary text-uppercase fs-10 fw-semibold mb-0 lh-1" style={{ letterSpacing: ".04em" }}>
+                p99 latency
+              </h6>
+              <span className="text-body-quaternary fs-10" data-bs-toggle="tooltip" data-bs-placement="top" title="The slowest route's p99, named beside it. Percentiles do not recombine, so there is no honest fleet-wide number.">
+                <span className="fa-solid fa-circle-info"></span>
+              </span>
+            </div>
+            <div className="d-flex align-items-baseline gap-2 flex-wrap">
+              <h2 className="mb-0 fw-semibold lh-1" data-obs-stat="data-obs-stat" data-obs-stat-key="p99Latency">
+                0
+              </h2>
+              <span className="badge badge-phoenix fs-10 badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="p99Latency">
+                slowest route
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="card flex-shrink-0" style={{ minWidth: "11.5rem", flex: "1 1 0" }}>
+          <div className="card-body py-3 px-3">
+            <div className="d-flex align-items-center gap-1 mb-2">
+              <h6 className="text-body-tertiary text-uppercase fs-10 fw-semibold mb-0 lh-1" style={{ letterSpacing: ".04em" }}>
+                Routes
+              </h6>
+              <span className="text-body-quaternary fs-10" data-bs-toggle="tooltip" data-bs-placement="top" title="Distinct routes seen. Nothing is registered — these are the routes traffic actually reached.">
+                <span className="fa-solid fa-circle-info"></span>
+              </span>
+            </div>
+            <div className="d-flex align-items-baseline gap-2 flex-wrap">
+              <h2 className="mb-0 fw-semibold lh-1" data-obs-stat="data-obs-stat" data-obs-stat-key="routes">
+                0
+              </h2>
+              <span className="badge badge-phoenix fs-10 badge-phoenix-primary" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="routes">
+                from stored spans
+              </span>
             </div>
           </div>
         </div>
       </div>
-      <div className="row gx-6">
-        <div className="col-12 col-xl-6">
-          <div data-list={"{\"valueNames\":[\"country\",\"users\",\"transactions\",\"revenue\",\"conv-rate\"],\"page\":5,\"filter\":{\"key\":\"country\"}}"}>
-            <div className="mb-5 mt-7">
-              <div className="row align-items-end justify-content-between g-3">
-                <div className="col-auto">
-                  <h3>
-                    Cloud cost by account
-                  </h3>
-                  <p className="text-body-tertiary mb-0">
-                    Multi-account spend across AWS, GCP, and Azure
-                  </p>
-                </div>
-                <div className="col-12 col-md-auto">
-                  <div className="row g-2">
-                    <div className="col-auto">
-                      <div className="search-box">
-                        <form className="position-relative">
-                          <input className="form-control search-input search form-control-sm" type="search" placeholder="Search accounts" aria-label="Search" />
-                          <span className="fas fa-search search-box-icon"></span>
-                        </form>
-                      </div>
-                    </div>
-                    <div className="col-auto">
-                      <select className="form-select form-select-sm" data-list-filter="data-list-filter" aria-label="Filter region">
-                        <option value="">
-                          Region: All
-                        </option>
-                        <option value="India">
-                          India
-                        </option>
-                        <option value="China">
-                          China
-                        </option>
-                        <option value="USA">
-                          USA
-                        </option>
-                        <option value="South Korea">
-                          South Korea
-                        </option>
-                        <option value="Vietnam">
-                          Vietnam
-                        </option>
-                        <option value="Australia">
-                          Australia
-                        </option>
-                        <option value="England">
-                          England
-                        </option>
-                        <option value="Indonesia">
-                          Indonesia
-                        </option>
-                        <option value="Japan">
-                          Japan
-                        </option>
-                      </select>
-                    </div>
-                    <div className="col-auto">
-                      <select className="form-select form-select-sm" data-obs-sort="data-obs-sort" aria-label="Sort by">
-                        <option value="">
-                          Sort by
-                        </option>
-                        <option value="country">
-                          Account / region
-                        </option>
-                        <option value="users">
-                          Resources
-                        </option>
-                        <option value="transactions">
-                          Alerts
-                        </option>
-                        <option value="revenue">
-                          Cost
-                        </option>
-                        <option value="conv-rate">
-                          Budget used
-                        </option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
+      <div className="obs-list-root" data-list={"{\"valueNames\":[\"col0\",\"col1\",\"col2\",\"col3\",\"col4\",\"col5\"],\"page\":6,\"filter\":{\"key\":\"col5\"}}"} data-live-table="apiRoutes">
+        <div className="card">
+          <div className="card-header border-bottom border-translucent py-3">
+            <div className="row align-items-center g-2 mb-3">
+              <div className="col">
+                <h4 className="mb-0">
+                  API routes
+                </h4>
+                <p className="text-body-tertiary fs-9 mb-0">
+                  Per-route traffic from stored spans — the same response the cards above are rolled up from
+                </p>
               </div>
             </div>
+            <div className="row align-items-center g-2">
+              <div className="col-12 col-md">
+                <div className="search-box w-100">
+                  <form className="position-relative">
+                    <input className="form-control search-input search form-control-sm" type="search" placeholder="Search routes" aria-label="Search" />
+                    <span className="fas fa-search search-box-icon"></span>
+                  </form>
+                </div>
+              </div>
+              <div className="col-6 col-md-auto">
+                <select className="form-select form-select-sm" data-list-filter="data-list-filter" aria-label="Filter">
+                  <option value="">
+                    Filter: All
+                  </option>
+                  <option value="Healthy">
+                    Healthy
+                  </option>
+                </select>
+              </div>
+              <div className="col-6 col-md-auto">
+                <select className="form-select form-select-sm" aria-label="Sort by" data-obs-sort="data-obs-sort">
+                  <option value="">
+                    Sort by
+                  </option>
+                  <option value="col0">
+                    Route
+                  </option>
+                  <option value="col1">
+                    Requests
+                  </option>
+                  <option value="col2">
+                    5xx
+                  </option>
+                  <option value="col3">
+                    Error rate
+                  </option>
+                  <option value="col4">
+                    Status codes
+                  </option>
+                  <option value="col5">
+                    Status
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div className="card-body p-0">
             <div className="table-responsive scrollbar">
-              <table className="table fs-10 mb-0">
+              <table className="table table-sm fs-9 mb-0">
                 <thead>
                   <tr>
-                    <th className="sort border-top border-translucent ps-0 align-middle" scope="col" data-sort="country" style={{ width: "32%" }}>
-                      ACCOUNT / REGION
+                    <th className="sort align-middle white-space-nowrap text-uppercase ps-3" scope="col" data-sort="col0">
+                      Route
                     </th>
-                    <th className="sort border-top border-translucent align-middle" scope="col" data-sort="users" style={{ width: "17%" }}>
-                      RESOURCES
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col1">
+                      Requests
                     </th>
-                    <th className="sort border-top border-translucent text-end align-middle" scope="col" data-sort="transactions" style={{ width: "16%" }}>
-                      ALERTS
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col2">
+                      5xx
                     </th>
-                    <th className="sort border-top border-translucent text-end align-middle" scope="col" data-sort="revenue" style={{ width: "20%" }}>
-                      COST
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col3">
+                      Error rate
                     </th>
-                    <th className="sort border-top border-translucent text-end pe-0 align-middle" scope="col" data-sort="conv-rate" style={{ width: "17%" }}>
-                      BUDGET USED
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col4">
+                      Status codes
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col5">
+                      Status
                     </th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="list" data-sample-rows="data-sample-rows">
                   <tr>
-                    <td></td>
-                    <td className="align-middle py-4">
-                      <h4 className="mb-0 fw-normal">
-                        377,620
-                      </h4>
-                    </td>
-                    <td className="align-middle text-end py-4">
-                      <h4 className="mb-0 fw-normal">
-                        236
-                      </h4>
-                    </td>
-                    <td className="align-middle text-end py-4">
-                      <h4 className="mb-0 fw-normal">
-                        $15,758
-                      </h4>
-                    </td>
-                    <td className="align-middle text-end py-4 pe-0">
-                      <h4 className="mb-0 fw-normal">
-                        10.32%
-                      </h4>
-                    </td>
-                  </tr>
-                </tbody>
-                <tbody className="list" id="table-regions-by-revenue">
-                  <tr>
-                    <td className="white-space-nowrap ps-0 country" style={{ width: "32%" }}>
+                    <td className="align-middle ps-3 py-3 col0">
                       <div className="d-flex align-items-center">
-                        <h6 className="mb-0 me-3">
-                          1.
-                        </h6>
-                        <a href="#!">
-                          <div className="d-flex align-items-center">
-                            <img src="/assets/img/country/india.png" alt="" width="24" />
-                            <p className="mb-0 ps-3 text-primary fw-bold fs-9">
-                              India
-                            </p>
-                          </div>
-                        </a>
+                        <span className="me-2 fa-solid fa-route text-success"></span>
+                        <div>
+                          <h6 className="mb-0">
+                            GET /api/v1/orders
+                          </h6>
+                          <p className="text-body-tertiary fs-10 mb-0">
+                            200×1204
+                          </p>
+                        </div>
                       </div>
                     </td>
-                    <td className="align-middle users" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        92896
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (41.6%)
-                        </span>
-                      </h6>
+                    <td className="align-middle col1">
+                      1,204
                     </td>
-                    <td className="align-middle text-end transactions" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        67
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (34.3%)
-                        </span>
-                      </h6>
+                    <td className="align-middle col2">
+                      0
                     </td>
-                    <td className="align-middle text-end revenue" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        $7560
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (36.9%)
-                        </span>
-                      </h6>
+                    <td className="align-middle col3">
+                      0.00%
                     </td>
-                    <td className="align-middle text-end pe-0 conv-rate" style={{ width: "17%" }}>
-                      <h6>
-                        14.01%
-                      </h6>
+                    <td className="align-middle col4">
+                      200
                     </td>
-                  </tr>
-                  <tr>
-                    <td className="white-space-nowrap ps-0 country" style={{ width: "32%" }}>
-                      <div className="d-flex align-items-center">
-                        <h6 className="mb-0 me-3">
-                          2.
-                        </h6>
-                        <a href="#!">
-                          <div className="d-flex align-items-center">
-                            <img src="/assets/img/country/china.png" alt="" width="24" />
-                            <p className="mb-0 ps-3 text-primary fw-bold fs-9">
-                              China
-                            </p>
-                          </div>
-                        </a>
-                      </div>
-                    </td>
-                    <td className="align-middle users" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        50496
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (32.8%)
-                        </span>
-                      </h6>
-                    </td>
-                    <td className="align-middle text-end transactions" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        54
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (23.8%)
-                        </span>
-                      </h6>
-                    </td>
-                    <td className="align-middle text-end revenue" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        $6532
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (26.5%)
-                        </span>
-                      </h6>
-                    </td>
-                    <td className="align-middle text-end pe-0 conv-rate" style={{ width: "17%" }}>
-                      <h6>
-                        23.56%
-                      </h6>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="white-space-nowrap ps-0 country" style={{ width: "32%" }}>
-                      <div className="d-flex align-items-center">
-                        <h6 className="mb-0 me-3">
-                          3.
-                        </h6>
-                        <a href="#!">
-                          <div className="d-flex align-items-center">
-                            <img src="/assets/img/country/usa.png" alt="" width="24" />
-                            <p className="mb-0 ps-3 text-primary fw-bold fs-9">
-                              USA
-                            </p>
-                          </div>
-                        </a>
-                      </div>
-                    </td>
-                    <td className="align-middle users" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        45679
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (24.3%)
-                        </span>
-                      </h6>
-                    </td>
-                    <td className="align-middle text-end transactions" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        35
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (19.7%)
-                        </span>
-                      </h6>
-                    </td>
-                    <td className="align-middle text-end revenue" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        $5432
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (16.9%)
-                        </span>
-                      </h6>
-                    </td>
-                    <td className="align-middle text-end pe-0 conv-rate" style={{ width: "17%" }}>
-                      <h6>
-                        10.23%
-                      </h6>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="white-space-nowrap ps-0 country" style={{ width: "32%" }}>
-                      <div className="d-flex align-items-center">
-                        <h6 className="mb-0 me-3">
-                          4.
-                        </h6>
-                        <a href="#!">
-                          <div className="d-flex align-items-center">
-                            <img src="/assets/img/country/south-korea.png" alt="" width="24" />
-                            <p className="mb-0 ps-3 text-primary fw-bold fs-9">
-                              South Korea
-                            </p>
-                          </div>
-                        </a>
-                      </div>
-                    </td>
-                    <td className="align-middle users" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        36453
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (19.7%)
-                        </span>
-                      </h6>
-                    </td>
-                    <td className="align-middle text-end transactions" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        22
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (9.54%)
-                        </span>
-                      </h6>
-                    </td>
-                    <td className="align-middle text-end revenue" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        $4673
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (11.6%)
-                        </span>
-                      </h6>
-                    </td>
-                    <td className="align-middle text-end pe-0 conv-rate" style={{ width: "17%" }}>
-                      <h6>
-                        8.85%
-                      </h6>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="white-space-nowrap ps-0 country" style={{ width: "32%" }}>
-                      <div className="d-flex align-items-center">
-                        <h6 className="mb-0 me-3">
-                          5.
-                        </h6>
-                        <a href="#!">
-                          <div className="d-flex align-items-center">
-                            <img src="/assets/img/country/vietnam.png" alt="" width="24" />
-                            <p className="mb-0 ps-3 text-primary fw-bold fs-9">
-                              Vietnam
-                            </p>
-                          </div>
-                        </a>
-                      </div>
-                    </td>
-                    <td className="align-middle users" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        15007
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (11.9%)
-                        </span>
-                      </h6>
-                    </td>
-                    <td className="align-middle text-end transactions" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        17
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (6.91%)
-                        </span>
-                      </h6>
-                    </td>
-                    <td className="align-middle text-end revenue" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        $2456
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (10.2%)
-                        </span>
-                      </h6>
-                    </td>
-                    <td className="align-middle text-end pe-0 conv-rate" style={{ width: "17%" }}>
-                      <h6>
-                        6.01%
-                      </h6>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="white-space-nowrap ps-0 country" style={{ width: "32%" }}>
-                      <div className="d-flex align-items-center">
-                        <h6 className="mb-0 me-3">
-                          6.
-                        </h6>
-                        <a href="#!">
-                          <div className="d-flex align-items-center">
-                            <img src="/assets/img/country/russia.png" alt="" width="24" />
-                            <p className="mb-0 ps-3 text-primary fw-bold fs-9">
-                              Russia
-                            </p>
-                          </div>
-                        </a>
-                      </div>
-                    </td>
-                    <td className="align-middle users" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        54215
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (32.9%)
-                        </span>
-                      </h6>
-                    </td>
-                    <td className="align-middle text-end transactions" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        38
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (7.91%)
-                        </span>
-                      </h6>
-                    </td>
-                    <td className="align-middle text-end revenue" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        $3254
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (12.4%)
-                        </span>
-                      </h6>
-                    </td>
-                    <td className="align-middle text-end pe-0 conv-rate" style={{ width: "17%" }}>
-                      <h6>
-                        6.21%
-                      </h6>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="white-space-nowrap ps-0 country" style={{ width: "32%" }}>
-                      <div className="d-flex align-items-center">
-                        <h6 className="mb-0 me-3">
-                          7.
-                        </h6>
-                        <a href="#!">
-                          <div className="d-flex align-items-center">
-                            <img src="/assets/img/country/australia.png" alt="" width="24" />
-                            <p className="mb-0 ps-3 text-primary fw-bold fs-9">
-                              Australia
-                            </p>
-                          </div>
-                        </a>
-                      </div>
-                    </td>
-                    <td className="align-middle users" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        54789
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (12.7%)
-                        </span>
-                      </h6>
-                    </td>
-                    <td className="align-middle text-end transactions" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        32
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (14.0%)
-                        </span>
-                      </h6>
-                    </td>
-                    <td className="align-middle text-end revenue" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        $3215
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (5.72%)
-                        </span>
-                      </h6>
-                    </td>
-                    <td className="align-middle text-end pe-0 conv-rate" style={{ width: "17%" }}>
-                      <h6>
-                        12.02%
-                      </h6>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="white-space-nowrap ps-0 country" style={{ width: "32%" }}>
-                      <div className="d-flex align-items-center">
-                        <h6 className="mb-0 me-3">
-                          8.
-                        </h6>
-                        <a href="#!">
-                          <div className="d-flex align-items-center">
-                            <img src="/assets/img/country/england.png" alt="" width="24" />
-                            <p className="mb-0 ps-3 text-primary fw-bold fs-9">
-                              England
-                            </p>
-                          </div>
-                        </a>
-                      </div>
-                    </td>
-                    <td className="align-middle users" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        14785
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (12.9%)
-                        </span>
-                      </h6>
-                    </td>
-                    <td className="align-middle text-end transactions" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        11
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (32.91%)
-                        </span>
-                      </h6>
-                    </td>
-                    <td className="align-middle text-end revenue" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        $4745
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (10.2%)
-                        </span>
-                      </h6>
-                    </td>
-                    <td className="align-middle text-end pe-0 conv-rate" style={{ width: "17%" }}>
-                      <h6>
-                        8.01%
-                      </h6>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="white-space-nowrap ps-0 country" style={{ width: "32%" }}>
-                      <div className="d-flex align-items-center">
-                        <h6 className="mb-0 me-3">
-                          9.
-                        </h6>
-                        <a href="#!">
-                          <div className="d-flex align-items-center">
-                            <img src="/assets/img/country/indonesia.png" alt="" width="24" />
-                            <p className="mb-0 ps-3 text-primary fw-bold fs-9">
-                              Indonesia
-                            </p>
-                          </div>
-                        </a>
-                      </div>
-                    </td>
-                    <td className="align-middle users" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        32156
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (32.2%)
-                        </span>
-                      </h6>
-                    </td>
-                    <td className="align-middle text-end transactions" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        89
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (12.0%)
-                        </span>
-                      </h6>
-                    </td>
-                    <td className="align-middle text-end revenue" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        $2456
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (23.2%)
-                        </span>
-                      </h6>
-                    </td>
-                    <td className="align-middle text-end pe-0 conv-rate" style={{ width: "17%" }}>
-                      <h6>
-                        9.07%
-                      </h6>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="white-space-nowrap ps-0 country" style={{ width: "32%" }}>
-                      <div className="d-flex align-items-center">
-                        <h6 className="mb-0 me-3">
-                          10.
-                        </h6>
-                        <a href="#!">
-                          <div className="d-flex align-items-center">
-                            <img src="/assets/img/country/japan.png" alt="" width="24" />
-                            <p className="mb-0 ps-3 text-primary fw-bold fs-9">
-                              Japan
-                            </p>
-                          </div>
-                        </a>
-                      </div>
-                    </td>
-                    <td className="align-middle users" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        12547
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (12.7%)
-                        </span>
-                      </h6>
-                    </td>
-                    <td className="align-middle text-end transactions" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        21
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (14.91%)
-                        </span>
-                      </h6>
-                    </td>
-                    <td className="align-middle text-end revenue" style={{ width: "17%" }}>
-                      <h6 className="mb-0">
-                        $2541
-                        <span className="text-body-tertiary fw-semibold ms-2">
-                          (23.2%)
-                        </span>
-                      </h6>
-                    </td>
-                    <td className="align-middle text-end pe-0 conv-rate" style={{ width: "17%" }}>
-                      <h6>
-                        20.01%
-                      </h6>
+                    <td className="align-middle col5">
+                      <span className="badge badge-phoenix badge-phoenix-success">
+                        Healthy
+                      </span>
                     </td>
                   </tr>
                 </tbody>
               </table>
             </div>
-            <div className="row align-items-center py-1">
+            <div className="text-center p-3 fallback d-none">
+              <p className="mb-0 text-body-tertiary">
+                No matching results
+              </p>
+            </div>
+          </div>
+          <div className="card-footer border-top border-translucent">
+            <div className="row align-items-center g-2">
               <div className="pagination d-none"></div>
-              <div className="col d-flex fs-9">
+              <div className="col d-flex fs-9 flex-wrap">
                 <p className="mb-0 d-none d-sm-block me-3 fw-semibold text-body" data-list-info="data-list-info"></p>
                 <a className="fw-semibold" href="#!" data-list-view="*">
                   View all
+                  <span className="fas fa-angle-right ms-1" data-fa-transform="down-1"></span>
                 </a>
                 <a className="fw-semibold d-none" href="#!" data-list-view="less">
                   View less
@@ -939,658 +298,479 @@ export default function Page() {
             </div>
           </div>
         </div>
+      </div>
+      <div className="row g-4 mb-4">
         <div className="col-12 col-xl-6">
-          <div className="mx-n4 mx-lg-n6 ms-xl-0 h-100">
-            <div className="h-100 w-100">
-              <div className="h-100 bg-body-emphasis" id="map" style={{ minHeight: "300px" }}></div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="mx-n4 px-4 mx-lg-n6 px-lg-6 bg-body-emphasis pt-6 pb-9 border-top">
-        <div className="row g-6">
-          <div className="col-12 col-xl-6">
-            <div className="me-xl-4">
-              <div>
-                <h3>
-                  Forecast vs actual spend
-                </h3>
-                <p className="mb-1 text-body-tertiary">
-                  Budgeted cloud + AI cost vs actual burn
-                </p>
-              </div>
-              <div className="echart-projection-actual" style={{ height: "300px", width: "100%" }}></div>
-            </div>
-          </div>
-          <div className="col-12 col-xl-6">
-            <div>
-              <h3>
-                Alert resolution rate
-              </h3>
-              <p className="mb-1 text-body-tertiary">
-                Share of alerts acknowledged and closed over time
-              </p>
-            </div>
-            <div className="echart-returning-customer" style={{ height: "300px" }}></div>
-          </div>
-        </div>
-      </div>
-      <div className="mx-n4 px-4 mx-lg-n6 px-lg-6 bg-body-emphasis pt-7 pb-7 border-top">
-        <div data-list={"{\"valueNames\":[\"product\",\"customer\",\"rating\",\"review\",\"status\",\"time\"],\"page\":6,\"filter\":{\"key\":\"status\"}}"}>
-          <div className="row align-items-end justify-content-between pb-5 g-3">
-            <div className="col-auto">
-              <h3>
-                Active alerts
-              </h3>
-              <p className="text-body-tertiary lh-sm mb-0">
-                API · AI Gateway · ETL · Cloud · Cost anomalies
-              </p>
-            </div>
-            <div className="col-12 col-md-auto">
-              <div className="row g-2 gy-3">
-                <div className="col-auto flex-1">
-                  <div className="search-box">
-                    <form className="position-relative">
-                      <input className="form-control search-input search form-control-sm" type="search" placeholder="Search alerts" aria-label="Search" />
-                      <span className="fas fa-search search-box-icon"></span>
-                    </form>
+          <div className="obs-list-root" data-list={"{\"valueNames\":[\"col0\",\"col1\",\"col2\",\"col3\",\"col4\",\"col5\"],\"page\":5,\"filter\":{\"key\":\"col5\"}}"} data-live-table="alerts">
+            <div className="card">
+              <div className="card-header border-bottom border-translucent py-3">
+                <div className="row align-items-center g-2 mb-3">
+                  <div className="col">
+                    <h4 className="mb-0">
+                      Open alerts
+                    </h4>
+                    <p className="text-body-tertiary fs-9 mb-0">
+                      Newest first, across every signal that feeds the collector
+                    </p>
                   </div>
                 </div>
-                <div className="col-auto">
-                  <select className="form-select form-select-sm" data-list-filter="data-list-filter" aria-label="Filter status">
-                    <option value="">
-                      Status: All
-                    </option>
-                    <option value="Critical">
-                      Critical
-                    </option>
-                    <option value="Warning">
-                      Warning
-                    </option>
-                    <option value="Open">
-                      Open
-                    </option>
-                    <option value="Acknowledged">
-                      Acknowledged
-                    </option>
-                    <option value="Resolved">
-                      Resolved
-                    </option>
-                  </select>
+                <div className="row align-items-center g-2">
+                  <div className="col-12 col-md">
+                    <div className="search-box w-100">
+                      <form className="position-relative">
+                        <input className="form-control search-input search form-control-sm" type="search" placeholder="Search alerts" aria-label="Search" />
+                        <span className="fas fa-search search-box-icon"></span>
+                      </form>
+                    </div>
+                  </div>
+                  <div className="col-6 col-md-auto">
+                    <select className="form-select form-select-sm" data-list-filter="data-list-filter" aria-label="Filter">
+                      <option value="">
+                        Filter: All
+                      </option>
+                      <option value="Open">
+                        Open
+                      </option>
+                    </select>
+                  </div>
+                  <div className="col-6 col-md-auto">
+                    <select className="form-select form-select-sm" aria-label="Sort by" data-obs-sort="data-obs-sort">
+                      <option value="">
+                        Sort by
+                      </option>
+                      <option value="col0">
+                        Alert
+                      </option>
+                      <option value="col1">
+                        Source
+                      </option>
+                      <option value="col2">
+                        Severity
+                      </option>
+                      <option value="col3">
+                        Owner
+                      </option>
+                      <option value="col4">
+                        Age
+                      </option>
+                      <option value="col5">
+                        Status
+                      </option>
+                    </select>
+                  </div>
                 </div>
-                <div className="col-auto">
-                  <select className="form-select form-select-sm" aria-label="Sort by" data-obs-sort="data-obs-sort">
-                    <option value="">
-                      Sort by
-                    </option>
-                    <option value="product">
-                      Source
-                    </option>
-                    <option value="customer">
-                      Owner
-                    </option>
-                    <option value="status">
-                      Status
-                    </option>
-                    <option value="time">
-                      Time
-                    </option>
-                  </select>
-                  <button className="btn btn-sm btn-phoenix-secondary bg-body-emphasis bg-body-hover action-btn ms-2" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup={true} aria-expanded={false} data-bs-reference="parent">
-                    <span className="fas fa-ellipsis-h" data-fa-transform="shrink-2"></span>
-                  </button>
-                  <ul className="dropdown-menu dropdown-menu-end">
-                    <li>
-                      <a className="dropdown-item" href="#">
-                        Acknowledge all
-                      </a>
-                    </li>
-                    <li>
-                      <a className="dropdown-item" href="#">
-                        Mute noise
-                      </a>
-                    </li>
-                    <li>
-                      <a className="dropdown-item" href="#">
-                        Export
-                      </a>
-                    </li>
-                  </ul>
+              </div>
+              <div className="card-body p-0">
+                <div className="table-responsive scrollbar">
+                  <table className="table table-sm fs-9 mb-0">
+                    <thead>
+                      <tr>
+                        <th className="sort align-middle white-space-nowrap text-uppercase ps-3" scope="col" data-sort="col0">
+                          Alert
+                        </th>
+                        <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col1">
+                          Source
+                        </th>
+                        <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col2">
+                          Severity
+                        </th>
+                        <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col3">
+                          Owner
+                        </th>
+                        <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col4">
+                          Age
+                        </th>
+                        <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col5">
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="list" data-sample-rows="data-sample-rows">
+                      <tr>
+                        <td className="align-middle ps-3 py-3 col0">
+                          <div className="d-flex align-items-center">
+                            <span className="me-2 fa-solid fa-bell text-danger"></span>
+                            <div>
+                              <h6 className="mb-0">
+                                Error rate above 5%
+                              </h6>
+                              <p className="text-body-tertiary fs-10 mb-0">
+                                checkout-api
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="align-middle col1">
+                          api
+                        </td>
+                        <td className="align-middle col2">
+                          <span className="badge badge-phoenix badge-phoenix-danger">
+                            critical
+                          </span>
+                        </td>
+                        <td className="align-middle col3">
+                          unassigned
+                        </td>
+                        <td className="align-middle col4">
+                          2026-09-10T09:40:00Z
+                        </td>
+                        <td className="align-middle col5">
+                          <span className="badge badge-phoenix badge-phoenix-danger">
+                            Open
+                          </span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div className="text-center p-3 fallback d-none">
+                  <p className="mb-0 text-body-tertiary">
+                    No matching results
+                  </p>
+                </div>
+              </div>
+              <div className="card-footer border-top border-translucent">
+                <div className="row align-items-center g-2">
+                  <div className="pagination d-none"></div>
+                  <div className="col d-flex fs-9 flex-wrap">
+                    <p className="mb-0 d-none d-sm-block me-3 fw-semibold text-body" data-list-info="data-list-info"></p>
+                    <a className="fw-semibold" href="#!" data-list-view="*">
+                      View all
+                      <span className="fas fa-angle-right ms-1" data-fa-transform="down-1"></span>
+                    </a>
+                    <a className="fw-semibold d-none" href="#!" data-list-view="less">
+                      View less
+                    </a>
+                  </div>
+                  <div className="col-auto d-flex">
+                    <button className="btn btn-link px-1 me-1" type="button" title="Previous" data-list-pagination="prev">
+                      <span className="fas fa-chevron-left me-2"></span>
+                      Previous
+                    </button>
+                    <button className="btn btn-link px-1 ms-1" type="button" title="Next" data-list-pagination="next">
+                      Next
+                      <span className="fas fa-chevron-right ms-2"></span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-          <div className="table-responsive mx-n1 px-1 scrollbar">
-            <table className="table fs-9 mb-0 border-top border-translucent">
-              <thead>
-                <tr>
-                  <th className="white-space-nowrap fs-9 ps-0 align-middle">
-                    <div className="form-check mb-0 fs-8">
-                      <input className="form-check-input" id="checkbox-bulk-reviews-select" type="checkbox" data-bulk-select={"{\"body\":\"table-latest-review-body\"}"} />
+        </div>
+        <div className="col-12 col-xl-6">
+          <div className="obs-list-root" data-list={"{\"valueNames\":[\"col0\",\"col1\",\"col2\",\"col3\",\"col4\",\"col5\"],\"page\":5,\"filter\":{\"key\":\"col5\"}}"} data-live-table="databases">
+            <div className="card">
+              <div className="card-header border-bottom border-translucent py-3">
+                <div className="row align-items-center g-2 mb-3">
+                  <div className="col">
+                    <h4 className="mb-0">
+                      Databases
+                    </h4>
+                    <p className="text-body-tertiary fs-9 mb-0">
+                      Registered databases and what the last probe found
+                    </p>
+                  </div>
+                </div>
+                <div className="row align-items-center g-2">
+                  <div className="col-12 col-md">
+                    <div className="search-box w-100">
+                      <form className="position-relative">
+                        <input className="form-control search-input search form-control-sm" type="search" placeholder="Search databases" aria-label="Search" />
+                        <span className="fas fa-search search-box-icon"></span>
+                      </form>
                     </div>
-                  </th>
-                  <th className="sort white-space-nowrap align-middle" scope="col" style={{ minWidth: "360px" }} data-sort="product">
-                    SOURCE / SERVICE
-                  </th>
-                  <th className="sort align-middle" scope="col" data-sort="customer" style={{ minWidth: "200px" }}>
-                    OWNER
-                  </th>
-                  <th className="sort align-middle" scope="col" data-sort="rating" style={{ minWidth: "110px" }}>
-                    SEVERITY
-                  </th>
-                  <th className="sort align-middle" scope="col" style={{ maxWidth: "350px" }} data-sort="review">
-                    MESSAGE
-                  </th>
-                  <th className="sort text-start ps-5 align-middle" scope="col" data-sort="status">
-                    STATUS
-                  </th>
-                  <th className="sort text-end align-middle" scope="col" data-sort="time">
-                    TIME
-                  </th>
-                  <th className="sort text-end pe-0 align-middle" scope="col"></th>
-                </tr>
-              </thead>
-              <tbody className="list" id="table-latest-review-body">
-                <tr className="hover-actions-trigger btn-reveal-trigger position-static">
-                  <td className="fs-9 align-middle ps-0">
-                    <div className="form-check mb-0 fs-8">
-                      <input className="form-check-input" type="checkbox" data-bulk-select-row={"{\"product\":\"API Gateway · /v1/checkout · p99 latency spike\",\"productImage\":\"/products/60x60/1.png\",\"customer\":{\"name\":\"Platform SRE\",\"avatar\":\"\"},\"rating\":5,\"review\":\"p99 latency exceeded 800ms for 12 minutes on checkout API. AI Gateway retries amplified load from Cursor + Copilot agents.\",\"status\":{\"title\":\"Critical\",\"badge\":\"danger\",\"icon\":\"alert-triangle\"},\"time\":\"Just now\"}"} />
-                    </div>
-                  </td>
-                  <td className="align-middle product white-space-nowrap">
-                    <a className="fw-semibold" href="#!">
-                      API Gateway · /v1/checkout · p99 latency spike
-                    </a>
-                  </td>
-                  <td className="align-middle customer white-space-nowrap">
-                    <a className="d-flex align-items-center text-body" href="#!">
-                      <div className="avatar avatar-l">
-                        <div className="avatar-name rounded-circle">
-                          <span>
-                            P
+                  </div>
+                  <div className="col-6 col-md-auto">
+                    <select className="form-select form-select-sm" data-list-filter="data-list-filter" aria-label="Filter">
+                      <option value="">
+                        Filter: All
+                      </option>
+                      <option value="Healthy">
+                        Healthy
+                      </option>
+                    </select>
+                  </div>
+                  <div className="col-6 col-md-auto">
+                    <select className="form-select form-select-sm" aria-label="Sort by" data-obs-sort="data-obs-sort">
+                      <option value="">
+                        Sort by
+                      </option>
+                      <option value="col0">
+                        Database
+                      </option>
+                      <option value="col1">
+                        Engine
+                      </option>
+                      <option value="col2">
+                        Env
+                      </option>
+                      <option value="col3">
+                        Connections
+                      </option>
+                      <option value="col4">
+                        Replication lag
+                      </option>
+                      <option value="col5">
+                        Status
+                      </option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div className="card-body p-0">
+                <div className="table-responsive scrollbar">
+                  <table className="table table-sm fs-9 mb-0">
+                    <thead>
+                      <tr>
+                        <th className="sort align-middle white-space-nowrap text-uppercase ps-3" scope="col" data-sort="col0">
+                          Database
+                        </th>
+                        <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col1">
+                          Engine
+                        </th>
+                        <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col2">
+                          Env
+                        </th>
+                        <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col3">
+                          Connections
+                        </th>
+                        <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col4">
+                          Replication lag
+                        </th>
+                        <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col5">
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="list" data-sample-rows="data-sample-rows">
+                      <tr>
+                        <td className="align-middle ps-3 py-3 col0">
+                          <div className="d-flex align-items-center">
+                            <span className="me-2 fa-solid fa-database text-info"></span>
+                            <div>
+                              <h6 className="mb-0">
+                                commerce
+                              </h6>
+                              <p className="text-body-tertiary fs-10 mb-0">
+                                db.internal
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="align-middle col1">
+                          PostgreSQL
+                        </td>
+                        <td className="align-middle col2">
+                          prod
+                        </td>
+                        <td className="align-middle col3">
+                          42
+                        </td>
+                        <td className="align-middle col4">
+                          0.2s
+                        </td>
+                        <td className="align-middle col5">
+                          <span className="badge badge-phoenix badge-phoenix-success">
+                            Healthy
                           </span>
-                        </div>
-                      </div>
-                      <h6 className="mb-0 ms-3 text-body">
-                        Platform SRE
-                      </h6>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div className="text-center p-3 fallback d-none">
+                  <p className="mb-0 text-body-tertiary">
+                    No matching results
+                  </p>
+                </div>
+              </div>
+              <div className="card-footer border-top border-translucent">
+                <div className="row align-items-center g-2">
+                  <div className="pagination d-none"></div>
+                  <div className="col d-flex fs-9 flex-wrap">
+                    <p className="mb-0 d-none d-sm-block me-3 fw-semibold text-body" data-list-info="data-list-info"></p>
+                    <a className="fw-semibold" href="#!" data-list-view="*">
+                      View all
+                      <span className="fas fa-angle-right ms-1" data-fa-transform="down-1"></span>
                     </a>
-                  </td>
-                  <td className="align-middle rating white-space-nowrap fs-10">
-                    <span className="fa fa-star text-warning"></span>
-                    <span className="fa fa-star text-warning"></span>
-                    <span className="fa fa-star text-warning"></span>
-                    <span className="fa fa-star text-warning"></span>
-                    <span className="fa fa-star text-warning"></span>
-                  </td>
-                  <td className="align-middle review" style={{ minWidth: "350px" }}>
-                    <p className="fs-9 fw-semibold text-body-highlight mb-0">
-                      p99 latency exceeded 800ms for 12 minutes on checkout API. AI Gateway retries amplified load from Cursor + Copilot agents.
-                    </p>
-                  </td>
-                  <td className="align-middle text-start ps-5 status">
-                    <span className="badge badge-phoenix fs-10 badge-phoenix-danger">
-                      <span className="badge-label">
-                        Critical
-                      </span>
-                      <span className="ms-1" data-feather="alert-triangle" style={{ height: "12.8px", width: "12.8px" }}></span>
-                    </span>
-                  </td>
-                  <td className="align-middle text-end time white-space-nowrap">
-                    <div className="hover-hide">
-                      <h6 className="text-body-highlight mb-0">
-                        Just now
-                      </h6>
-                    </div>
-                  </td>
-                  <td className="align-middle white-space-nowrap text-end pe-0">
-                    <div className="position-relative">
-                      <div className="hover-actions">
-                        <button className="btn btn-sm btn-phoenix-secondary me-1 fs-10">
-                          <span className="fas fa-check"></span>
-                        </button>
-                        <button className="btn btn-sm btn-phoenix-secondary fs-10">
-                          <span className="fas fa-trash"></span>
-                        </button>
-                      </div>
-                    </div>
-                    <div className="btn-reveal-trigger position-static">
-                      <button className="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup={true} aria-expanded={false} data-bs-reference="parent">
-                        <span className="fas fa-ellipsis-h fs-10"></span>
-                      </button>
-                      <div className="dropdown-menu dropdown-menu-end py-2">
-                        <a className="dropdown-item" href="#!">
-                          View
-                        </a>
-                        <a className="dropdown-item" href="#!">
-                          Export
-                        </a>
-                        <div className="dropdown-divider"></div>
-                        <a className="dropdown-item text-danger" href="#!">
-                          Remove
-                        </a>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-                <tr className="hover-actions-trigger btn-reveal-trigger position-static">
-                  <td className="fs-9 align-middle ps-0">
-                    <div className="form-check mb-0 fs-8">
-                      <input className="form-check-input" type="checkbox" data-bulk-select-row={"{\"product\":\"AI Cost · OpenAI ChatGPT org-billing\",\"productImage\":\"/products/60x60/2.png\",\"customer\":{\"name\":\"FinOps\",\"avatar\":\"/team/40x40/59.webp\"},\"rating\":4,\"review\":\"Daily OpenAI spend crossed $1.2k threshold. Top consumers: Cursor, Claude API proxy, and BabyLoveGrowth workflows.\",\"status\":{\"title\":\"Warning\",\"badge\":\"warning\",\"icon\":\"alert-circle\"},\"time\":\"Just now\"}"} />
-                    </div>
-                  </td>
-                  <td className="align-middle product white-space-nowrap">
-                    <a className="fw-semibold" href="#!">
-                      AI Cost · OpenAI ChatGPT org-billing
+                    <a className="fw-semibold d-none" href="#!" data-list-view="less">
+                      View less
                     </a>
-                  </td>
-                  <td className="align-middle customer white-space-nowrap">
-                    <a className="d-flex align-items-center text-body" href="#!">
-                      <div className="avatar avatar-l">
-                        <img className="rounded-circle" src="/assets/img/team/40x40/59.webp" alt="" />
-                      </div>
-                      <h6 className="mb-0 ms-3 text-body">
-                        FinOps
-                      </h6>
-                    </a>
-                  </td>
-                  <td className="align-middle rating white-space-nowrap fs-10">
-                    <span className="fa fa-star text-warning"></span>
-                    <span className="fa fa-star text-warning"></span>
-                    <span className="fa fa-star text-warning"></span>
-                    <span className="fa fa-star text-warning"></span>
-                    <span className="fa-regular fa-star text-warning-light" data-bs-theme="light"></span>
-                  </td>
-                  <td className="align-middle review" style={{ minWidth: "350px" }}>
-                    <p className="fs-9 fw-semibold text-body-highlight mb-0">
-                      Daily OpenAI spend crossed $1.2k threshold. Top consumers: Cursor, Claude API proxy, and BabyLoveGrowth workflows.
-                    </p>
-                  </td>
-                  <td className="align-middle text-start ps-5 status">
-                    <span className="badge badge-phoenix fs-10 badge-phoenix-warning">
-                      <span className="badge-label">
-                        Warning
-                      </span>
-                      <span className="ms-1" data-feather="alert-circle" style={{ height: "12.8px", width: "12.8px" }}></span>
-                    </span>
-                  </td>
-                  <td className="align-middle text-end time white-space-nowrap">
-                    <div className="hover-hide">
-                      <h6 className="text-body-highlight mb-0">
-                        Just now
-                      </h6>
-                    </div>
-                  </td>
-                  <td className="align-middle white-space-nowrap text-end pe-0">
-                    <div className="position-relative">
-                      <div className="hover-actions">
-                        <button className="btn btn-sm btn-phoenix-secondary me-1 fs-10">
-                          <span className="fas fa-check"></span>
-                        </button>
-                        <button className="btn btn-sm btn-phoenix-secondary fs-10">
-                          <span className="fas fa-trash"></span>
-                        </button>
-                      </div>
-                    </div>
-                    <div className="btn-reveal-trigger position-static">
-                      <button className="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup={true} aria-expanded={false} data-bs-reference="parent">
-                        <span className="fas fa-ellipsis-h fs-10"></span>
-                      </button>
-                      <div className="dropdown-menu dropdown-menu-end py-2">
-                        <a className="dropdown-item" href="#!">
-                          View
-                        </a>
-                        <a className="dropdown-item" href="#!">
-                          Export
-                        </a>
-                        <div className="dropdown-divider"></div>
-                        <a className="dropdown-item text-danger" href="#!">
-                          Remove
-                        </a>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-                <tr className="hover-actions-trigger btn-reveal-trigger position-static">
-                  <td className="fs-9 align-middle ps-0">
-                    <div className="form-check mb-0 fs-8">
-                      <input className="form-check-input" type="checkbox" data-bulk-select-row={"{\"product\":\"ETL · middleware/customer_sync failed\",\"productImage\":\"/products/60x60/3.png\",\"customer\":{\"name\":\"Data Eng\",\"avatar\":\"/team/40x40/58.webp\"},\"rating\":3,\"review\":\"ELT job customer_sync aborted after S3 extract timeout. Downstream warehouse load skipped for account batch 14.\",\"status\":{\"title\":\"Open\",\"badge\":\"warning\",\"icon\":\"clock\"},\"time\":\"1 hour ago\"}"} />
-                    </div>
-                  </td>
-                  <td className="align-middle product white-space-nowrap">
-                    <a className="fw-semibold" href="#!">
-                      ETL · middleware/customer_sync failed
-                    </a>
-                  </td>
-                  <td className="align-middle customer white-space-nowrap">
-                    <a className="d-flex align-items-center text-body" href="#!">
-                      <div className="avatar avatar-l">
-                        <img className="rounded-circle" src="/assets/img/team/40x40/58.webp" alt="" />
-                      </div>
-                      <h6 className="mb-0 ms-3 text-body">
-                        Data Eng
-                      </h6>
-                    </a>
-                  </td>
-                  <td className="align-middle rating white-space-nowrap fs-10">
-                    <span className="fa fa-star text-warning"></span>
-                    <span className="fa fa-star text-warning"></span>
-                    <span className="fa fa-star text-warning"></span>
-                    <span className="fa-regular fa-star text-warning-light" data-bs-theme="light"></span>
-                    <span className="fa-regular fa-star text-warning-light" data-bs-theme="light"></span>
-                  </td>
-                  <td className="align-middle review" style={{ minWidth: "350px" }}>
-                    <p className="fs-9 fw-semibold text-body-highlight mb-0">
-                      ELT job customer_sync aborted after S3 extract timeout. Downstream warehouse load skipped for account batch 14.
-                    </p>
-                  </td>
-                  <td className="align-middle text-start ps-5 status">
-                    <span className="badge badge-phoenix fs-10 badge-phoenix-warning">
-                      <span className="badge-label">
-                        Open
-                      </span>
-                      <span className="ms-1" data-feather="clock" style={{ height: "12.8px", width: "12.8px" }}></span>
-                    </span>
-                  </td>
-                  <td className="align-middle text-end time white-space-nowrap">
-                    <div className="hover-hide">
-                      <h6 className="text-body-highlight mb-0">
-                        1 hour ago
-                      </h6>
-                    </div>
-                  </td>
-                  <td className="align-middle white-space-nowrap text-end pe-0">
-                    <div className="position-relative">
-                      <div className="hover-actions">
-                        <button className="btn btn-sm btn-phoenix-secondary me-1 fs-10">
-                          <span className="fas fa-check"></span>
-                        </button>
-                        <button className="btn btn-sm btn-phoenix-secondary fs-10">
-                          <span className="fas fa-trash"></span>
-                        </button>
-                      </div>
-                    </div>
-                    <div className="btn-reveal-trigger position-static">
-                      <button className="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup={true} aria-expanded={false} data-bs-reference="parent">
-                        <span className="fas fa-ellipsis-h fs-10"></span>
-                      </button>
-                      <div className="dropdown-menu dropdown-menu-end py-2">
-                        <a className="dropdown-item" href="#!">
-                          View
-                        </a>
-                        <a className="dropdown-item" href="#!">
-                          Export
-                        </a>
-                        <div className="dropdown-divider"></div>
-                        <a className="dropdown-item text-danger" href="#!">
-                          Remove
-                        </a>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-                <tr className="hover-actions-trigger btn-reveal-trigger position-static">
-                  <td className="fs-9 align-middle ps-0">
-                    <div className="form-check mb-0 fs-8">
-                      <input className="form-check-input" type="checkbox" data-bulk-select-row={"{\"product\":\"AWS · prod-us-east-1 cost anomaly\",\"productImage\":\"/products/60x60/4.png\",\"customer\":{\"name\":\"Cloud Ops\",\"avatar\":\"\"},\"rating\":5,\"review\":\"EC2 + Lambda spend +38% WoW across 6 linked accounts. Azure and GCP remain within forecast.\",\"status\":{\"title\":\"Acknowledged\",\"badge\":\"info\",\"icon\":\"check\"},\"time\":\"2 hours ago\"}"} />
-                    </div>
-                  </td>
-                  <td className="align-middle product white-space-nowrap">
-                    <a className="fw-semibold" href="#!">
-                      AWS · prod-us-east-1 cost anomaly
-                    </a>
-                  </td>
-                  <td className="align-middle customer white-space-nowrap">
-                    <a className="d-flex align-items-center text-body" href="#!">
-                      <div className="avatar avatar-l">
-                        <div className="avatar-name rounded-circle">
-                          <span>
-                            C
-                          </span>
-                        </div>
-                      </div>
-                      <h6 className="mb-0 ms-3 text-body">
-                        Cloud Ops
-                      </h6>
-                    </a>
-                  </td>
-                  <td className="align-middle rating white-space-nowrap fs-10">
-                    <span className="fa fa-star text-warning"></span>
-                    <span className="fa fa-star text-warning"></span>
-                    <span className="fa fa-star text-warning"></span>
-                    <span className="fa fa-star text-warning"></span>
-                    <span className="fa fa-star text-warning"></span>
-                  </td>
-                  <td className="align-middle review" style={{ minWidth: "350px" }}>
-                    <p className="fs-9 fw-semibold text-body-highlight mb-0">
-                      EC2 + Lambda spend +38% WoW across 6 linked accounts. Azure and GCP remain within forecast.
-                    </p>
-                  </td>
-                  <td className="align-middle text-start ps-5 status">
-                    <span className="badge badge-phoenix fs-10 badge-phoenix-info">
-                      <span className="badge-label">
-                        Acknowledged
-                      </span>
-                      <span className="ms-1" data-feather="check" style={{ height: "12.8px", width: "12.8px" }}></span>
-                    </span>
-                  </td>
-                  <td className="align-middle text-end time white-space-nowrap">
-                    <div className="hover-hide">
-                      <h6 className="text-body-highlight mb-0">
-                        2 hours ago
-                      </h6>
-                    </div>
-                  </td>
-                  <td className="align-middle white-space-nowrap text-end pe-0">
-                    <div className="position-relative">
-                      <div className="hover-actions">
-                        <button className="btn btn-sm btn-phoenix-secondary me-1 fs-10">
-                          <span className="fas fa-check"></span>
-                        </button>
-                        <button className="btn btn-sm btn-phoenix-secondary fs-10">
-                          <span className="fas fa-trash"></span>
-                        </button>
-                      </div>
-                    </div>
-                    <div className="btn-reveal-trigger position-static">
-                      <button className="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup={true} aria-expanded={false} data-bs-reference="parent">
-                        <span className="fas fa-ellipsis-h fs-10"></span>
-                      </button>
-                      <div className="dropdown-menu dropdown-menu-end py-2">
-                        <a className="dropdown-item" href="#!">
-                          View
-                        </a>
-                        <a className="dropdown-item" href="#!">
-                          Export
-                        </a>
-                        <div className="dropdown-divider"></div>
-                        <a className="dropdown-item text-danger" href="#!">
-                          Remove
-                        </a>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-                <tr className="hover-actions-trigger btn-reveal-trigger position-static">
-                  <td className="fs-9 align-middle ps-0">
-                    <div className="form-check mb-0 fs-8">
-                      <input className="form-check-input" type="checkbox" data-bulk-select-row={"{\"product\":\"AI Gateway · Claude rate limit\",\"productImage\":\"/products/60x60/5.png\",\"customer\":{\"name\":\"AI Platform\",\"avatar\":\"/team/40x40/57.webp\"},\"rating\":2,\"review\":\"Anthropic Claude tier hit RPM ceiling. Fallback routed to Grok and GitHub Copilot for non-critical prompts.\",\"status\":{\"title\":\"Resolved\",\"badge\":\"success\",\"icon\":\"check\"},\"time\":\"3 hours ago\"}"} />
-                    </div>
-                  </td>
-                  <td className="align-middle product white-space-nowrap">
-                    <a className="fw-semibold" href="#!">
-                      AI Gateway · Claude rate limit
-                    </a>
-                  </td>
-                  <td className="align-middle customer white-space-nowrap">
-                    <a className="d-flex align-items-center text-body" href="#!">
-                      <div className="avatar avatar-l">
-                        <img className="rounded-circle" src="/assets/img/team/40x40/57.webp" alt="" />
-                      </div>
-                      <h6 className="mb-0 ms-3 text-body">
-                        AI Platform
-                      </h6>
-                    </a>
-                  </td>
-                  <td className="align-middle rating white-space-nowrap fs-10">
-                    <span className="fa fa-star text-warning"></span>
-                    <span className="fa fa-star text-warning"></span>
-                    <span className="fa-regular fa-star text-warning-light" data-bs-theme="light"></span>
-                    <span className="fa-regular fa-star text-warning-light" data-bs-theme="light"></span>
-                    <span className="fa-regular fa-star text-warning-light" data-bs-theme="light"></span>
-                  </td>
-                  <td className="align-middle review" style={{ minWidth: "350px" }}>
-                    <p className="fs-9 fw-semibold text-body-highlight mb-0">
-                      Anthropic Claude tier hit RPM ceiling. Fallback routed to Grok and GitHub Copilot for non-critical prompts.
-                    </p>
-                  </td>
-                  <td className="align-middle text-start ps-5 status">
-                    <span className="badge badge-phoenix fs-10 badge-phoenix-success">
-                      <span className="badge-label">
-                        Resolved
-                      </span>
-                      <span className="ms-1" data-feather="check" style={{ height: "12.8px", width: "12.8px" }}></span>
-                    </span>
-                  </td>
-                  <td className="align-middle text-end time white-space-nowrap">
-                    <div className="hover-hide">
-                      <h6 className="text-body-highlight mb-0">
-                        3 hours ago
-                      </h6>
-                    </div>
-                  </td>
-                  <td className="align-middle white-space-nowrap text-end pe-0">
-                    <div className="position-relative">
-                      <div className="hover-actions">
-                        <button className="btn btn-sm btn-phoenix-secondary me-1 fs-10">
-                          <span className="fas fa-check"></span>
-                        </button>
-                        <button className="btn btn-sm btn-phoenix-secondary fs-10">
-                          <span className="fas fa-trash"></span>
-                        </button>
-                      </div>
-                    </div>
-                    <div className="btn-reveal-trigger position-static">
-                      <button className="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup={true} aria-expanded={false} data-bs-reference="parent">
-                        <span className="fas fa-ellipsis-h fs-10"></span>
-                      </button>
-                      <div className="dropdown-menu dropdown-menu-end py-2">
-                        <a className="dropdown-item" href="#!">
-                          View
-                        </a>
-                        <a className="dropdown-item" href="#!">
-                          Export
-                        </a>
-                        <div className="dropdown-divider"></div>
-                        <a className="dropdown-item text-danger" href="#!">
-                          Remove
-                        </a>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-                <tr className="hover-actions-trigger btn-reveal-trigger position-static">
-                  <td className="fs-9 align-middle ps-0">
-                    <div className="form-check mb-0 fs-8">
-                      <input className="form-check-input" type="checkbox" data-bulk-select-row={"{\"product\":\"GCP · analytics-billing project\",\"productImage\":\"/products/60x60/6.png\",\"customer\":{\"name\":\"FinOps\",\"avatar\":\"/team/40x40/3.webp\"},\"rating\":4,\"review\":\"BigQuery on-demand bytes scanned exceeded budget guardrail. Recommend slot reservations for ETL monitoring workloads.\",\"status\":{\"title\":\"Open\",\"badge\":\"warning\",\"icon\":\"alert-circle\"},\"time\":\"Yesterday\"}"} />
-                    </div>
-                  </td>
-                  <td className="align-middle product white-space-nowrap">
-                    <a className="fw-semibold" href="#!">
-                      GCP · analytics-billing project
-                    </a>
-                  </td>
-                  <td className="align-middle customer white-space-nowrap">
-                    <a className="d-flex align-items-center text-body" href="#!">
-                      <div className="avatar avatar-l">
-                        <img className="rounded-circle" src="/assets/img/team/40x40/3.webp" alt="" />
-                      </div>
-                      <h6 className="mb-0 ms-3 text-body">
-                        FinOps
-                      </h6>
-                    </a>
-                  </td>
-                  <td className="align-middle rating white-space-nowrap fs-10">
-                    <span className="fa fa-star text-warning"></span>
-                    <span className="fa fa-star text-warning"></span>
-                    <span className="fa fa-star text-warning"></span>
-                    <span className="fa fa-star text-warning"></span>
-                    <span className="fa-regular fa-star text-warning-light" data-bs-theme="light"></span>
-                  </td>
-                  <td className="align-middle review" style={{ minWidth: "350px" }}>
-                    <p className="fs-9 fw-semibold text-body-highlight mb-0">
-                      BigQuery on-demand bytes scanned exceeded budget guardrail. Recommend slot reservations for ETL monitoring workloads.
-                    </p>
-                  </td>
-                  <td className="align-middle text-start ps-5 status">
-                    <span className="badge badge-phoenix fs-10 badge-phoenix-warning">
-                      <span className="badge-label">
-                        Open
-                      </span>
-                      <span className="ms-1" data-feather="alert-circle" style={{ height: "12.8px", width: "12.8px" }}></span>
-                    </span>
-                  </td>
-                  <td className="align-middle text-end time white-space-nowrap">
-                    <div className="hover-hide">
-                      <h6 className="text-body-highlight mb-0">
-                        Yesterday
-                      </h6>
-                    </div>
-                  </td>
-                  <td className="align-middle white-space-nowrap text-end pe-0">
-                    <div className="position-relative">
-                      <div className="hover-actions">
-                        <button className="btn btn-sm btn-phoenix-secondary me-1 fs-10">
-                          <span className="fas fa-check"></span>
-                        </button>
-                        <button className="btn btn-sm btn-phoenix-secondary fs-10">
-                          <span className="fas fa-trash"></span>
-                        </button>
-                      </div>
-                    </div>
-                    <div className="btn-reveal-trigger position-static">
-                      <button className="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup={true} aria-expanded={false} data-bs-reference="parent">
-                        <span className="fas fa-ellipsis-h fs-10"></span>
-                      </button>
-                      <div className="dropdown-menu dropdown-menu-end py-2">
-                        <a className="dropdown-item" href="#!">
-                          View
-                        </a>
-                        <a className="dropdown-item" href="#!">
-                          Export
-                        </a>
-                        <div className="dropdown-divider"></div>
-                        <a className="dropdown-item text-danger" href="#!">
-                          Remove
-                        </a>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div className="row align-items-center py-1">
-            <div className="pagination d-none"></div>
-            <div className="col d-flex fs-9">
-              <p className="mb-0 d-none d-sm-block me-3 fw-semibold text-body" data-list-info="data-list-info"></p>
-              <a className="fw-semibold" href="#!" data-list-view="*">
-                View all
-                <span className="fas fa-angle-right ms-1" data-fa-transform="down-1"></span>
-              </a>
-              <a className="fw-semibold d-none" href="#!" data-list-view="less">
-                View Less
-              </a>
+                  </div>
+                  <div className="col-auto d-flex">
+                    <button className="btn btn-link px-1 me-1" type="button" title="Previous" data-list-pagination="prev">
+                      <span className="fas fa-chevron-left me-2"></span>
+                      Previous
+                    </button>
+                    <button className="btn btn-link px-1 ms-1" type="button" title="Next" data-list-pagination="next">
+                      Next
+                      <span className="fas fa-chevron-right ms-2"></span>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="col-auto d-flex">
-              <button className="btn btn-link px-1 me-1" type="button" title="Previous" data-list-pagination="prev">
-                <span className="fas fa-chevron-left me-2"></span>
-                Previous
-              </button>
-              <button className="btn btn-link px-1 ms-1" type="button" title="Next" data-list-pagination="next">
-                Next
-                <span className="fas fa-chevron-right ms-2"></span>
-              </button>
+          </div>
+        </div>
+      </div>
+      <div className="obs-list-root" data-list={"{\"valueNames\":[\"col0\",\"col1\",\"col2\",\"col3\",\"col4\",\"col5\",\"col6\"],\"page\":6,\"filter\":{\"key\":\"col6\"}}"} data-live-table="etlJobs">
+        <div className="card">
+          <div className="card-header border-bottom border-translucent py-3">
+            <div className="row align-items-center g-2 mb-3">
+              <div className="col">
+                <h4 className="mb-0">
+                  Recent ETL runs
+                </h4>
+                <p className="text-body-tertiary fs-9 mb-0">
+                  One row per run, newest first — from both the pollers and anything pushed to the ingest endpoints
+                </p>
+              </div>
+            </div>
+            <div className="row align-items-center g-2">
+              <div className="col-12 col-md">
+                <div className="search-box w-100">
+                  <form className="position-relative">
+                    <input className="form-control search-input search form-control-sm" type="search" placeholder="Search jobs" aria-label="Search" />
+                    <span className="fas fa-search search-box-icon"></span>
+                  </form>
+                </div>
+              </div>
+              <div className="col-6 col-md-auto">
+                <select className="form-select form-select-sm" data-list-filter="data-list-filter" aria-label="Filter">
+                  <option value="">
+                    Filter: All
+                  </option>
+                  <option value="2026-09-10T02:00:00Z">
+                    2026-09-10T02:00:00Z
+                  </option>
+                </select>
+              </div>
+              <div className="col-6 col-md-auto">
+                <select className="form-select form-select-sm" aria-label="Sort by" data-obs-sort="data-obs-sort">
+                  <option value="">
+                    Sort by
+                  </option>
+                  <option value="col0">
+                    Job
+                  </option>
+                  <option value="col1">
+                    Platform
+                  </option>
+                  <option value="col2">
+                    Environment
+                  </option>
+                  <option value="col3">
+                    Status
+                  </option>
+                  <option value="col4">
+                    Duration
+                  </option>
+                  <option value="col5">
+                    Records
+                  </option>
+                  <option value="col6">
+                    Last run
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div className="card-body p-0">
+            <div className="table-responsive scrollbar">
+              <table className="table table-sm fs-9 mb-0">
+                <thead>
+                  <tr>
+                    <th className="sort align-middle white-space-nowrap text-uppercase ps-3" scope="col" data-sort="col0">
+                      Job
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col1">
+                      Platform
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col2">
+                      Environment
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col3">
+                      Status
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col4">
+                      Duration
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col5">
+                      Records
+                    </th>
+                    <th className="sort align-middle white-space-nowrap text-uppercase" scope="col" data-sort="col6">
+                      Last run
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="list" data-sample-rows="data-sample-rows">
+                  <tr>
+                    <td className="align-middle ps-3 py-3 col0">
+                      <div className="d-flex align-items-center">
+                        <span className="me-2 fa-solid fa-diagram-project text-success"></span>
+                        <div>
+                          <h6 className="mb-0">
+                            nightly-load
+                          </h6>
+                          <p className="text-body-tertiary fs-10 mb-0">
+                            talend
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="align-middle col1">
+                      Talend
+                    </td>
+                    <td className="align-middle col2">
+                      prod
+                    </td>
+                    <td className="align-middle col3">
+                      <span className="badge badge-phoenix badge-phoenix-success">
+                        Success
+                      </span>
+                    </td>
+                    <td className="align-middle col4">
+                      4m 12s
+                    </td>
+                    <td className="align-middle col5">
+                      1,204
+                    </td>
+                    <td className="align-middle col6">
+                      2026-09-10T02:00:00Z
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div className="text-center p-3 fallback d-none">
+              <p className="mb-0 text-body-tertiary">
+                No matching results
+              </p>
+            </div>
+          </div>
+          <div className="card-footer border-top border-translucent">
+            <div className="row align-items-center g-2">
+              <div className="pagination d-none"></div>
+              <div className="col d-flex fs-9 flex-wrap">
+                <p className="mb-0 d-none d-sm-block me-3 fw-semibold text-body" data-list-info="data-list-info"></p>
+                <a className="fw-semibold" href="#!" data-list-view="*">
+                  View all
+                  <span className="fas fa-angle-right ms-1" data-fa-transform="down-1"></span>
+                </a>
+                <a className="fw-semibold d-none" href="#!" data-list-view="less">
+                  View less
+                </a>
+              </div>
+              <div className="col-auto d-flex">
+                <button className="btn btn-link px-1 me-1" type="button" title="Previous" data-list-pagination="prev">
+                  <span className="fas fa-chevron-left me-2"></span>
+                  Previous
+                </button>
+                <button className="btn btn-link px-1 ms-1" type="button" title="Next" data-list-pagination="next">
+                  Next
+                  <span className="fas fa-chevron-right ms-2"></span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

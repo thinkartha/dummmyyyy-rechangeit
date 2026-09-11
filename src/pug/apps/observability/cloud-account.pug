@@ -73,17 +73,17 @@ block content
                 option(value='environment') Tag: environment
 
       +ObsKpiRow([
-        { key: 'accountAlarms', label: 'Open alarms', value: '\u2014', delta: 'awaiting data', badge: 'danger',
+        { key: 'accountAlarms', label: 'Open alarms', value: '0', delta: 'awaiting data', badge: 'danger',
           help: 'CloudWatch alarms in ALARM right now, across every region this connector reads.' },
-        { key: 'accountResources', label: 'Resources', value: '\u2014', delta: 'awaiting data', badge: 'info',
+        { key: 'accountResources', label: 'Resources', value: '0', delta: 'awaiting data', badge: 'info',
           help: 'Route 53 zones, domains, CloudFront distributions, S3 buckets and IAM users found in this account.' },
-        { key: 'accountStreamed', label: 'Streamed', value: '\u2014', delta: 'awaiting data', badge: 'success',
+        { key: 'accountStreamed', label: 'Streamed', value: '0', delta: 'awaiting data', badge: 'success',
           help: 'Distinct resources the CloudWatch metric stream has described in the selected range.' },
-        { key: 'accountServices', label: 'Services', value: '\u2014', delta: 'awaiting data', badge: 'primary',
+        { key: 'accountServices', label: 'Services', value: '0', delta: 'awaiting data', badge: 'primary',
           help: 'AWS services reporting through the metric stream. No per-service integration sits behind these.' },
-        { key: 'accountRegions', label: 'Regions', value: '\u2014', delta: 'awaiting data', badge: 'secondary',
+        { key: 'accountRegions', label: 'Regions', value: '0', delta: 'awaiting data', badge: 'secondary',
           help: 'Regions this connector is configured to read. Alarms outside them are not visible here.' },
-        { key: 'accountSpend', label: 'Spend MTD', value: '\u2014', delta: 'awaiting data', badge: 'warning',
+        { key: 'accountSpend', label: 'Spend MTD', value: '0', delta: 'awaiting data', badge: 'warning',
           help: 'Month-to-date unblended cost for this linked account, from Cost Explorer. Lags about a day.' }
       ])
 

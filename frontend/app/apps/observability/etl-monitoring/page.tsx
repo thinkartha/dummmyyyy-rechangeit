@@ -89,7 +89,7 @@ export default function Page() {
                     Pipelines
                   </h6>
                   <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="pipelines">
-                    —
+                    0
                   </h3>
                 </div>
                 <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="pipelines">
@@ -108,7 +108,7 @@ export default function Page() {
                     Success rate
                   </h6>
                   <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="successRate">
-                    —
+                    0
                   </h3>
                 </div>
                 <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="successRate">
@@ -127,7 +127,7 @@ export default function Page() {
                     Failed runs (24h)
                   </h6>
                   <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="failedRuns">
-                    —
+                    0
                   </h3>
                 </div>
                 <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="failedRuns">
@@ -146,7 +146,7 @@ export default function Page() {
                     Avg duration
                   </h6>
                   <h3 className="mb-0" data-obs-stat="data-obs-stat">
-                    —
+                    0
                   </h3>
                 </div>
                 <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">

@@ -1,59 +1,110 @@
 extends ../layouts/LayoutTheme
 include ../mixins/dashboard/common
-include ../mixins/dashboard/e-commerce/Stats
-include ../mixins/dashboard/e-commerce/EcomCharts
-include ../mixins/dashboard/e-commerce/TotalSalesChart
-include ../mixins/dashboard/e-commerce/StatCard
-include ../mixins/dashboard/e-commerce/TopRegions
-include ../mixins/dashboard/e-commerce/LatestReviews
+include ../mixins/observability/Common
 
-prepend scripts
-  script(src=`${CWD}vendors/leaflet/leaflet.js`)
-  script(src=`${CWD}vendors/leaflet.markercluster/leaflet.markercluster.js`)
-  script(src=`${CWD}vendors/leaflet.tilelayer.colorfilter/leaflet-tilelayer-colorfilter.min.js`)
-
-append scripts
-  script(src=`${CWD}vendors/echarts/echarts.min.js`)
-  script(src=`${CWD}assets/js/dashboards/ecommerce-dashboard.js`)
-
-append styles
-  link(href=`${CWD}vendors/leaflet/leaflet.css`, rel='stylesheet')
-  link(href=`${CWD}vendors/leaflet.markercluster/MarkerCluster.css`, rel='stylesheet')
-  link(href=`${CWD}vendors/leaflet.markercluster/MarkerCluster.Default.css`, rel='stylesheet')
+//- This page was the Phoenix e-commerce demo dashboard with an observability heading on
+//- it: Total Sales, New Customers, Top Coupons, a customer map and product reviews, none
+//- of it wired to anything. It is the first screen after signing in, so every number a
+//- new tenant saw was invented — which is the whole "am I already connected?" problem,
+//- on the page best placed to cause it.
+//-
+//- Rebuilt from sources that already exist. Nothing here is new backend work: each table
+//- is a `live:` key from integration/live-data.js, and the cards are published by the
+//- API routes source rather than typed in.
 
 block content
-  .pb-5
-    .row.g-4
-      .col-12.col-xxl-6
-        .mb-8
-          h2.mb-2 Observability Dashboard
-          h5.text-body-tertiary.fw-semibold LoveHeartBeat — APIs, AI tools, ETL, alerts, and multi-cloud cost in one place
-        +Stats
+  .mb-5
+    h2.mb-2 Observability Dashboard
+    p.text-body-tertiary.mb-0 LoveHeartBeat — APIs, AI tools, ETL, alerts and multi-cloud cost in one place.
 
-        hr.bg-body-secondary.mb-6.mt-4
-        +TotalSalesChart
-      .col-12.col-xxl-6
-        .row.g-3
-          .col-12.col-md-6
-            +TotalOrders
-          .col-12.col-md-6
-            +NewCustomers
-          .col-12.col-md-6
-            +TopCoupons
-          .col-12.col-md-6
-            +PayingCustomer
-  .row.gx-6
+  //- These four are published by the `apiRoutes` source below, rolled up from the same
+  //- response its table renders — so the cards and the rows can never disagree.
+  +ObsKpiRow([
+    { key: 'requests', label: 'Requests', value: '0', delta: 'from stored spans', badge: 'info',
+      help: 'Requests across every route the collector has spans for, in the stored window.' },
+    { key: 'errorRate', label: 'Error rate', value: '0', delta: '0 5xx', badge: 'success',
+      help: '5xx only. A 4xx is the caller\'s mistake, not the route\'s, and folding it in here would make a healthy route look broken.' },
+    { key: 'p99Latency', label: 'p99 latency', value: '0', delta: 'slowest route', badge: 'warning',
+      help: 'The slowest route\'s p99, named beside it. Percentiles do not recombine, so there is no honest fleet-wide number.' },
+    { key: 'routes', label: 'Routes', value: '0', delta: 'from stored spans', badge: 'primary',
+      help: 'Distinct routes seen. Nothing is registered — these are the routes traffic actually reached.' }
+  ])
+
+  +ObsToolTable({
+    title: 'API routes',
+    live: 'apiRoutes',
+    subtitle: 'Per-route traffic from stored spans — the same response the cards above are rolled up from',
+    searchPlaceholder: 'Search routes',
+    pageSize: 6,
+    columns: [
+      { label: 'Route', className: 'ps-3' },
+      { label: 'Requests' },
+      { label: '5xx' },
+      { label: 'Error rate' },
+      { label: 'Status codes' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-route', iconColor: 'success', meta: '200×1204', cells: ['GET /api/v1/orders', '1,204', '0', '0.00%', '200', { text: 'Healthy', badge: 'success' }] }
+    ]
+  })
+
+  .row.g-4.mb-4
     .col-12.col-xl-6
-      +TopRegionsTable
+      +ObsToolTable({
+        title: 'Open alerts',
+        live: 'alerts',
+        subtitle: 'Newest first, across every signal that feeds the collector',
+        searchPlaceholder: 'Search alerts',
+        pageSize: 5,
+        columns: [
+          { label: 'Alert', className: 'ps-3' },
+          { label: 'Source' },
+          { label: 'Severity' },
+          { label: 'Owner' },
+          { label: 'Age' },
+          { label: 'Status' }
+        ],
+        rows: [
+          { icon: 'fa-bell', iconColor: 'danger', meta: 'checkout-api', cells: ['Error rate above 5%', 'api', { text: 'critical', badge: 'danger' }, 'unassigned', '2026-09-10T09:40:00Z', { text: 'Open', badge: 'danger' }] }
+        ]
+      })
     .col-12.col-xl-6
-      .mx-n4.mx-lg-n6.ms-xl-0.h-100
-        .h-100.w-100
-          #map.h-100.bg-body-emphasis(style="min-height: 300px;")
-  .mx-n4.px-4.mx-lg-n6.px-lg-6.bg-body-emphasis.pt-6.pb-9.border-top
-    .row.g-6
-      .col-12.col-xl-6
-        +ProjectionVsActual
-      .col-12.col-xl-6
-        +ReturningCustomerRate
-  .mx-n4.px-4.mx-lg-n6.px-lg-6.bg-body-emphasis.pt-7.pb-7.border-top
-    +LatestReviews
+      +ObsToolTable({
+        title: 'Databases',
+        live: 'databases',
+        subtitle: 'Registered databases and what the last probe found',
+        searchPlaceholder: 'Search databases',
+        pageSize: 5,
+        columns: [
+          { label: 'Database', className: 'ps-3' },
+          { label: 'Engine' },
+          { label: 'Env' },
+          { label: 'Connections' },
+          { label: 'Replication lag' },
+          { label: 'Status' }
+        ],
+        rows: [
+          { icon: 'fa-database', iconColor: 'info', meta: 'db.internal', cells: ['commerce', 'PostgreSQL', 'prod', '42', '0.2s', { text: 'Healthy', badge: 'success' }] }
+        ]
+      })
+
+  +ObsToolTable({
+    title: 'Recent ETL runs',
+    live: 'etlJobs',
+    subtitle: 'One row per run, newest first — from both the pollers and anything pushed to the ingest endpoints',
+    searchPlaceholder: 'Search jobs',
+    pageSize: 6,
+    columns: [
+      { label: 'Job', className: 'ps-3' },
+      { label: 'Platform' },
+      { label: 'Environment' },
+      { label: 'Status' },
+      { label: 'Duration' },
+      { label: 'Records' },
+      { label: 'Last run' }
+    ],
+    rows: [
+      { icon: 'fa-diagram-project', iconColor: 'success', meta: 'talend', cells: ['nightly-load', 'Talend', 'prod', { text: 'Success', badge: 'success' }, '4m 12s', '1,204', '2026-09-10T02:00:00Z'] }
+    ]
+  })
