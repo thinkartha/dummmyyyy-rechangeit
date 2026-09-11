@@ -1,0 +1,87 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+//- One page per route, selected by ?route=<route>. Same shape as the cloud-account
+//- drill-down and for the same reason: the build is a static export and the route list
+//- is derived from stored spans at read time, so a route per page is not available and
+//- would go stale the moment traffic moved.
+//-
+//- Everything here comes from /observability/routes and /observability/traces, which the
+//- parent page already calls. No new endpoint: a per-route read would be the same scan
+//- of the same spans, filtered one level deeper.
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Observability', href: '#!' },
+      { label: 'API Monitoring', href: `${CWD}${paths['obs-api-monitoring']}` },
+      { label: 'Route', href: '#!', active: true }
+    ];
+
+block content
+  //- Painted by live-data, not written here: the route is a query parameter, and a
+  //- heading that says "Route" while the tables below describe POST /ingest/events
+  //- reads as two different pages.
+  .d-flex.flex-wrap.align-items-start.justify-content-between.gap-3.mb-3(data-route-heading)
+    div
+      h2.mb-1.text-break(data-route-name) —
+      p.text-body-tertiary.fs-9.mb-0(data-route-meta) Loading route…
+    .d-flex.align-items-center.gap-2
+      a.btn.btn-phoenix-secondary.btn-sm(href=`${CWD}${paths['obs-api-monitoring']}`)
+        span.fa-solid.fa-arrow-left.me-2
+        | All routes
+      button.btn.btn-phoenix-secondary.btn-sm(type='button' data-lhb-action='refreshData')
+        span.fa-solid.fa-arrows-rotate.me-2
+        | Update
+
+  //- p99 and average are this route's own. They are not derived from the fleet numbers
+  //- on the parent page — percentiles do not recombine, which is exactly why the route
+  //- has to be opened to see its own.
+  +ObsKpiRow([
+    { key: 'routeRequests', label: 'Requests', value: '0', delta: '', badge: 'info',
+      help: 'Every stored span for this route. There is no time window — spans are kept for the record retention period and all of them are counted.' },
+    { key: 'routeErrors', label: '5xx', value: '0', delta: '', badge: 'danger',
+      help: 'Responses the server failed, plus spans the exporter marked ERROR. A 4xx is the caller\'s mistake and is not counted here.' },
+    { key: 'routeErrorRate', label: 'Error rate', value: '0', delta: '', badge: 'warning',
+      help: '5xx as a share of this route\'s requests.' },
+    { key: 'routeAvgLatency', label: 'Average', value: '0', delta: '', badge: 'primary',
+      help: 'Mean span duration for this route.' },
+    { key: 'routeP99Latency', label: 'p99', value: '0', delta: '', badge: 'secondary',
+      help: 'The slowest 1% of this route\'s requests start here. Read it next to the average: a gap between them is a tail problem, not a capacity one.' }
+  ])
+
+  +ObsToolTable({
+    title: 'Status codes',
+    live: 'apiRouteCodes',
+    subtitle: 'Every response code this route has returned, and how much of its traffic each one is',
+    searchPlaceholder: 'Search codes',
+    pageSize: 10,
+    columns: [
+      { label: 'Code', className: 'ps-3' },
+      { label: 'Responses' },
+      { label: 'Share' },
+      { label: 'Class' }
+    ],
+    rows: [
+      { icon: 'fa-hashtag', iconColor: 'secondary', meta: 'no traffic recorded yet', cells: ['—', '0', '—', { text: 'No data', badge: 'secondary' }] }
+    ]
+  })
+
+  +ObsToolTable({
+    title: 'Recent traces',
+    live: 'apiRouteTraces',
+    subtitle: 'Stored traces whose root span is this route — open one to see where the time went',
+    searchPlaceholder: 'Search traces',
+    pageSize: 10,
+    columns: [
+      { label: 'Trace', className: 'ps-3' },
+      { label: 'Spans' },
+      { label: 'Errors' },
+      { label: 'Duration' },
+      { label: 'Started' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { icon: 'fa-diagram-project', iconColor: 'secondary', meta: 'no traces for this route yet', cells: ['—', '0', '0', '—', '—', { text: 'No data', badge: 'secondary' }] }
+    ]
+  })

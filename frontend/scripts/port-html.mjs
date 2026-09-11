@@ -28,7 +28,11 @@ const PAGES = [
     'ai-cost-usage', 'ai-gateway', 'ai-models', 'ai-monitoring', 'alert-management',
     // 'cloud-cost' is hidden from the nav (see src/pug/mixins/Variables.pug); it is
     // dropped here too so the export does not carry a route nothing links to.
-    'alerts', 'api-gateway', 'api-monitoring', 'automation',
+    'alerts', 'api-gateway', 'api-monitoring',
+    // api-route is the per-route drill-down, reached from a row on api-monitoring
+    // rather than from the nav — same arrangement as cloud-account below, and for the
+    // same reason: the route list is derived from spans at read time.
+    'api-route', 'automation',
     // cloud-account is the per-account drill-down, reached from a row on
     // cloud-monitoring rather than from the nav — so it is listed here but has no entry
     // in Variables.pug. It selects its account from ?account=, because the build is a

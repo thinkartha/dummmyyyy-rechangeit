@@ -53,6 +53,9 @@ export default function Page() {
           "src": "/vendors/dayjs/dayjs.min.js"
         },
         {
+          "src": "/vendors/echarts/echarts.min.js"
+        },
+        {
           "src": "/assets/js/phoenix.js"
         }
       ]}>
@@ -86,29 +89,6 @@ export default function Page() {
               Run job
             </button>
           </div>
-        </div>
-      </div>
-      <div className="alert alert-subtle-info d-flex align-items-start gap-2 mb-4" role="alert" data-mock-empty="data-mock-empty">
-        <span className="fa-solid fa-circle-info mt-1"></span>
-        <div>
-          <strong className="d-block">
-            Cost and query panels need Databricks system tables.
-          </strong>
-          <span className="fs-9">
-            They are opt-in per metastore. Enable the
-            <code>
-              system
-            </code>
-            schemas and grant the connected token SELECT on
-            <code>
-              system.billing
-            </code>
-            and
-            <code>
-              system.query
-            </code>
-            . Clusters and job runs work without them.
-          </span>
         </div>
       </div>
       <div className="obs-kpi-row d-flex gap-3 mb-4 pb-1" style={{ overflowX: "auto", scrollbarWidth: "thin" }}>

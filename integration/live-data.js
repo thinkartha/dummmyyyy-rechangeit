@@ -228,6 +228,12 @@ const pageHref = (name) => {
   return `${dir}${name}${dot ? '.html' : trailing ? '/' : ''}`;
 };
 
+/** Which route a drill-down page is about. Raw, not lowercased: a route is a path. */
+const routeParam = () => {
+  if (typeof window === 'undefined' || !window.location) return '';
+  return new URLSearchParams(window.location.search || '').get('route') || '';
+};
+
 /** Which account a drill-down page is about. */
 const accountParam = () => {
   if (typeof window === 'undefined' || !window.location) return '';
@@ -744,12 +750,90 @@ export const SOURCES = {
       (data || []).map((r) => ({
         icon: 'fa-route',
         iconColor: r.error_rate > 0.05 ? 'danger' : r.error_rate > 0.01 ? 'warning' : 'success',
+        href: pageHref('api-route')
+          ? `${pageHref('api-route')}?route=${encodeURIComponent(r.route)}`
+          : undefined,
         meta: Object.entries(r.by_code || {}).map(([code, n]) => `${code}×${n}`).join(' ') || null,
         cells: [r.route, num(r.requests), num(r.errors),
                 pct((r.error_rate || 0) * 100, 2),
                 Object.keys(r.by_code || {}).sort().join(', ') || '—',
                 badge(r.error_rate > 0.05 ? 'Down' : r.error_rate > 0.01 ? 'Degraded' : 'Healthy')],
       })),
+  },
+
+  /**
+   * Columns: Code · Responses · Share · Class.
+   *
+   * One route, opened from the table on API Monitoring. /observability/routes returns
+   * every route's full record — counts, per-code breakdown, average and p99 — so the
+   * drill-down filters that response rather than asking for a per-route read that would
+   * scan the same spans one level deeper. The five tiles are published from here for
+   * the same reason.
+   */
+  apiRouteCodes: {
+    stats: (row) => {
+      const requests = Number(row && row.requests) || 0;
+      const errors = Number(row && row.errors) || 0;
+      return {
+        routeRequests: { value: num(requests), delta: row ? 'stored spans' : 'route not found' },
+        routeErrors: { value: num(errors), delta: errors ? '5xx and ERROR spans' : 'none' },
+        routeErrorRate: {
+          value: pct(requests ? (errors / requests) * 100 : 0, 2),
+          delta: requests ? `of ${num(requests)} requests` : 'no traffic',
+        },
+        routeAvgLatency: { value: `${num(row ? row.avg_latency_ms : 0, 1)}ms`, delta: 'mean' },
+        routeP99Latency: { value: `${num(row ? row.p99_latency_ms : 0, 1)}ms`, delta: 'slowest 1%' },
+      };
+    },
+    load: async (api) => {
+      const wanted = routeParam();
+      const rows = await api.observability.routes().catch(() => []);
+      const row = (rows || []).find((r) => String(r.route) === wanted) || null;
+      paintRouteHeading(row, wanted);
+      return row;
+    },
+    rows: (row) => {
+      const codes = Object.entries((row && row.by_code) || {});
+      const total = codes.reduce((t, [, n]) => t + (Number(n) || 0), 0);
+      return codes
+        .sort((a, b) => String(a[0]).localeCompare(String(b[0])))
+        .map(([code, count]) => {
+          const klass = String(code)[0];
+          return {
+            icon: 'fa-hashtag',
+            iconColor: klass === '5' ? 'danger' : klass === '4' ? 'warning' : 'success',
+            meta: null,
+            cells: [code, num(count), pct(total ? (count / total) * 100 : 0, 1),
+                    badge(klass === '5' ? 'Server error'
+                      : klass === '4' ? 'Client error'
+                      : klass === '3' ? 'Redirect' : 'Success')],
+          };
+        });
+    },
+  },
+
+  /**
+   * Columns: Trace · Spans · Errors · Duration · Started · Status.
+   *
+   * Matched on the trace's root span name, which is what /observability/traces carries.
+   * A trace whose root is some other operation and which only touches this route deeper
+   * down will not appear — saying so beats a filter that quietly half-works.
+   */
+  apiRouteTraces: {
+    load: (api) => api.observability.traces({ limit: 200 }),
+    rows: (data) => {
+      const wanted = routeParam();
+      return (data || [])
+        .filter((t) => String(t.root_name || '') === wanted)
+        .map((t) => ({
+          icon: 'fa-diagram-project',
+          iconColor: t.errors ? 'danger' : 'info',
+          meta: t.trace_id,
+          cells: [t.trace_id, num(t.span_count), num(t.errors),
+                  `${num(t.duration_ms, 1)}ms`, t.start_time || '—',
+                  badge(t.errors ? 'Failed' : 'OK')],
+        }));
+    },
   },
 
   traces: {
@@ -1967,6 +2051,22 @@ function publishStats(stats) {
  * a link to an account the credential no longer reaches, and "Loading…" forever is the
  * least useful way to report that.
  */
+function paintRouteHeading(row, wanted) {
+  const name = document.querySelector('[data-route-name]');
+  const meta = document.querySelector('[data-route-meta]');
+  if (!name || !meta) return;
+  name.textContent = wanted || 'No route selected';
+  if (!row) {
+    meta.textContent = wanted
+      ? 'No stored spans for this route — it may have had no traffic within the retention window.'
+      : 'Open this page from a route row on API Monitoring.';
+    return;
+  }
+  const codes = Object.keys(row.by_code || {}).sort().join(', ');
+  meta.textContent = [`${num(row.requests)} requests`, `${num(row.errors)} 5xx`,
+                      codes && `codes ${codes}`].filter(Boolean).join(' · ');
+}
+
 function paintAccountHeading(account, wanted) {
   const name = document.querySelector('[data-account-name]');
   const meta = document.querySelector('[data-account-meta]');

@@ -18,6 +18,10 @@ include ../../mixins/observability/Common
 
 append variables
   -
+    //- This page draws charts, and LayoutTheme only ships echarts (~1MB) to pages that
+    //- say so. Without it every ObsChartCard here rendered "Charting library not
+    //- loaded on this page."
+    var useECharts = true;
     var breadcrumb = [
       { label: 'Observability', href: '#!' },
       { label: 'Databricks', href: '#!', active: true }
@@ -33,25 +37,6 @@ block content
     secondaryActionKey: 'pollEtl',
     secondaryActionArg: 'databricks'
   })
-
-  //- data-mock-empty: shown only when demo data is off and nothing has loaded. The
-  //- reason it is worth its own banner is that the likeliest empty state here is not
-  //- "no workload yet" but "system schemas are not enabled on the metastore", which is
-  //- a setup step nobody guesses from a blank table.
-  .alert.alert-subtle-info.d-flex.align-items-start.gap-2.mb-4(role='alert' data-mock-empty)
-    span.fa-solid.fa-circle-info.mt-1
-    div
-      strong.d-block Cost and query panels need Databricks system tables.
-      span.fs-9 They are opt-in per metastore. Enable the
-        |  
-        code system
-        |  schemas and grant the connected token SELECT on
-        |  
-        code system.billing
-        |  and
-        |  
-        code system.query
-        | . Clusters and job runs work without them.
 
   +ObsKpiRow([
     { key: 'dbxCost', label: 'List cost', value: '0', delta: 'last 30 days', badge: 'primary',
