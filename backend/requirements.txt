@@ -33,3 +33,9 @@ python-dateutil==2.8.2
 # shared/elk/otlp.py so a JSON-only deployment pays nothing at cold start.
 protobuf==4.25.3
 opentelemetry-proto==1.25.0
+# Not imported here, but elasticsearch-py's OTel shim does `from opentelemetry import
+# trace` and catches only ModuleNotFoundError. opentelemetry-proto makes `opentelemetry`
+# a namespace package containing just `.proto`, so that import raises a plain ImportError
+# instead — uncaught, at module scope, which took the whole Lambda down with
+# Runtime.ImportModuleError. Shipping the api package puts `trace` where it looks.
+opentelemetry-api==1.25.0
