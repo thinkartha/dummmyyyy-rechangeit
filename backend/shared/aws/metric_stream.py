@@ -43,6 +43,7 @@ import hashlib
 import json
 import logging
 import secrets
+import time
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from typing import Any, Iterable
@@ -262,6 +263,11 @@ def ingest(body: dict[str, Any], access_key: str | None) -> dict[str, Any]:
     # outcome with no recovery.
     record_store.append_many(tenant_id, STREAM, stored,
                              moment_key="ts", id_key="id", require_durable=True)
+    # The rows just written are what the next read is for, so the cached answer for this
+    # tenant is wrong the moment the write lands — waiting out the TTL would make a fresh
+    # delivery invisible for up to a minute on a page somebody is watching.
+    for key in [k for k in _READ_CACHE if k[0] == tenant_id]:
+        _READ_CACHE.pop(key, None)
 
     # Evaluated here because the delivery is the only tick this deployment has — there is
     # no scheduler, so a condition checked on a timer would never run. Storing first means
@@ -303,6 +309,18 @@ def service_label(namespace: str) -> str:
     return _SERVICE_LABELS.get(namespace, namespace.removeprefix("AWS/") or namespace)
 
 
+# One page load asks this question four times — the chart's metric catalog, the chart's
+# series, the service-coverage table and the resource list — and each one was a separate
+# DynamoDB query for up to 5000 rows plus a JSON decode per row. The stream delivers
+# about once a minute, so a read that is up to a minute old is the same read; caching it
+# collapses those four queries into one and is the difference between a page that draws
+# and a page that is "taking too long".
+# ponytail: process-local dict, same as cost.py and inventory.py — each worker pays its
+# own miss. Move all three to Redis together if the fleet grows past a couple of workers.
+_READ_TTL_SECONDS = 60
+_READ_CACHE: dict[tuple[str, str, int], tuple[float, list[dict[str, Any]]]] = {}
+
+
 def read(tenant_id: str, since: datetime | None = None,
          limit: int = record_store.MAX_READ, *,
          account: str | None = None, region: str | None = None) -> list[dict[str, Any]]:
@@ -312,9 +330,29 @@ def read(tenant_id: str, since: datetime | None = None,
     something DynamoDB can range over without a second index. At one row per metric per
     minute this is a small list to walk, and an index that exists only to serve a drill-
     down page is the wrong trade until a tenant's stream is big enough to prove it.
+
+    Filtered *after* the cache for the same reason: the expensive half is the query, and
+    two callers asking the same window for different accounts should pay for it once.
     """
     since = since or datetime.now(timezone.utc) - _DEFAULT_WINDOW
-    rows = record_store.window(tenant_id, STREAM, since, limit)
+    # Floored to the minute so the reads one page makes ask the same question. Without
+    # this, two requests milliseconds apart compute windows that differ by milliseconds
+    # and miss each other's cache entry for no extra freshness.
+    since = since.replace(second=0, microsecond=0)
+    key = (tenant_id, since.isoformat(), limit)
+    hit = _READ_CACHE.get(key)
+    if hit and time.monotonic() - hit[0] < _READ_TTL_SECONDS:
+        rows = hit[1]
+    else:
+        rows = record_store.window(tenant_id, STREAM, since, limit)
+        if len(_READ_CACHE) > 64:
+            # Keys carry a timestamp, so they are never reused — without this the dict
+            # grows for the life of the container.
+            now = time.monotonic()
+            for stale in [k for k, (at, _) in _READ_CACHE.items()
+                          if now - at >= _READ_TTL_SECONDS]:
+                _READ_CACHE.pop(stale, None)
+        _READ_CACHE[key] = (time.monotonic(), rows)
     if account:
         rows = [r for r in rows if r.get("account") == account]
     if region:

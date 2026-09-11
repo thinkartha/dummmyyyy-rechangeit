@@ -239,7 +239,25 @@ async function request(path, options = {}) {
   return response.text();
 }
 
-const get = (path, params) => request(`${API_PREFIX}${path}${query(params)}`);
+/* One page load can ask the same question twice at the same moment — the cloud-account
+ * drill-down fetches the identical Cost Explorer breakdown for its spend treemap and for
+ * its tiles, and a Cost Explorer request is seconds, not milliseconds. Callers that fire
+ * while an identical GET is still in flight join that one instead of starting a second.
+ *
+ * In-flight only: the entry is dropped the moment the response settles, so this never
+ * serves a stale answer and needs no TTL to reason about. Two reads a second apart are
+ * still two reads.
+ */
+const inFlight = new Map();
+
+const get = (path, params) => {
+  const url = `${API_PREFIX}${path}${query(params)}`;
+  const pending = inFlight.get(url);
+  if (pending) return pending;
+  const promise = request(url).finally(() => inFlight.delete(url));
+  inFlight.set(url, promise);
+  return promise;
+};
 const post = (path, body) =>
   request(`${API_PREFIX}${path}`, {
     method: 'POST',

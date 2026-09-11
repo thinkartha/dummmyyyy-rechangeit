@@ -432,8 +432,16 @@ async function draw(api, root) {
        rather than "nothing was measured". Dispose and say which it is. */
     const existing = instances.get(root);
     if (existing) { existing.dispose(); instances.delete(root); }
-    message(root, spec.empty
-      || 'This fills in once your backend systems are connected and reporting.');
+    /* "Waiting on Cost Explorer history" is true of an account that has not been billed
+       yet and false of a role that was refused ce:GetCostAndUsage — and the second is
+       the likelier one, because it is a setup step. The payload already carries the
+       reason; showing the generic line over the top of it is what made a permissions
+       problem look like patience. */
+    const reason = data && data.error;
+    message(root, reason
+      || spec.empty
+      || 'This fills in once your backend systems are connected and reporting.',
+      reason ? 'danger' : 'secondary');
     return;
   }
   let chart = instances.get(root);
