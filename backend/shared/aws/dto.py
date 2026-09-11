@@ -6,6 +6,11 @@ from pydantic import BaseModel, Field
 
 
 class AwsLambdaConfig(BaseModel):
+    # A tenant can connect several AWS accounts (a payer org, a standalone sandbox, an
+    # acquisition's org), each with its own credential. `id` names one of them; it is
+    # assigned on first save and is what every per-connection route addresses.
+    id: str | None = None
+    label: str | None = None
     region: str = "us-east-1"
     # Extra regions to read alongside `region`. Alarms and resources are regional, so a
     # tenant with anything outside their home region was simply not being shown it — the

@@ -75,7 +75,7 @@ def test_tenant_with_telemetry_sees_only_its_own():
 
 def test_unconfigured_aws_account_is_empty_not_invented():
     _mock(False)
-    lambda_service.get_config = lambda _tenant: None
+    lambda_service.get_config = lambda _tenant, _connection=None: None
     overview = lambda_service.lambda_overview("tenant-a")
     assert overview.configured is False
     assert overview.source == "none"
@@ -86,7 +86,7 @@ def test_refused_aws_account_reports_the_refusal():
     """Connected, but AWS said no. Zeros plus a reason — never a healthy-looking row."""
     _mock(False)
     cfg = lambda_service.AwsLambdaConfig(region="eu-west-1")
-    lambda_service.get_config = lambda _tenant: cfg
+    lambda_service.get_config = lambda _tenant, _connection=None: cfg
     lambda_service._session = lambda _cfg: (_ for _ in ()).throw(
         RuntimeError("ExpiredToken: security token expired"))
 
@@ -100,7 +100,7 @@ def test_refused_aws_account_reports_the_refusal():
 def test_mock_mode_still_serves_the_demo_account():
     _mock(True)
     assert mock_data.enabled() is True
-    lambda_service.get_config = lambda _tenant: None
+    lambda_service.get_config = lambda _tenant, _connection=None: None
     assert lambda_service.lambda_overview("tenant-a").source == "demo"
 
 

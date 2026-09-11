@@ -13,7 +13,7 @@ append variables
 block content
   +ObsPageHeader({
     title: 'Cloud accounts',
-    subtitle: 'One connection per cloud per organization — AWS credentials feed Cloud Monitoring, Orchestration, and the Lambda job stream; GCP and Azure store the account for the gateway readers',
+    subtitle: 'Connect as many AWS accounts as you run — inventory, spend and alarms are read across all of them; GCP and Azure store one account each for the gateway readers',
     action: 'Connect AWS account',
     actionKey: 'connectAwsAccount',
     secondaryAction: 'Finish setup & test',
@@ -26,9 +26,11 @@ block content
         .card-body
           h6.mb-2 AWS
           p.text-body-tertiary.fs-9.mb-3 Regions, credentials (default chain, access keys, or an assumed role), the member-account role, and the thresholds that raise an anomaly.
+          p.text-body-tertiary.fs-10.mb-3 One connection reaches every member account of one organization. A separate org, or a standalone account, is a second connection — add as many as you have.
           p.text-body-tertiary.fs-10.mb-3 The credential is only half of it: <strong>Finish setup &amp; test</strong> shows the ARN your role must trust, the metric-stream endpoint and key, and probes what the credential can actually do.
           .d-flex.gap-2.flex-wrap
             button.btn.btn-sm.btn-primary(type='button' data-lhb-action='connectAwsAccount') Connect AWS account
+            button.btn.btn-sm.btn-phoenix-secondary(type='button' data-lhb-action='addAwsAccount') Add another account
             button.btn.btn-sm.btn-phoenix-secondary(type='button' data-lhb-action='cloudSetup') Finish setup &amp; test
     .col-md-4
       .card.h-100
@@ -44,9 +46,29 @@ block content
           button.btn.btn-sm.btn-phoenix-secondary(type='button' data-lhb-action='connectAzure') Connect Azure
 
   +ObsToolTable({
+    title: 'AWS connections',
+    live: 'awsConnections',
+    subtitle: 'The credentials this organization has saved — one per AWS organization or standalone account. Each is probed for what it can actually read',
+    searchPlaceholder: 'Search connections',
+    pageSize: 8,
+    secondaryAction: 'Add AWS account',
+    secondaryActionKey: 'addAwsAccount',
+    columns: [
+      { label: 'Name', className: 'ps-3' },
+      { label: 'Account' },
+      { label: 'Auth' },
+      { label: 'Regions' },
+      { label: 'Status' }
+    ],
+    rows: [
+      { iconSet: 'fa-brands', icon: 'fa-aws', iconColor: 'secondary', meta: 'no credentials saved yet', cells: ['—', '—', '—', '—', { text: 'Not connected', badge: 'secondary' }] }
+    ]
+  })
+
+  +ObsToolTable({
     title: 'Linked accounts',
     live: 'cloudAccounts',
-    subtitle: 'Every AWS account the saved credential reaches, plus any managed cloud gateway in use',
+    subtitle: 'Every AWS account the saved credentials reach, across all connections, plus any managed cloud gateway in use',
     searchPlaceholder: 'Search accounts',
     pageSize: 8,
     columns: [
