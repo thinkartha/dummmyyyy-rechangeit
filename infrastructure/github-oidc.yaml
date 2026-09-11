@@ -74,6 +74,11 @@ Resources:
                   - secretsmanager:*
                   - logs:*
                   - cloudwatch:*
+                  # The scheduled connector sweep (the ConnectorSweep event in
+                  # backend/template.yaml) is an EventBridge rule, so the deploy role
+                  # has to be able to create, read and delete one. Without this the
+                  # whole stack update rolls back at the rule.
+                  - events:*
                   - route53:*
                   - sns:*
                   - ses:*
