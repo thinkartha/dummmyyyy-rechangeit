@@ -118,6 +118,11 @@ class IamUser(BaseModel):
 class AccountInventory(BaseModel):
     account_id: str = Field(alias="accountId")
     name: str | None = None
+    # Which saved connection reached this account. A tenant can connect several AWS
+    # accounts, and without this two identically-named member accounts from different
+    # orgs are indistinguishable in the merged report.
+    connection_id: str | None = Field(default=None, alias="connectionId")
+    connection_label: str | None = Field(default=None, alias="connectionLabel")
     # The account whose credential this tenant saved, as opposed to one reached by
     # assuming a role. The page labels them differently because they fail differently:
     # a member account with no cross-account role is the common setup mistake.
@@ -416,18 +421,14 @@ def read_regions(cfg) -> list[str]:
     return list(seen) or [_GLOBAL_REGION]
 
 
-def inventory(tenant_id: str, role_name: str | None = None) -> AwsInventoryReport:
-    """Per-account inventory for every AWS account this tenant's credential can reach."""
-    cfg = lambda_service.get_config(tenant_id)
-    if not cfg:
-        return AwsInventoryReport(configured=False)
-
+def _inventory_one(tenant_id: str, cfg, role_name: str | None = None) -> AwsInventoryReport:
+    """Per-account inventory for every AWS account one saved connection can reach."""
     # Explicit argument wins, then the saved config, then the role Organizations makes.
     role_name = role_name or getattr(cfg, "member_role_name", None) or _DEFAULT_ROLE
     regions = read_regions(cfg)
     # The role name and the region set both change the fan-out, so both change the
     # answer, so both belong in the key.
-    cache_key = f"{tenant_id}|{role_name}|{','.join(regions)}"
+    cache_key = f"{tenant_id}|{cfg.id}|{role_name}|{','.join(regions)}"
     cached = _CACHE.get(cache_key)
     if cached and time.monotonic() - cached[0] < _TTL_SECONDS:
         return cached[1]
@@ -463,6 +464,9 @@ def inventory(tenant_id: str, role_name: str | None = None) -> AwsInventoryRepor
     # ceiling here — add backoff on the individual reads if you start seeing Throttling.
     with ThreadPoolExecutor(max_workers=min(8, len(targets))) as pool:
         accounts = list(pool.map(one, targets))
+    for account in accounts:
+        account.connection_id = cfg.id
+        account.connection_label = cfg.label or cfg.id
 
     report = AwsInventoryReport(
         accounts=accounts,
@@ -473,6 +477,47 @@ def inventory(tenant_id: str, role_name: str | None = None) -> AwsInventoryRepor
     )
     _CACHE[cache_key] = (time.monotonic(), report)
     return report
+
+
+def inventory(
+    tenant_id: str, role_name: str | None = None, connection_id: str | None = None
+) -> AwsInventoryReport:
+    """Inventory across every AWS account this tenant has connected.
+
+    A tenant with one connection gets exactly what they got before. With several, the
+    per-connection reports are concatenated rather than re-keyed: each row already says
+    which connection found it, and merging them any harder would only invent an ordering
+    nobody asked for. `connectionId` narrows it to one.
+    """
+    configs = lambda_service.list_configs(tenant_id)
+    if connection_id:
+        configs = [c for c in configs if c.id == connection_id]
+    if not configs:
+        return AwsInventoryReport(configured=False)
+    if len(configs) == 1:
+        return _inventory_one(tenant_id, configs[0], role_name)
+
+    reports = [_inventory_one(tenant_id, cfg, role_name) for cfg in configs]
+    accounts: list[AccountInventory] = []
+    regions: dict[str, None] = {}
+    for cfg, report in zip(configs, reports):
+        accounts.extend(report.accounts)
+        for region in report.regions:
+            regions.setdefault(region, None)
+        if report.error and not report.accounts:
+            # A connection AWS refused has no rows at all; without this it would vanish
+            # into the merge and read as "that account owns nothing".
+            accounts.append(AccountInventory(
+                accountId=cfg.id or "unknown", name=cfg.label,
+                connectionId=cfg.id, connectionLabel=cfg.label or cfg.id,
+                error=report.error))
+    return AwsInventoryReport(
+        accounts=accounts,
+        organization=any(r.organization for r in reports),
+        roleName=reports[0].role_name,
+        regions=list(regions),
+        configured=True,
+    )
 
 
 def invalidate(tenant_id: str) -> None:

@@ -18,8 +18,12 @@ from .dto import (
     AwsLambdaOverview,
 )
 
-_IN_MEMORY_CONFIGS: dict[str, AwsLambdaConfig] = {}
+# A tenant can connect more than one AWS account. They live in a single list row
+# (`aws-accounts`); the pre-list `aws-lambda` row is still read when that one is absent,
+# so an existing tenant's connection migrates itself on the next save.
+_IN_MEMORY_ACCOUNTS: dict[str, list[AwsLambdaConfig]] = {}
 _INTEGRATION = "aws-lambda"
+_ACCOUNTS_INTEGRATION = "aws-accounts"
 _MAX_INVOCATIONS = 200
 _INVOCATIONS: dict[str, Deque[AwsLambdaInvocationResponse]] = defaultdict(lambda: deque(maxlen=_MAX_INVOCATIONS))
 
@@ -32,9 +36,42 @@ def _mask(value: str | None) -> str | None:
     return f"{value[:3]}...{value[-3:]}"
 
 
-def save_config(tenant_id: str, config: AwsLambdaConfig) -> dict[str, Any]:
-    _IN_MEMORY_CONFIGS[tenant_id] = config
-    config_store.save_config(tenant_id, _INTEGRATION, config.model_dump_json(by_alias=True))
+def list_configs(tenant_id: str) -> list[AwsLambdaConfig]:
+    """Every AWS account this tenant has connected, in the order they were added."""
+    cached = _IN_MEMORY_ACCOUNTS.get(tenant_id)
+    if cached is not None:
+        return cached
+    raw = config_store.get_config(tenant_id, _ACCOUNTS_INTEGRATION)
+    if raw:
+        accounts = [AwsLambdaConfig.model_validate(item) for item in json.loads(raw)]
+    else:
+        legacy = config_store.get_config(tenant_id, _INTEGRATION)
+        accounts = [AwsLambdaConfig.model_validate_json(legacy)] if legacy else []
+    for index, account in enumerate(accounts):
+        account.id = account.id or f"aws-{index + 1}"
+    _IN_MEMORY_ACCOUNTS[tenant_id] = accounts
+    return accounts
+
+
+def get_config(tenant_id: str, connection_id: str | None = None) -> AwsLambdaConfig | None:
+    """The named connection, or the tenant's first one.
+
+    Callers that predate multiple accounts pass no id and keep reading the primary
+    credential, which is the one a single-account tenant has.
+    """
+    accounts = list_configs(tenant_id)
+    if connection_id:
+        return next((a for a in accounts if a.id == connection_id), None)
+    return accounts[0] if accounts else None
+
+
+def _persist(tenant_id: str, accounts: list[AwsLambdaConfig]) -> None:
+    _IN_MEMORY_ACCOUNTS[tenant_id] = accounts
+    config_store.save_config(
+        tenant_id,
+        _ACCOUNTS_INTEGRATION,
+        json.dumps([a.model_dump(by_alias=True, mode="json") for a in accounts]),
+    )
     # Cost Explorer and inventory answers are cached for hours. Saving new credentials is
     # exactly when somebody is watching for the page to change, so the stale answers go
     # with them. Imported here rather than at module scope: both import this module.
@@ -42,27 +79,78 @@ def save_config(tenant_id: str, config: AwsLambdaConfig) -> dict[str, Any]:
 
     cost.invalidate(tenant_id)
     inventory.invalidate(tenant_id)
-    return config_status(tenant_id)
 
 
-def get_config(tenant_id: str) -> AwsLambdaConfig | None:
-    cfg = _IN_MEMORY_CONFIGS.get(tenant_id)
-    if cfg:
-        return cfg
-    raw = config_store.get_config(tenant_id, _INTEGRATION)
-    if raw:
-        cfg = AwsLambdaConfig.model_validate_json(raw)
-        _IN_MEMORY_CONFIGS[tenant_id] = cfg
-    return cfg
+def _keep_secrets(new: AwsLambdaConfig, old: AwsLambdaConfig) -> AwsLambdaConfig:
+    """A blank or masked secret means "leave it alone", not "erase it".
+
+    `config_status` masks secrets and the connect form prefills from it, so saving an
+    edited region would otherwise post the mask back and wipe the credential.
+    """
+    for field in ("access_key_id", "secret_access_key", "external_id"):
+        value = getattr(new, field)
+        if not value or set(value) <= {"*"} or "..." in value:
+            setattr(new, field, getattr(old, field))
+    return new
 
 
-def config_status(tenant_id: str) -> dict[str, Any]:
-    cfg = get_config(tenant_id)
+def save_config(
+    tenant_id: str, config: AwsLambdaConfig, connection_id: str | None = None
+) -> dict[str, Any]:
+    """Create or update one connection.
+
+    With no id this updates the tenant's first connection — what the single-account form
+    has always done — and creates it if there is none.
+    """
+    accounts = list(list_configs(tenant_id))
+    target = connection_id or config.id or (accounts[0].id if accounts else None)
+    for index, existing in enumerate(accounts):
+        if existing.id == target:
+            config.id = target
+            accounts[index] = _keep_secrets(config, existing)
+            break
+    else:
+        config.id = target or f"aws-{uuid.uuid4().hex[:8]}"
+        accounts.append(config)
+    _persist(tenant_id, accounts)
+    return config_status(tenant_id, config.id)
+
+
+def add_config(tenant_id: str, config: AwsLambdaConfig) -> dict[str, Any]:
+    """Always a new connection. Separate from save_config so that "add an account" can
+    never silently overwrite the one already there."""
+    config.id = f"aws-{uuid.uuid4().hex[:8]}"
+    _persist(tenant_id, [*list_configs(tenant_id), config])
+    return config_status(tenant_id, config.id)
+
+
+def delete_config(tenant_id: str, connection_id: str) -> bool:
+    accounts = list_configs(tenant_id)
+    remaining = [a for a in accounts if a.id != connection_id]
+    if len(remaining) == len(accounts):
+        return False
+    _persist(tenant_id, remaining)
+    return True
+
+
+def config_status(tenant_id: str, connection_id: str | None = None) -> dict[str, Any]:
+    return _status(get_config(tenant_id, connection_id))
+
+
+def list_config_status(tenant_id: str) -> list[dict[str, Any]]:
+    return [_status(cfg) for cfg in list_configs(tenant_id)]
+
+
+def _status(cfg: AwsLambdaConfig | None) -> dict[str, Any]:
     return {
         "id": _INTEGRATION,
+        "connectionId": cfg.id if cfg else None,
+        "label": (cfg.label if cfg else None) or (cfg.id if cfg else None),
         "configured": cfg is not None,
         "source": "frontend" if cfg else "unset",
         "fields": {
+            "id": cfg.id if cfg else None,
+            "label": cfg.label if cfg else None,
             "region": cfg.region if cfg else None,
             "regions": ",".join(cfg.regions) if cfg else None,
             "member_role_name": cfg.member_role_name if cfg else None,
@@ -193,7 +281,7 @@ def connector_identity() -> dict[str, Any]:
     return _CONNECTOR_IDENTITY
 
 
-def test_connection(tenant_id: str) -> dict[str, Any]:
+def test_connection(tenant_id: str, connection_id: str | None = None) -> dict[str, Any]:
     """Can we actually use this connection, and for what?
 
     Saving a connection told the operator nothing: `config_status` reports that fields
@@ -206,7 +294,7 @@ def test_connection(tenant_id: str) -> dict[str, Any]:
     and missing `ce:GetCostAndUsage`, and "it doesn't work" is not a useful answer to
     that. The probes are the cheapest call that proves the permission, not a full read.
     """
-    cfg = get_config(tenant_id)
+    cfg = get_config(tenant_id, connection_id)
     if not cfg:
         return {"configured": False, "ok": False,
                 "error": "No AWS connection saved for this organization.",
@@ -304,8 +392,8 @@ def _avg_duration(cw, function_name: str, start: datetime, end: datetime) -> flo
     return round(mean(values), 1) if values else 0.0
 
 
-def lambda_overview(tenant_id: str) -> AwsLambdaOverview:
-    cfg = get_config(tenant_id)
+def lambda_overview(tenant_id: str, connection_id: str | None = None) -> AwsLambdaOverview:
+    cfg = get_config(tenant_id, connection_id)
     if not cfg:
         return _demo_overview(None) if mock_data.enabled() else _empty_overview(None)
     try:

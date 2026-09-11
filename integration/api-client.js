@@ -535,7 +535,9 @@ export const api = {
     inventory: (params) => get('/integrations/aws/inventory', params),
     /* Probe the saved credential and report what it can actually do. POST because it
        calls AWS every time and is deliberately uncached — it exists to be pressed. */
-    test: () => post('/integrations/aws/test'),
+    /* The probe is a POST with no body, so its one selector rides in the path —
+       `post` puts everything else in the body and has nowhere to put a query. */
+    test: (params) => post(`/integrations/aws/test${query(params)}`),
     /* The ARN a customer's cross-account role must trust. Derived from STS, not
        configured, so it is right even after the stack is renamed. */
     connectorIdentity: () => get('/integrations/aws/connector-identity'),
@@ -544,6 +546,12 @@ export const api = {
     scanChanges: () => post('/integrations/aws/changes/scan'),
     config: () => get('/integrations/aws/lambda/config'),
     saveConfig: (body) => put('/integrations/aws/lambda/config', body),
+    /* Several AWS accounts per organization: the config routes above address the
+       first one, these address any of them. */
+    connections: () => get('/integrations/aws/connections'),
+    addConnection: (body) => post('/integrations/aws/connections', body),
+    updateConnection: (id, body) => put(`/integrations/aws/connections/${id}`, body),
+    deleteConnection: (id) => del(`/integrations/aws/connections/${id}`),
     invocations: (params) => get('/integrations/aws/lambda/invocations', params),
     invoke: (body) => post('/integrations/aws/lambda/invoke', body),
     retry: (id) => post(`/integrations/aws/lambda/invocations/${id}/retry`),

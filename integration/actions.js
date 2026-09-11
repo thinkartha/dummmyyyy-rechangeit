@@ -1319,10 +1319,13 @@ async function testDsn(api, dsn) {
   return `Connected${detail ? ` — ${detail}` : ''}.`;
 }
 
-/* One AWS connection per tenant, configured from two pages — the orchestrator's job
- * stream and the cloud account list are both fed by these credentials, so both forms
- * are built from this one list. */
+/* AWS connections are configured from two pages — the orchestrator's job stream and the
+ * cloud account list are both fed by these credentials, so both forms are built from this
+ * one list. An organization may connect several accounts; each is one of these. */
 const AWS_FIELDS = (current = {}) => [
+      { name: 'label', label: 'Name', width: 'half', value: current.label,
+        placeholder: 'Production payer',
+        help: 'Names this connection in the account list. Optional.' },
       { name: 'region', label: 'AWS region', required: true, width: 'half',
         value: current.region || 'us-east-1' },
       { name: 'auth_method', label: 'Authentication', type: 'select', width: 'half',
@@ -2025,6 +2028,43 @@ export const ACTIONS = {
     prefill: (api) => api.awsLambda.config().then((s) => (s && s.fields) || {}).catch(() => ({})),
     fields: (current = {}) => AWS_FIELDS(current),
     run: (api, body) => api.awsLambda.saveConfig(body),
+  },
+
+  /**
+   * A second, third, nth AWS account.
+   *
+   * Separate from `connectAwsAccount` — which edits the organization's first connection —
+   * because the two differ only in whether they overwrite, and that is exactly the
+   * mistake worth making impossible: an operator adding their sandbox account should
+   * never find production's credential replaced.
+   */
+  addAwsAccount: {
+    title: 'Add another AWS account',
+    submit: 'Add account',
+    success: 'AWS account added — inventory and spend include it from the next sweep.',
+    fields: () => AWS_FIELDS({}),
+    run: (api, body) => api.awsLambda.addConnection(body),
+  },
+
+  editAwsAccount: {
+    title: 'Edit AWS account',
+    submit: 'Save connection',
+    success: 'Connection updated.',
+    /* Secrets come back masked, and a blank or masked secret is left alone by the
+       backend — so editing a region cannot silently erase the credential. */
+    prefill: (api, id) => api.awsLambda.connections()
+      .then((rows) => (rows || []).find((r) => r.connectionId === id))
+      .then((row) => (row && row.fields) || {})
+      .catch(() => ({})),
+    fields: (current = {}) => AWS_FIELDS(current),
+    run: (api, body, id) => api.awsLambda.updateConnection(id, body),
+  },
+
+  removeAwsAccount: {
+    direct: true,
+    confirm: 'Remove this AWS account?\n\nThe stored credential is deleted. Inventory, '
+      + 'spend and alarms from it stop appearing; nothing in AWS is changed.',
+    run: async (api, id) => { await api.awsLambda.deleteConnection(id); return 'AWS account removed.'; },
   },
 
   /**

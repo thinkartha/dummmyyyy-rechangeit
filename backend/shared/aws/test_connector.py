@@ -51,10 +51,10 @@ def test_region_list_changes_the_cache_key(monkeypatch):
     monkeypatch.setattr(lambda_service, "_session", lambda cfg: FakeSession())
 
     tenant = "t-regions"
-    lambda_service._IN_MEMORY_CONFIGS[tenant] = AwsLambdaConfig(region="us-east-1")
+    lambda_service._IN_MEMORY_ACCOUNTS[tenant] = [AwsLambdaConfig(id="aws-1", region="us-east-1")]
     inventory.inventory(tenant)
-    lambda_service._IN_MEMORY_CONFIGS[tenant] = AwsLambdaConfig(
-        region="us-east-1", regions=["eu-west-1"])
+    lambda_service._IN_MEMORY_ACCOUNTS[tenant] = [AwsLambdaConfig(
+        id="aws-1", region="us-east-1", regions=["eu-west-1"])]
     inventory.inventory(tenant)
 
     assert calls == [["us-east-1"], ["us-east-1", "eu-west-1"]]
@@ -115,7 +115,7 @@ def test_untagged_spend_is_labelled_not_dropped(monkeypatch):
     """Cost Explorer returns "team$" for everything the tag is not on. That bucket is
     usually the reason somebody opened the page."""
     tenant = "t-cost"
-    lambda_service._IN_MEMORY_CONFIGS[tenant] = AwsLambdaConfig(region="us-east-1")
+    lambda_service._IN_MEMORY_ACCOUNTS[tenant] = [AwsLambdaConfig(id="aws-1", region="us-east-1")]
     cost.invalidate(tenant)
 
     class FakeCe:
@@ -159,7 +159,7 @@ def test_probe_reports_each_capability_separately(monkeypatch):
     """A role good for CloudWatch and missing Cost Explorer is the normal case; one
     boolean for the whole connection cannot express it."""
     tenant = "t-probe"
-    lambda_service._IN_MEMORY_CONFIGS[tenant] = AwsLambdaConfig(region="us-east-1")
+    lambda_service._IN_MEMORY_ACCOUNTS[tenant] = [AwsLambdaConfig(id="aws-1", region="us-east-1")]
 
     class FakeClient:
         def __init__(self, service):
@@ -195,7 +195,7 @@ def test_probe_reports_each_capability_separately(monkeypatch):
 
 def test_probe_on_a_refused_credential_does_not_repeat_the_error_five_times(monkeypatch):
     tenant = "t-probe-bad"
-    lambda_service._IN_MEMORY_CONFIGS[tenant] = AwsLambdaConfig(region="us-east-1")
+    lambda_service._IN_MEMORY_ACCOUNTS[tenant] = [AwsLambdaConfig(id="aws-1", region="us-east-1")]
 
     def boom(cfg):
         raise RuntimeError("AccessDenied: not authorized to perform sts:AssumeRole")
@@ -218,7 +218,7 @@ def test_daily_and_breakdown_scope_to_one_account(monkeypatch):
     drill-down asking for one account has to narrow at Cost Explorer — not after it,
     which would still have paid to move every other account's numbers."""
     tenant = "t-account-cost"
-    lambda_service._IN_MEMORY_CONFIGS[tenant] = AwsLambdaConfig(region="us-east-1")
+    lambda_service._IN_MEMORY_ACCOUNTS[tenant] = [AwsLambdaConfig(id="aws-1", region="us-east-1")]
     cost.invalidate(tenant)
     seen: list[dict] = []
 
@@ -257,7 +257,7 @@ def test_account_scoping_is_part_of_the_cost_cache_key(monkeypatch):
     """Two accounts are two answers; sharing an entry would serve one account's spend
     for the other for six hours."""
     tenant = "t-cache-key"
-    lambda_service._IN_MEMORY_CONFIGS[tenant] = AwsLambdaConfig(region="us-east-1")
+    lambda_service._IN_MEMORY_ACCOUNTS[tenant] = [AwsLambdaConfig(id="aws-1", region="us-east-1")]
     cost.invalidate(tenant)
     calls = []
 
@@ -275,3 +275,63 @@ def test_account_scoping_is_part_of_the_cost_cache_key(monkeypatch):
     cost.breakdown(tenant, "SERVICE", today=date(2026, 9, 10), account="222")
     assert len(calls) == 2, "the second account reused the first account's cache entry"
     cost.invalidate(tenant)
+
+
+# --- several AWS accounts per organization ----------------------------------
+
+def _fresh(tenant):
+    lambda_service._IN_MEMORY_ACCOUNTS.pop(tenant, None)
+    return tenant
+
+
+def test_adding_an_account_never_overwrites_the_first_one():
+    """The mistake worth making impossible: connecting a sandbox must not replace prod."""
+    tenant = _fresh("t-multi-add")
+    lambda_service.save_config(tenant, AwsLambdaConfig(region="us-east-1", label="prod"))
+    lambda_service.add_config(tenant, AwsLambdaConfig(region="eu-west-1", label="sandbox"))
+
+    accounts = lambda_service.list_configs(tenant)
+    assert [a.label for a in accounts] == ["prod", "sandbox"]
+    # Unqualified reads still mean the first connection, as they did before.
+    assert lambda_service.get_config(tenant).label == "prod"
+    assert lambda_service.get_config(tenant, accounts[1].id).region == "eu-west-1"
+
+
+def test_saving_an_edit_keeps_the_secret_it_was_shown_masked():
+    """config_status masks secrets and the form prefills from it, so a round-tripped
+    mask must not be written back over the real credential."""
+    tenant = _fresh("t-multi-secret")
+    lambda_service.save_config(tenant, AwsLambdaConfig(
+        region="us-east-1", auth_method="access-keys",
+        access_key_id="AKIAREAL", secret_access_key="s3cret"))
+    stored = lambda_service.get_config(tenant)
+
+    lambda_service.save_config(tenant, AwsLambdaConfig(
+        id=stored.id, region="eu-west-1", auth_method="access-keys",
+        access_key_id="AKI...EAL", secret_access_key=""))
+
+    after = lambda_service.get_config(tenant)
+    assert after.region == "eu-west-1"
+    assert (after.access_key_id, after.secret_access_key) == ("AKIAREAL", "s3cret")
+
+
+def test_removing_one_account_leaves_the_others():
+    tenant = _fresh("t-multi-delete")
+    lambda_service.save_config(tenant, AwsLambdaConfig(region="us-east-1", label="prod"))
+    second = lambda_service.add_config(tenant, AwsLambdaConfig(region="eu-west-1", label="sandbox"))
+
+    assert lambda_service.delete_config(tenant, second["connectionId"]) is True
+    assert lambda_service.delete_config(tenant, "aws-nope") is False
+    assert [a.label for a in lambda_service.list_configs(tenant)] == ["prod"]
+
+
+def test_a_single_account_tenant_stored_before_the_list_still_reads(monkeypatch):
+    """Migration: the old one-row-per-tenant config has to keep working untouched."""
+    from shared.core import config_store
+
+    tenant = _fresh("t-legacy")
+    config_store.save_config(tenant, lambda_service._INTEGRATION,
+                             AwsLambdaConfig(region="ap-south-1").model_dump_json(by_alias=True))
+    accounts = lambda_service.list_configs(tenant)
+    assert len(accounts) == 1 and accounts[0].region == "ap-south-1"
+    assert accounts[0].id  # named on read, so every per-connection route can address it

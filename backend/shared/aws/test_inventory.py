@@ -109,7 +109,8 @@ def _wire(base_clients=None, org_accounts=None, org_raises=None, members=None, c
             {"list_accounts": [{"Accounts": org_accounts or []}]})
     base = FakeSession(clients)
 
-    lambda_service.get_config = lambda _t: AwsLambdaConfig(region="eu-west-1") if configured else None
+    lambda_service.list_configs = lambda _t: ([AwsLambdaConfig(id="aws-1", region="eu-west-1")]
+                                              if configured else [])
     lambda_service._session = lambda _cfg: base
 
     assumed = []

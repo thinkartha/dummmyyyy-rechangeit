@@ -28,14 +28,20 @@ def finops_recommendations(tenant_id: str = Depends(get_tenant_id)) -> FinopsRes
 
 
 @router.get("/finops/cloud-cost", response_model=CloudCostReport)
-def finops_cloud_cost(tenant_id: str = Depends(get_tenant_id)) -> CloudCostReport:
+def finops_cloud_cost(
+    tenant_id: str = Depends(get_tenant_id),
+    connection_id: str | None = Query(default=None, alias="connectionId", max_length=64),
+) -> CloudCostReport:
     """Month-to-date AWS spend per linked account, from Cost Explorer.
+
+    Summed across every AWS account the tenant has connected; `connectionId` narrows it
+    to one of them.
 
     The spend half of the Cloud Cost page. Budgets are fetched separately and joined in
     the browser, the same way the AI cost table does it — the ceiling and the spend come
     from different places and a tenant with no budgets is the normal case, not an error.
     """
-    return cloud_cost(tenant_id)
+    return cloud_cost(tenant_id, connection_id=connection_id)
 
 
 @router.get("/finops/cloud-cost/breakdown", response_model=CostBreakdown)
@@ -43,6 +49,7 @@ def finops_cost_breakdown(
     group_by: str = Query(default="SERVICE", alias="groupBy", max_length=128),
     account: str | None = Query(default=None, max_length=64),
     tenant_id: str = Depends(get_tenant_id),
+    connection_id: str | None = Query(default=None, alias="connectionId", max_length=64),
 ) -> CostBreakdown:
     """MTD spend grouped by service, region, or a tag key.
 
@@ -50,7 +57,7 @@ def finops_cost_breakdown(
     anything else, a tag key — which is the only way to answer "what does this team
     spend", since the tag keys are the customer's own and cannot be listed here.
     """
-    return breakdown(tenant_id, group_by, account=account)
+    return breakdown(tenant_id, group_by, account=account, connection_id=connection_id)
 
 
 @router.get("/finops/cloud-cost/daily", response_model=CostSeries)
@@ -58,12 +65,13 @@ def finops_cost_daily(
     days: int = Query(default=30, ge=2, le=365),
     account: str | None = Query(default=None, max_length=64),
     tenant_id: str = Depends(get_tenant_id),
+    connection_id: str | None = Query(default=None, alias="connectionId", max_length=64),
 ) -> CostSeries:
     """Daily spend, so the page can show whether spend is accelerating.
 
     A month-to-date total only ever rises; it cannot answer that question on its own.
     """
-    return daily(tenant_id, days, account=account)
+    return daily(tenant_id, days, account=account, connection_id=connection_id)
 
 
 # --- budgets ----------------------------------------------------------------

@@ -42,7 +42,8 @@ def _group(account, amount):
 
 def _wire(ce, configured=True):
     cost._CACHE.clear()
-    lambda_service.get_config = lambda _t: AwsLambdaConfig(region="eu-west-1") if configured else None
+    lambda_service.list_configs = lambda _t: ([AwsLambdaConfig(id="aws-1", region="eu-west-1")]
+                                              if configured else [])
     lambda_service._session = lambda _cfg: type("S", (), {"client": lambda self, *a, **k: ce})()
     return ce
 

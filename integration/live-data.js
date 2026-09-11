@@ -1005,6 +1005,55 @@ export const SOURCES = {
    * A managed API gateway is still a row: it is the only real signal this app has for
    * an Azure or GCP account, and dropping it would make "multi-cloud" mean AWS.
    */
+  /**
+   * Columns: Name · Account id · Auth · Regions · Status.
+   *
+   * The credentials themselves, one row per saved connection — as opposed to
+   * `cloudAccounts`, which lists the AWS accounts those credentials *reach*. An
+   * organization with a payer org and a standalone sandbox has two rows here and a dozen
+   * there, and only this table can be edited.
+   *
+   * The account id and the status come from probing each connection, because "saved" and
+   * "works" are different claims and the stored fields can only support the first.
+   */
+  awsConnections: {
+    load: async (api) => {
+      const rows = await api.awsLambda.connections().catch(() => []);
+      /* Probed one at a time: each probe is five signed calls, and firing them at once
+         across a handful of connections is how a tenant meets AWS throttling. */
+      const probes = [];
+      for (const row of rows || []) {
+        probes.push(await api.awsLambda.test({ connectionId: row.connectionId })
+          .catch((err) => ({ ok: false, error: err.message })));
+      }
+      return { rows: rows || [], probes };
+    },
+    rows: ({ rows, probes }) => (rows || []).map((row, index) => {
+      const probe = probes[index] || {};
+      const fields = row.fields || {};
+      const refused = (probe.checks || []).filter((c) => !c.ok);
+      return {
+        iconSet: 'fa-brands',
+        icon: 'fa-aws',
+        iconColor: probe.ok ? (refused.length ? 'warning' : 'success') : 'danger',
+        meta: probe.error || (refused.length
+          ? `no access: ${refused.map((c) => c.permission).join(', ')}`
+          : probe.arn || row.connectionId),
+        cells: [
+          row.label || row.connectionId,
+          probe.account || '—',
+          fields.auth_method || '—',
+          (probe.regions || []).join(', ') || fields.region || '—',
+          badge(probe.ok ? (refused.length ? 'Partial access' : 'Connected') : 'Unreachable'),
+        ],
+        actions: [
+          { key: 'editAwsAccount', arg: row.connectionId, label: 'Edit' },
+          { key: 'removeAwsAccount', arg: row.connectionId, label: 'Remove' },
+        ],
+      };
+    }),
+  },
+
   cloudAccounts: {
     stats: ({ report, cost }) => {
       const accounts = (report && report.accounts) || [];
