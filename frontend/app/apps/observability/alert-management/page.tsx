@@ -75,7 +75,7 @@ export default function Page() {
               Where alerts go, who owes a response, and when to stay quiet — routing rules, SLA policies, and maintenance windows
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="routingRule">
               New routing rule
             </button>

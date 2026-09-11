@@ -66,7 +66,7 @@ export default function Page() {
               Okta / enterprise SSO, or LoveHeartBeat email and password for the active organization
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="saveAuthSettings">
               Save changes
             </button>

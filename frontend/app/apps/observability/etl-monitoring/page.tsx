@@ -72,10 +72,13 @@ export default function Page() {
               Pipeline health across integration and analytics platforms
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <a className="btn btn-phoenix-primary" href="/apps/platform/integrations/etl/">
               Configure in Integrations
             </a>
+            <button className="btn btn-primary" type="button" data-lhb-action="runEtlJob">
+              Run job
+            </button>
           </div>
         </div>
       </div>

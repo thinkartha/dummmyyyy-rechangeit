@@ -75,7 +75,7 @@ export default function Page() {
               Unified alerts from APIs, AI tools, ETL jobs, and multi-cloud accounts — a routing rule decides which team each one pages
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="routingRule">
               New routing rule
             </button>

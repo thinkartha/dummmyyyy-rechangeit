@@ -59,6 +59,9 @@ def test_empty_payload_is_not_an_error():
     assert otlp.traces({}) == [] and otlp.logs({}) == [] and otlp.metrics({"resourceMetrics": []}) == []
 
 
+_AUTH = {"X-API-Key": "dev-admin-key", "X-Tenant-Id": "acme-test"}
+
+
 def _client():
     from handlers.api import app
 
@@ -88,3 +91,37 @@ def test_garbage_body_is_a_400():
                        headers={"X-API-Key": "dev-admin-key", "X-Tenant-Id": "acme-test",
                                 "content-type": "application/json"})
     assert r.status_code == 400
+
+
+# --- protobuf ---------------------------------------------------------------
+
+def _protobuf_traces_body() -> bytes:
+    from opentelemetry.proto.collector.trace.v1 import trace_service_pb2
+    from opentelemetry.proto.trace.v1 import trace_pb2
+
+    span = trace_pb2.Span(
+        trace_id=bytes.fromhex("4bf92f3577b34da6a3ce929d0e0e4736"),
+        span_id=bytes.fromhex("00f067aa0ba902b7"),
+        name="GET /api/v1/orders",
+    )
+    return trace_service_pb2.ExportTraceServiceRequest(
+        resource_spans=[trace_pb2.ResourceSpans(
+            scope_spans=[trace_pb2.ScopeSpans(spans=[span])])]).SerializeToString()
+
+
+def test_protobuf_body_is_accepted_not_rejected_as_bad_json():
+    """The SDK default encoding. Before this it 400'd as malformed JSON, which reads as
+    "your instrumentation is broken" for a collector that is working perfectly."""
+    response = _client().post(
+        "/api/v1/otlp/v1/traces",
+        content=_protobuf_traces_body(),
+        headers={**_AUTH, "Content-Type": "application/x-protobuf"},
+    )
+    # 503 when Elasticsearch is not configured in the test env — what matters here is
+    # that the body parsed, so it is anything but the 400 it used to be.
+    assert response.status_code != 400
+
+
+def test_status_advertises_both_encodings():
+    body = _client().get("/api/v1/otlp/status", headers=_AUTH).json()
+    assert "protobuf" in body["encoding"]

@@ -34,7 +34,7 @@ const PAGES = [
     // in Variables.pug. It selects its account from ?account=, because the build is a
     // static export and the account list is AWS's, discovered at read time.
     'cloud-account',
-    'cloud-monitoring', 'data-observability', 'database-monitoring', 'drift',
+    'cloud-monitoring', 'data-observability', 'database-monitoring', 'databricks', 'drift',
     'escalation', 'etl-monitoring', 'incident-correlation', 'logs',
     'orchestration-monitoring', 'service-topology', 'slo', 'traces',
   ].map(p => `apps/observability/${p}.html`),

@@ -69,7 +69,7 @@ export default function Page() {
               People in your organization — roles, invites, and auth source (SSO or native)
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="inviteMember">
               Invite member
             </button>

@@ -69,7 +69,7 @@ export default function Page() {
               Freshness, volume, schema, and quality for the tables your pipelines land — backed by Databricks Unity Catalog
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="runScan">
               Run scan
             </button>

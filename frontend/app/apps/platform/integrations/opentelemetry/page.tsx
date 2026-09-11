@@ -82,13 +82,12 @@ export default function Page() {
             Collector configuration
           </h4>
           <p className="text-body-tertiary fs-9">
-            Add this exporter to your OTel Collector and send every pipeline to it. The endpoint and the key are shown in the table below; the key is one of this organization's API keys.
+            Add this exporter to your OTel Collector and send every pipeline to it. The endpoint and the key are shown in the table below; the key is one of this organization's API keys. Both OTLP/HTTP encodings are accepted — protobuf (the default) and JSON — so there is no line to change.
           </p>
           <pre className="bg-body-highlight rounded-3 p-3 fs-9 mb-3 overflow-auto">
             exporters:
   otlphttp:
     endpoint: &lt;OTLP endpoint below&gt;
-    encoding: json          # JSON only — protobuf is not accepted yet
     headers:
       X-API-Key: &lt;your ingest key&gt;
 
@@ -103,15 +102,16 @@ service:
             <code className="mx-1">
               OTEL_EXPORTER_OTLP_ENDPOINT
             </code>
-            to the same URL,
-            <code className="mx-1">
-              OTEL_EXPORTER_OTLP_PROTOCOL=http/json
-            </code>
-            and
+            to the same URL and
             <code className="mx-1">
               OTEL_EXPORTER_OTLP_HEADERS=X-API-Key=…
             </code>
-            . Set
+            . The SDK default,
+            <code className="mx-1">
+              http/protobuf
+            </code>
+            , is accepted as-is
+              . Set
             <code className="mx-1">
               service.name
             </code>
@@ -204,7 +204,7 @@ service:
                         <span className="me-2 fa-solid fa-satellite-dish text-secondary"></span>
                         <div>
                           <h6 className="mb-0">
-                            —
+                            traces
                           </h6>
                           <p className="text-body-tertiary fs-10 mb-0">
                             nothing received yet
@@ -213,10 +213,10 @@ service:
                       </div>
                     </td>
                     <td className="align-middle col1">
-                      —
+                      otlp/http
                     </td>
                     <td className="align-middle col2">
-                      —
+                      not yet
                     </td>
                     <td className="align-middle col3">
                       0

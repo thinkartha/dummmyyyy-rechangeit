@@ -69,7 +69,7 @@ export default function Page() {
               Token usage and billing for ChatGPT, Claude, Cursor, Copilot, Grok, Lovable, and more
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="setAiBudget">
               Set AI budget
             </button>

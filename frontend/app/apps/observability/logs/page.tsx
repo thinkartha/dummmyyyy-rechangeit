@@ -66,7 +66,7 @@ export default function Page() {
               Search across every service, gateway, and pipeline — indexed per organization in Elasticsearch
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="saveSearch">
               Save search
             </button>

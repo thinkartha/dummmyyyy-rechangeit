@@ -518,6 +518,127 @@ export const SOURCES = {
     },
   },
 
+  /* --- Databricks --------------------------------------------------------
+   *
+   * Four sources for four questions, matching the dimensions New Relic's Databricks
+   * integration collects: what is it costing, who is spending it, are the queries
+   * healthy, and what compute is up. Job *runs* are not here — they are already the
+   * `etlJobs` source above, fed by the same poller, and a second copy would drift.
+   *
+   * Each one degrades the same way: system tables are opt-in per metastore, so the API
+   * answers `available: false` with a reason instead of failing. The tables render
+   * empty and the page's own banner carries the reason — a row saying "unavailable" in
+   * every column would be worse than no rows.
+   */
+
+  databricksUsage: {
+    stats: (data) => {
+      const points = (data && data.points) || [];
+      const currency = (data && data.currency) || 'USD';
+      /* Compared against the *previous* window of equal length, not against the whole
+         history: "spend is up" only means something against a like-for-like period. */
+      const half = Math.floor(points.length / 2);
+      const sum = (list) => list.reduce((t, p) => t + (Number(p.amount) || 0), 0);
+      const recent = sum(points.slice(half));
+      const prior = sum(points.slice(0, half));
+      const change = prior ? ((recent - prior) / prior) * 100 : 0;
+      return {
+        dbxCost: {
+          value: money((data && data.total_cost) || 0, currency),
+          delta: half ? `${change >= 0 ? '+' : ''}${pct(change, 1)} vs prior` : 'list price',
+        },
+        dbxDbus: { value: num((data && data.total_dbus) || 0, 1), delta: 'DBUs consumed' },
+        dbxTopSku: {
+          value: (data && data.skus && data.skus[0] && data.skus[0].name) || 'none yet',
+          delta: data && data.skus && data.skus[0]
+            ? money(data.skus[0].amount, currency) : 'no billing rows',
+        },
+      };
+    },
+    load: (api) => api.databricks.usage({ days: 30 }),
+    rows: (data) => {
+      const currency = (data && data.currency) || 'USD';
+      const total = (data && data.total_cost) || 0;
+      return ((data && data.skus) || []).map((sku) => ({
+        icon: 'fa-cube',
+        iconColor: 'info',
+        meta: null,
+        cells: [sku.name, num(sku.dbus, 1), money(sku.amount, currency),
+                pct(total ? (sku.amount / total) * 100 : 0, 1)],
+      }));
+    },
+  },
+
+  databricksSpenders: {
+    load: (api) => api.databricks.usage({ days: 30 }),
+    rows: (data) => {
+      const currency = (data && data.currency) || 'USD';
+      return ((data && data.top_spenders) || []).map((row) => ({
+        icon: row.entity_type === 'job' ? 'fa-diagram-project'
+          : row.entity_type === 'warehouse' ? 'fa-warehouse' : 'fa-server',
+        /* "unattributed" is not a problem to flag — serverless and some shared compute
+           genuinely carry no entity id. Colouring it as a warning would have people
+           chasing a fault that is not there. */
+        iconColor: row.entity_type === 'unattributed' ? 'secondary' : 'primary',
+        meta: null,
+        cells: [row.entity, row.entity_type, num(row.dbus, 1), money(row.amount, currency)],
+      }));
+    },
+  },
+
+  databricksQueries: {
+    stats: (data) => ({
+      dbxQueries: { value: num((data && data.total_queries) || 0), delta: 'last 24h' },
+      dbxQueryFailures: {
+        value: pct(((data && data.failure_rate) || 0) * 100, 2),
+        delta: `${num((data && data.total_failures) || 0)} failed`,
+      },
+      /* The worst compute's p99, not an average of p99s — percentiles do not
+         recombine, and averaging them produces a number nothing ever measured. */
+      dbxQueryP99: { value: `${num((data && data.worst_p99_ms) || 0, 0)}ms`, delta: 'worst compute' },
+    }),
+    load: (api) => api.databricks.queries({ hours: 24 }),
+    rows: (data) =>
+      ((data && data.items) || []).map((q) => {
+        const rate = q.queries ? q.failures / q.queries : 0;
+        return {
+          icon: 'fa-magnifying-glass-chart',
+          iconColor: rate > 0.05 ? 'danger' : rate > 0.01 ? 'warning' : 'success',
+          meta: q.statement_type,
+          cells: [q.compute_id, num(q.queries), num(q.failures), pct(rate * 100, 2),
+                  `${num(q.avg_duration_ms, 0)}ms`, `${num(q.p99_duration_ms, 0)}ms`,
+                  badge(rate > 0.05 ? 'Failing' : rate > 0.01 ? 'Degraded' : 'Healthy')],
+        };
+      }),
+  },
+
+  databricksClusters: {
+    stats: (data) => ({
+      dbxClusters: { value: num((data && data.total) || 0), delta: 'in workspace' },
+      dbxClustersRunning: {
+        value: num((data && data.running) || 0),
+        delta: 'running now',
+      },
+    }),
+    load: (api) => api.databricks.clusters(),
+    rows: (data) =>
+      ((data && data.items) || []).map((c) => ({
+        icon: 'fa-server',
+        iconColor: c.running ? 'success' : 'secondary',
+        meta: c.state_message || c.spark_version || null,
+        cells: [
+          c.name,
+          badge(c.running ? 'Running' : c.state === 'PENDING' ? 'Starting' : 'Stopped'),
+          c.source,
+          c.node_type || '—',
+          /* An autoscaling cluster has no fixed worker count, and printing its floor as
+             if it were the size is how a 2-64 cluster reads as a small one. */
+          c.min_workers ? `${num(c.min_workers)}\u2013${num(c.max_workers)}` : num(c.workers),
+          c.autotermination_minutes ? `${num(c.autotermination_minutes)}m` : 'never',
+        ],
+      })),
+  },
+
   correlation: {
     load: (api) => api.correlation.incidents(),
     rows: (data) =>

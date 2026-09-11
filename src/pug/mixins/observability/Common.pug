@@ -4,27 +4,31 @@ mixin ObsPageHeader(config)
       .col
         h2.mb-2= config.title
         h5.text-body-tertiary.fw-semibold.mb-0= config.subtitle
-      if config.linkHref
-        //- Connecting a source happens under Integrations, on that source's own page.
-        //- A monitoring page links there rather than carrying a second copy of the form:
-        //- two entry points to one credential is how they drift apart.
-        .col-auto
-          a.btn.btn-phoenix-primary(href=config.linkHref)= config.linkText
-      else if config.action || config.secondaryAction
-        //- Only the two-button pages need the flex row; keeping it conditional means
-        //- adding this option did not rewrite the markup of every other page.
-        .col-auto(class=config.secondaryAction ? 'd-flex gap-2' : '')
+      //- A link and an action are not alternatives. ETL monitoring sends you to
+      //- Integrations to *connect* a platform and also launches a job on one that is
+      //- already connected; when these were an if/else the second button could not
+      //- exist on that page at all.
+      if config.linkHref || config.action || config.secondaryAction
+        .col-auto.d-flex.gap-2
+          //- Connecting a source happens under Integrations, on that source's own page.
+          //- A monitoring page links there rather than carrying a second copy of the
+          //- form: two entry points to one credential is how they drift apart.
+          if config.linkHref
+            a.btn.btn-phoenix-primary(href=config.linkHref)= config.linkText
           //- actionKey names an entry in integration/actions.js. Without one the button
           //- stays inert, which is what every page did before the write layer existed.
           //- A page can carry two: the API gateway page offers both "connect the one you
           //- already run" and "install ours", which are different jobs, not one job with
           //- a mode switch.
+          //- data-lhb-arg is how one action entry serves several pages: "Poll now" is
+          //- the same pollEtl entry on the Databricks, Talend and Boomi pages, told
+          //- which platform it is on rather than copied three times.
           if config.secondaryAction
-            button.btn.btn-phoenix-secondary(type='button' data-lhb-action=config.secondaryActionKey)= config.secondaryAction
+            button.btn.btn-phoenix-secondary(type='button' data-lhb-action=config.secondaryActionKey data-lhb-arg=config.secondaryActionArg)= config.secondaryAction
           if config.action
             //- actionRole hides the button unless the session holds that role. The API
             //- 403s either way; this is so the page does not offer what it cannot do.
-            button.btn.btn-primary(type='button' data-lhb-action=config.actionKey data-lhb-requires-role=config.actionRole)= config.action
+            button.btn.btn-primary(type='button' data-lhb-action=config.actionKey data-lhb-arg=config.actionArg data-lhb-requires-role=config.actionRole)= config.action
 
 //- The numbers in these cards are illustrative unless the card carries a `key`, which
 //- names a figure a live source publishes. `data-obs-stat` is what live-data.js blanks

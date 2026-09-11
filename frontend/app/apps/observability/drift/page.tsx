@@ -69,7 +69,7 @@ export default function Page() {
               Where today stopped looking like the baseline — for metrics feeding alerts and features feeding models
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="rebaseline">
               Rebaseline
             </button>

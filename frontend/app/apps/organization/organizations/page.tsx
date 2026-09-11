@@ -69,7 +69,7 @@ export default function Page() {
               Multi-tenant SaaS — each org gets slug.loveheartbeat.com with isolated members, SSO, and data
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="createOrganization" data-lhb-requires-role="platform_admin">
               Create organization
             </button>

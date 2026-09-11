@@ -72,7 +72,7 @@ export default function Page() {
               Rules that act on signals, models that predict them, and the agents that carry out remediation
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="automationRule">
               New rule
             </button>

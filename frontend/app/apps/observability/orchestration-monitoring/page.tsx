@@ -72,7 +72,7 @@ export default function Page() {
               DAGs, workflows, and scheduled jobs — the layer that decides when your ETL actually runs
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <a className="btn btn-phoenix-primary" href="/apps/platform/integrations/cloud/">
               Configure in Integrations
             </a>

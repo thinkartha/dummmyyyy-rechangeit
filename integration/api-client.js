@@ -490,7 +490,14 @@ export const api = {
     schemas: (params) => get('/databricks/schemas', params),
     tables: (params) => get('/databricks/tables', params),
     table: (fullName) => get(`/databricks/tables/${fullName}`),
-    query: (body) => post('/databricks/query', body)
+    query: (body) => post('/databricks/query', body),
+    /* Consumption, query health and clusters — the three dimensions the ETL job-run
+       poller does not cover. Separate calls on purpose: clusters is one REST hop and
+       cheap to refresh, usage is a warehouse statement over a month of billing rows. */
+    usage: (params) => get('/databricks/usage', params),
+    queries: (params) => get('/databricks/queries', params),
+    clusters: () => get('/databricks/clusters'),
+    metricsSummary: (params) => get('/databricks/metrics/summary', params)
   },
 
   /* Cloud cost + reliability */

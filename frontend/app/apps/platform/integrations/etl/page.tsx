@@ -74,7 +74,7 @@ export default function Page() {
               Credentials for the pipeline platforms whose job executions feed ETL and Orchestration Monitoring
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="connectEtl">
               Connect ETL tool
             </button>

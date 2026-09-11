@@ -78,7 +78,7 @@ export default function Page() {
               Every AWS account your connected credential reaches, with what it owns, what is alarming, and what it has cost this month
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="refreshData">
               Refresh
             </button>

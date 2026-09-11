@@ -69,7 +69,7 @@ export default function Page() {
               One workspace connection, shared by Data Observability and the ETL connector — the catalog browser and query console that sit behind both
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="connectDatabricks">
               Connect Databricks
             </button>

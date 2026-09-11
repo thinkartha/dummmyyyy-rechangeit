@@ -1,0 +1,162 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+//- Databricks monitoring.
+//-
+//- The workspace connection already existed and was used for two things: browsing Delta
+//- tables, and polling job runs. Neither answers what a Databricks owner opens a
+//- monitoring tool for — what is this costing, who is spending it, and are the queries
+//- and clusters healthy.
+//-
+//- Same four dimensions New Relic's Databricks integration collects (consumption, jobs,
+//- queries, clusters), from the system tables over the SQL warehouse this tenant already
+//- configured. No agent to install: the only new permission is SELECT on `system`.
+//-
+//- Job runs are not duplicated here. They are the ETL monitoring page's table, fed by
+//- the same poller, and the Jobs tab links there rather than carrying a second copy.
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Observability', href: '#!' },
+      { label: 'Databricks', href: '#!', active: true }
+    ];
+
+block content
+  +ObsPageHeader({
+    title: 'Databricks',
+    subtitle: 'Consumption, query health and clusters for the connected workspace — read from system tables, not from an agent',
+    action: 'Run job',
+    actionKey: 'runEtlJob',
+    secondaryAction: 'Poll now',
+    secondaryActionKey: 'pollEtl',
+    secondaryActionArg: 'databricks'
+  })
+
+  //- data-mock-empty: shown only when demo data is off and nothing has loaded. The
+  //- reason it is worth its own banner is that the likeliest empty state here is not
+  //- "no workload yet" but "system schemas are not enabled on the metastore", which is
+  //- a setup step nobody guesses from a blank table.
+  .alert.alert-subtle-info.d-flex.align-items-start.gap-2.mb-4(role='alert' data-mock-empty)
+    span.fa-solid.fa-circle-info.mt-1
+    div
+      strong.d-block Cost and query panels need Databricks system tables.
+      span.fs-9 They are opt-in per metastore. Enable the
+        |  
+        code system
+        |  schemas and grant the connected token SELECT on
+        |  
+        code system.billing
+        |  and
+        |  
+        code system.query
+        | . Clusters and job runs work without them.
+
+  +ObsKpiRow([
+    { key: 'dbxCost', label: 'List cost', value: '0', delta: 'last 30 days', badge: 'primary',
+      help: 'Databricks list price on the DBUs consumed. It excludes committed-use discounts and the cloud provider\'s own compute charge, so it will not equal the invoice — it is the number that moves when a workload changes.' },
+    { key: 'dbxDbus', label: 'DBUs', value: '0', delta: 'last 30 days', badge: 'info',
+      help: 'The billable unit itself, independent of price. Watch this rather than cost when a discount or a region change would otherwise look like a workload change.' },
+    { key: 'dbxQueries', label: 'Queries', value: '0', delta: 'last 24h', badge: 'info',
+      help: 'Statements recorded in system.query.history across every warehouse and cluster.' },
+    { key: 'dbxQueryFailures', label: 'Query failures', value: '0', delta: '0 failed', badge: 'warning',
+      help: 'Anything that did not finish: errors, cancellations and timeouts alike. A cancelled query is still a person who did not get an answer.' },
+    { key: 'dbxQueryP99', label: 'Slowest p99', value: '0', delta: 'worst compute', badge: 'warning',
+      help: 'The worst compute\'s p99, named beside it. Percentiles do not recombine, so there is no honest fleet-wide number.' },
+    { key: 'dbxClustersRunning', label: 'Clusters running', value: '0', delta: 'running now', badge: 'success',
+      help: 'Running or resizing. Job clusters are included — they are where most job DBUs are spent.' }
+  ])
+
+  +ObsTabs([
+    { id: 'dbx-spend', label: 'Spend', icon: 'fa-coins' },
+    { id: 'dbx-queries', label: 'Queries', icon: 'fa-magnifying-glass-chart' },
+    { id: 'dbx-clusters', label: 'Clusters', icon: 'fa-server' }
+  ])
+
+  .tab-content
+    #dbx-spend.tab-pane.fade.show.active(role='tabpanel' aria-labelledby='dbx-spend-tab')
+      .mb-4
+        +ObsChartCard({
+          title: 'Daily list cost',
+          chart: 'databricksCost',
+          height: '300px',
+          help: 'Last 30 days. A month-to-date total only ever rises, so it cannot show whether spend is accelerating. DBUs are in the tooltip rather than on a second axis — two y-scales make their crossing point look meaningful when it is an artefact of the scales.'
+        })
+
+      .row.g-4
+        .col-12.col-xl-6
+          +ObsToolTable({
+            title: 'Cost by SKU',
+            live: 'databricksUsage',
+            subtitle: 'Which product the DBUs went to, over the last 30 days',
+            searchPlaceholder: 'Search SKUs',
+            pageSize: 8,
+            columns: [
+              { label: 'SKU', className: 'ps-3' },
+              { label: 'DBUs' },
+              { label: 'List cost' },
+              { label: 'Share' }
+            ],
+            rows: [
+              { icon: 'fa-cube', iconColor: 'info', cells: ['PREMIUM_ALL_PURPOSE_COMPUTE', '412.0', 'USD 226.60', '58.1%'] }
+            ]
+          })
+        .col-12.col-xl-6
+          +ObsToolTable({
+            title: 'Top spenders',
+            live: 'databricksSpenders',
+            subtitle: 'Attributed to the job, warehouse or cluster that consumed the DBUs',
+            searchPlaceholder: 'Search',
+            pageSize: 8,
+            columns: [
+              { label: 'Entity', className: 'ps-3' },
+              { label: 'Type' },
+              { label: 'DBUs' },
+              { label: 'List cost' }
+            ],
+            rows: [
+              { icon: 'fa-diagram-project', iconColor: 'primary', cells: ['nightly-load', 'job', '184.0', 'USD 101.20'] }
+            ]
+          })
+
+    #dbx-queries.tab-pane.fade(role='tabpanel' aria-labelledby='dbx-queries-tab')
+      +ObsToolTable({
+        title: 'Query health by compute',
+        live: 'databricksQueries',
+        subtitle: 'Last 24 hours from system.query.history, busiest first',
+        searchPlaceholder: 'Search warehouses and clusters',
+        pageSize: 10,
+        columns: [
+          { label: 'Compute', className: 'ps-3' },
+          { label: 'Queries' },
+          { label: 'Failures' },
+          { label: 'Failure rate' },
+          { label: 'Avg' },
+          { label: 'p99' },
+          { label: 'Status' }
+        ],
+        rows: [
+          { icon: 'fa-magnifying-glass-chart', iconColor: 'success', meta: 'SELECT', cells: ['a1b2c3d4e5f6', '1,204', '3', '0.25%', '42ms', '910ms', { text: 'Healthy', badge: 'success' }] }
+        ]
+      })
+
+    #dbx-clusters.tab-pane.fade(role='tabpanel' aria-labelledby='dbx-clusters-tab')
+      +ObsToolTable({
+        title: 'Clusters',
+        live: 'databricksClusters',
+        subtitle: 'Running first. Job clusters included — hiding them would make this disagree with the spend attribution',
+        searchPlaceholder: 'Search clusters',
+        pageSize: 10,
+        columns: [
+          { label: 'Cluster', className: 'ps-3' },
+          { label: 'State' },
+          { label: 'Source' },
+          { label: 'Node type' },
+          { label: 'Workers' },
+          { label: 'Auto-terminate' }
+        ],
+        rows: [
+          { icon: 'fa-server', iconColor: 'success', meta: '15.4.x-scala2.12', cells: ['analytics-shared', { text: 'Running', badge: 'success' }, 'UI', 'm5d.large', '2–8', '30m'] }
+        ]
+      })

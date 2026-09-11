@@ -69,7 +69,7 @@ export default function Page() {
               What you promised, what you have spent, and how fast you are spending it
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="defineSlo">
               Define SLO
             </button>

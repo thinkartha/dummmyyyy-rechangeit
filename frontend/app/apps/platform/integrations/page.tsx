@@ -69,7 +69,7 @@ export default function Page() {
               Every source this organization has connected, what it is feeding, and whether its credentials still work
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="addIntegration">
               Add integration
             </button>

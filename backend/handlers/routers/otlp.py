@@ -5,16 +5,18 @@ Point an OTel Collector (or an SDK exporter) at this router's base URL:
     exporters:
       otlphttp:
         endpoint: https://<api>/api/v1/otlp
-        encoding: json
         headers: {X-API-Key: <tenant api key>}
 
 The exporter appends /v1/traces, /v1/metrics and /v1/logs itself, so the paths below
-are the standard ones. Payloads are converted by shared/elk/otlp.py and written to the
-same Elasticsearch indices as the native ingest routes in elk.py — no other wiring.
+are the standard ones. Both OTLP/HTTP encodings are accepted — protobuf (the SDK and
+collector default) and JSON — decided by Content-Type, so no exporter needs a special
+line. Payloads are converted by shared/elk/otlp.py and written to the same
+Elasticsearch indices as the native ingest routes in elk.py — no other wiring.
 """
 
 from __future__ import annotations
 
+import json
 import logging
 from datetime import datetime, timezone
 
@@ -41,14 +43,38 @@ _INDEXERS = {
 _LAST_SEEN: dict[str, dict[str, dict]] = {}
 
 
-async def _ingest(request: Request, signal: str, tenant_id: str) -> dict:
-    indexer, convert, bulk = _INDEXERS[signal]
+async def _payload(request: Request, signal: str) -> dict:
+    """The request body as a dict, whichever OTLP encoding it arrived in.
+
+    Content-Type decides. An exporter that sends protobuf without the header is rare
+    enough not to guess at: a wrong guess would mean feeding protobuf bytes to a JSON
+    parser and reporting the resulting syntax error, which tells the operator nothing.
+    """
+    body = await request.body()
+    content_type = (request.headers.get("content-type") or "").split(";")[0].strip().lower()
+
+    if content_type in ("application/x-protobuf", "application/protobuf"):
+        try:
+            return otlp.decode_protobuf(body, signal)
+        except otlp.ProtobufUnavailable as exc:
+            raise HTTPException(status_code=415, detail=str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(
+                status_code=400, detail=f"Body is not an OTLP protobuf {signal} export: {exc}"
+            ) from exc
+
     try:
-        payload = await request.json()
+        payload = json.loads(body or b"{}")
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Body is not OTLP JSON: {exc}") from exc
     if not isinstance(payload, dict):
         raise HTTPException(status_code=400, detail="Body is not an OTLP JSON object.")
+    return payload
+
+
+async def _ingest(request: Request, signal: str, tenant_id: str) -> dict:
+    indexer, convert, bulk = _INDEXERS[signal]
+    payload = await _payload(request, signal)
     docs = convert(payload)
     if not docs:
         # An empty export is normal collector behaviour, not an error.
@@ -96,7 +122,7 @@ def otlp_status(request: Request, tenant_id: str = Depends(get_tenant_id)) -> di
     return {
         "endpoint": base,
         "protocol": "otlp/http",
-        "encoding": "json",
+        "encoding": ["protobuf", "json"],
         "auth_header": "X-API-Key",
         "signals": {s: seen.get(s) for s in _INDEXERS},
         "connected": bool(seen),

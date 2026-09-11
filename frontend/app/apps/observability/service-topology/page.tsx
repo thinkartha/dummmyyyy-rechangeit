@@ -69,7 +69,7 @@ export default function Page() {
               What calls what, inferred from span parentage rather than from a diagram somebody drew once and stopped updating
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="rebuildTopology">
               Rebuild graph
             </button>

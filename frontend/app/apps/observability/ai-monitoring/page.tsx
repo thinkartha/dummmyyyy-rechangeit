@@ -75,7 +75,7 @@ export default function Page() {
               Usage, latency, failures, and spend for the AI traffic the gateway already sees — no tool registration needed
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="refreshData">
               Refresh
             </button>

@@ -69,7 +69,7 @@ export default function Page() {
               Can we reach it, does it answer, and is the answer correct — the checks that run before you trust any other dashboard
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="runHealthChecks">
               Run all checks
             </button>

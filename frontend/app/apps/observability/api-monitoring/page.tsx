@@ -69,7 +69,7 @@ export default function Page() {
               Latency, errors, and throughput for the APIs behind your gateways — register them under API Gateway and their traffic shows up here
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="refreshData">
               Refresh
             </button>

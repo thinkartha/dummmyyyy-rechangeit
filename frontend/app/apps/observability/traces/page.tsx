@@ -69,7 +69,7 @@ export default function Page() {
               OpenTelemetry spans and the dependency graph derived from them — which service called what, and where the time went
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="exportTraces">
               Export traces
             </button>

@@ -72,7 +72,7 @@ export default function Page() {
               Alerts that fired together, collapsed into one incident with a probable cause and the evidence behind it
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="recorrelate">
               Recorrelate
             </button>

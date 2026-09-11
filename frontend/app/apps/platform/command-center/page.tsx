@@ -66,7 +66,7 @@ export default function Page() {
               Every signal this organization produces, on one page — with a way into whichever area is on fire
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="acknowledgeAll">
               Acknowledge all
             </button>

@@ -33,6 +33,18 @@ Parameters:
       Comma-separated Elasticsearch/OpenSearch URLs backing the log, metric and trace
       search endpoints. Optional: when empty, deployed search endpoints return empty
       results instead of trying localhost inside the Lambda container.
+  ConnectorPollMinutes:
+    Type: Number
+    Default: 5
+    # 2, not 1: EventBridge spells a one-minute rate `rate(1 minute)`, singular, and the
+    # expression below is built by substitution — a 1 here would deploy `rate(1 minutes)`
+    # and fail validation at stack update.
+    MinValue: 2
+    MaxValue: 60
+    Description: >
+      How often the scheduled sweep polls every tenant's ETL connectors. The sweep is
+      idempotent (runs are deduplicated on id + state), so a shorter interval costs
+      invocations and provider API calls, not duplicate data.
   MockData:
     Type: String
     Default: "0"
@@ -599,6 +611,18 @@ Resources:
             Path: /health
             Method: GET
             RestApiId: !Ref LoveHeartBeatApiGateway
+        # The connector sweep. The in-process poller threads the app starts locally are
+        # skipped under Lambda on purpose (a frozen container cannot run a sleep loop),
+        # which left the deployed stack polling nothing until someone pressed a button.
+        # This invokes the same function with an EventBridge envelope; lambda_handler
+        # routes it to handlers/scheduled.py instead of Mangum.
+        ConnectorSweep:
+          Type: Schedule
+          Properties:
+            Schedule: !Sub rate(${ConnectorPollMinutes} minutes)
+            Name: !Sub loveheartbeat-connector-sweep-${Stage}
+            Description: Poll every tenant's ETL connectors (Databricks, Talend, Boomi)
+            Enabled: true
 
   LoveHeartBeatApiGateway:
     Type: AWS::Serverless::Api

@@ -69,7 +69,7 @@ export default function Page() {
               Who gets woken when nobody answers, and what a machine is not allowed to do without a human saying yes
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="escalationPath">
               New escalation path
             </button>

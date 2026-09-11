@@ -258,6 +258,67 @@ export const CHARTS = {
   },
 
   /**
+   * Databricks list cost per day.
+   *
+   * Same shape as accountCost and for the same reason: a month-to-date total only ever
+   * rises, so it cannot answer "is this accelerating", which is the only question worth
+   * putting a chart on a bill for.
+   *
+   * DBUs are deliberately not plotted beside it. They are the same quantity in a
+   * different unit, and the honest way to show both on one canvas would be a second
+   * y-axis — which is the one chart form that reliably misleads, because the crossing
+   * point of the two lines is an artefact of the scales rather than anything real.
+   */
+  databricksCost: {
+    load: (api) => api.databricks.usage({ days: 30 }),
+    empty: 'No Databricks billing rows yet. system.billing fills in within a day of the first workload.',
+    option: (data) => {
+      if (!data || data.available === false || !(data.points || []).length) return null;
+      const c = ink();
+      const currency = data.currency || 'USD';
+      const fill = seriesColors()[0];
+      return {
+        ...base(),
+        tooltip: {
+          ...base().tooltip,
+          formatter: (points) => {
+            const p = points[0];
+            const point = data.points[p.dataIndex] || {};
+            return `${esc(p.axisValue)}<br/>${esc(money(p.data, currency))}`
+              + `<br/>${esc(`${point.dbus} DBUs`)}`;
+          },
+        },
+        grid: { left: 8, right: 16, top: 8, bottom: 8, containLabel: true },
+        xAxis: {
+          type: 'category',
+          data: data.points.map((p) => p.date),
+          boundaryGap: false,
+          axisLine: { lineStyle: { color: c.axis } },
+          axisTick: { show: false },
+          axisLabel: { color: c.muted, fontSize: 11, hideOverlap: true },
+        },
+        yAxis: {
+          type: 'value',
+          name: `${currency} (list)`,
+          nameTextStyle: { color: c.muted, fontSize: 11, align: 'left' },
+          splitLine: { lineStyle: { color: c.grid } },
+          axisLabel: { color: c.muted, fontSize: 11 },
+        },
+        series: [{
+          type: 'line',
+          data: data.points.map((p) => p.amount),
+          smooth: false,
+          showSymbol: false,
+          symbolSize: 8,
+          lineStyle: { width: 2, color: fill },
+          itemStyle: { color: fill },
+          areaStyle: { color: fill, opacity: 0.12 },
+        }],
+      };
+    },
+  },
+
+  /**
    * Spend as a treemap — tile area is the amount.
    *
    * A ranked bar chart compares magnitude more accurately and is what shipped first.

@@ -48,4 +48,24 @@ from mangum import Mangum  # noqa: E402  — must follow _load_secrets()
 from handlers.api import app  # noqa: E402  — core.auth reads env at import time
 
 # Default API Gateway stage prefix handling.
-handler = Mangum(app, lifespan="off", api_gateway_base_path=os.getenv("STAGE", "/"))
+_http_handler = Mangum(app, lifespan="off", api_gateway_base_path=os.getenv("STAGE", "/"))
+
+
+def handler(event, context=None):
+    """One function, two kinds of event.
+
+    EventBridge invokes this same Lambda on a schedule to run the connector sweep (see
+    handlers/scheduled.py). Mangum raises on anything that is not an HTTP event, so the
+    two are separated here rather than by deploying a second function — a second
+    function would be a copy of this one's role, environment and code for the sake of
+    one `if`.
+
+    The test is EventBridge's own envelope, not the absence of HTTP keys: a malformed
+    API Gateway event should still reach Mangum and fail as a bad request, not silently
+    trigger a poll of every tenant.
+    """
+    if isinstance(event, dict) and event.get("source") == "aws.events":
+        from handlers.scheduled import handler as scheduled_handler
+
+        return scheduled_handler(event, context)
+    return _http_handler(event, context)
