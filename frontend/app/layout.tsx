@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 
 export const metadata: Metadata = {
   title: 'LoveHeartBeat',
@@ -13,6 +13,14 @@ export const metadata: Metadata = {
     shortcut: '/assets/img/favicons/favicon.ico',
   },
   manifest: '/assets/img/favicons/manifest.json',
+}
+
+// The brand red, sampled from the logo. In the `viewport` export, not `metadata` —
+// Next 15 moved it and warns at build time if it is left in the other one. Kept in step
+// with the same value in src/pug/layouts/Layout.pug, since this file is hand-maintained
+// and the porter does not generate it.
+export const viewport: Viewport = {
+  themeColor: '#FF3B4F',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
