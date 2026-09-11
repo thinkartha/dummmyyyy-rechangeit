@@ -1775,9 +1775,18 @@ function isFiltering(root) {
 function publishStats(stats) {
   for (const [key, stat] of Object.entries(stats || {})) {
     const value = document.querySelector(`[data-obs-stat-key="${key}"]`);
-    if (value) value.textContent = stat.value;
+    if (value) {
+      value.textContent = stat.value;
+      /* Both of these are truncated in the markup, so the title is the only way to read
+         the whole thing. Set here as well as in the template, or it keeps saying
+         whatever the placeholder said before the first measurement landed. */
+      value.title = stat.value;
+    }
     const delta = document.querySelector(`[data-obs-stat-delta-key="${key}"]`);
-    if (delta && stat.delta != null) delta.textContent = stat.delta;
+    if (delta && stat.delta != null) {
+      delta.textContent = stat.delta;
+      delta.title = stat.delta;
+    }
   }
 }
 

@@ -75,11 +75,11 @@ export default function Page() {
                 <span className="fa-solid fa-circle-info"></span>
               </span>
             </div>
-            <div className="d-flex align-items-baseline gap-2 flex-wrap">
+            <div className="d-flex align-items-baseline gap-2" style={{ minWidth: "0" }}>
               <h2 className="mb-0 fw-semibold lh-1" data-obs-stat="data-obs-stat" data-obs-stat-key="requests">
                 0
               </h2>
-              <span className="badge badge-phoenix fs-10 badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="requests">
+              <span className="badge badge-phoenix fs-10 text-truncate badge-phoenix-info" style={{ maxWidth: "60%", textTransform: "none" }} title="from stored spans" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="requests">
                 from stored spans
               </span>
             </div>
@@ -95,11 +95,11 @@ export default function Page() {
                 <span className="fa-solid fa-circle-info"></span>
               </span>
             </div>
-            <div className="d-flex align-items-baseline gap-2 flex-wrap">
+            <div className="d-flex align-items-baseline gap-2" style={{ minWidth: "0" }}>
               <h2 className="mb-0 fw-semibold lh-1" data-obs-stat="data-obs-stat" data-obs-stat-key="errorRate">
                 0
               </h2>
-              <span className="badge badge-phoenix fs-10 badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="errorRate">
+              <span className="badge badge-phoenix fs-10 text-truncate badge-phoenix-success" style={{ maxWidth: "60%", textTransform: "none" }} title="0 5xx" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="errorRate">
                 0 5xx
               </span>
             </div>
@@ -115,11 +115,11 @@ export default function Page() {
                 <span className="fa-solid fa-circle-info"></span>
               </span>
             </div>
-            <div className="d-flex align-items-baseline gap-2 flex-wrap">
+            <div className="d-flex align-items-baseline gap-2" style={{ minWidth: "0" }}>
               <h2 className="mb-0 fw-semibold lh-1" data-obs-stat="data-obs-stat" data-obs-stat-key="p99Latency">
                 0
               </h2>
-              <span className="badge badge-phoenix fs-10 badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="p99Latency">
+              <span className="badge badge-phoenix fs-10 text-truncate badge-phoenix-warning" style={{ maxWidth: "60%", textTransform: "none" }} title="slowest route" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="p99Latency">
                 slowest route
               </span>
             </div>
@@ -135,11 +135,11 @@ export default function Page() {
                 <span className="fa-solid fa-circle-info"></span>
               </span>
             </div>
-            <div className="d-flex align-items-baseline gap-2 flex-wrap">
+            <div className="d-flex align-items-baseline gap-2" style={{ minWidth: "0" }}>
               <h2 className="mb-0 fw-semibold lh-1" data-obs-stat="data-obs-stat" data-obs-stat-key="routes">
                 0
               </h2>
-              <span className="badge badge-phoenix fs-10 badge-phoenix-primary" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="routes">
+              <span className="badge badge-phoenix fs-10 text-truncate badge-phoenix-primary" style={{ maxWidth: "60%", textTransform: "none" }} title="from stored spans" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="routes">
                 from stored spans
               </span>
             </div>

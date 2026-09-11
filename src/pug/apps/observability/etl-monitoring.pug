@@ -21,10 +21,10 @@ block content
   //- below. Avg duration has no key: /summary does not carry one, and the Job runs table
   //- reports duration per run, which is the honest place for it.
   +ObsStatCards([
-    { label: 'Pipelines', key: 'pipelines', value: '0', delta: 'awaiting data', badge: 'info' },
-    { label: 'Success rate', key: 'successRate', value: '0', delta: 'awaiting data', badge: 'success' },
-    { label: 'Failed runs (24h)', key: 'failedRuns', value: '0', delta: 'awaiting data', badge: 'success' },
-    { label: 'Avg duration', value: '0', delta: 'awaiting data', badge: 'warning' }
+    { label: 'Pipelines', key: 'pipelines', value: '0', delta: '', badge: 'info' },
+    { label: 'Success rate', key: 'successRate', value: '0', delta: '', badge: 'success' },
+    { label: 'Failed runs (24h)', key: 'failedRuns', value: '0', delta: '', badge: 'success' },
+    { label: 'Avg duration', value: '0', delta: '', badge: 'warning' }
   ])
 
   +ObsToolTable({

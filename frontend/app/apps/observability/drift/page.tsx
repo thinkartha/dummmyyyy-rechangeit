@@ -80,16 +80,16 @@ export default function Page() {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 className="text-body-tertiary mb-2">
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div style={{ minWidth: "0" }}>
+                  <h6 className="text-body-tertiary mb-2 text-truncate" title="Features tracked">
                     Features tracked
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="driftTracked">
+                  <h3 className="mb-0 text-truncate" data-obs-stat="data-obs-stat" data-obs-stat-key="driftTracked" title="0">
                     0
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="driftTracked">
+                <span className="badge badge-phoenix text-truncate badge-phoenix-info" style={{ maxWidth: "55%", textTransform: "none" }} title="numeric + categorical" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="driftTracked">
                   numeric + categorical
                 </span>
               </div>
@@ -99,16 +99,16 @@ export default function Page() {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 className="text-body-tertiary mb-2">
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div style={{ minWidth: "0" }}>
+                  <h6 className="text-body-tertiary mb-2 text-truncate" title="Drifting">
                     Drifting
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="driftDrifting">
+                  <h3 className="mb-0 text-truncate" data-obs-stat="data-obs-stat" data-obs-stat-key="driftDrifting" title="0">
                     0
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="driftDrifting">
+                <span className="badge badge-phoenix text-truncate badge-phoenix-warning" style={{ maxWidth: "55%", textTransform: "none" }} title="over threshold" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="driftDrifting">
                   over threshold
                 </span>
               </div>
@@ -118,16 +118,16 @@ export default function Page() {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 className="text-body-tertiary mb-2">
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div style={{ minWidth: "0" }}>
+                  <h6 className="text-body-tertiary mb-2 text-truncate" title="Numeric (KS)">
                     Numeric (KS)
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="driftNumeric">
+                  <h3 className="mb-0 text-truncate" data-obs-stat="data-obs-stat" data-obs-stat-key="driftNumeric" title="0">
                     0
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-primary" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="driftNumeric">
+                <span className="badge badge-phoenix text-truncate badge-phoenix-primary" style={{ maxWidth: "55%", textTransform: "none" }} title="distribution shift" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="driftNumeric">
                   distribution shift
                 </span>
               </div>
@@ -137,16 +137,16 @@ export default function Page() {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 className="text-body-tertiary mb-2">
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div style={{ minWidth: "0" }}>
+                  <h6 className="text-body-tertiary mb-2 text-truncate" title="Categorical (Chi-square)">
                     Categorical (Chi-square)
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="driftCategorical">
+                  <h3 className="mb-0 text-truncate" data-obs-stat="data-obs-stat" data-obs-stat-key="driftCategorical" title="0">
                     0
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-secondary" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="driftCategorical">
+                <span className="badge badge-phoenix text-truncate badge-phoenix-secondary" style={{ maxWidth: "55%", textTransform: "none" }} title="category mix" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="driftCategorical">
                   category mix
                 </span>
               </div>

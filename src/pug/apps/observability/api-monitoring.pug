@@ -23,10 +23,10 @@ block content
   //- up every stored span, out to the 30-day record retention), so "Requests (24h)" was
   //- a promise nothing measured, and it knows nothing about gateway registrations.
   +ObsStatCards([
-    { label: 'Requests', key: 'requests', value: '0', delta: 'awaiting data', badge: 'info' },
-    { label: 'Error rate', key: 'errorRate', value: '0', delta: 'awaiting data', badge: 'success' },
-    { label: 'Slowest route p99', key: 'p99Latency', value: '0', delta: 'awaiting data', badge: 'warning' },
-    { label: 'Routes', key: 'routes', value: '0', delta: 'awaiting data', badge: 'info' }
+    { label: 'Requests', key: 'requests', value: '0', delta: '', badge: 'info' },
+    { label: 'Error rate', key: 'errorRate', value: '0', delta: '', badge: 'success' },
+    { label: 'Slowest route', key: 'p99Latency', value: '0', delta: 'no routes yet', badge: 'warning' },
+    { label: 'Routes', key: 'routes', value: '0', delta: '', badge: 'info' }
   ])
 
   //- Columns follow what /observability/routes actually returns — route, requests, 5xx,

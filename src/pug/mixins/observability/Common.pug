@@ -37,11 +37,25 @@ mixin ObsStatCards(stats)
       .col-12.col-sm-6.col-xl-3
         .card.h-100
           .card-body
-            .d-flex.justify-content-between.align-items-start
-              div
-                h6.text-body-tertiary.mb-2= stat.label
-                h3.mb-0(data-obs-stat data-obs-stat-key=stat.key)= stat.value
-              span.badge.badge-phoenix(class=`badge-phoenix-${stat.badge || 'primary'}` data-obs-stat-delta data-obs-stat-delta-key=stat.key)= stat.delta
+            //- gap-2 and min-width:0 are both load-bearing. A delta is not always a
+            //- short word: the p99 card's delta is the slowest route's *path*, and a
+            //- flex item defaults to min-width:auto, so the badge refused to shrink and
+            //- ran outside the card instead. Zero min-width lets both sides give, and
+            //- text-truncate is what they do with the space they have.
+            .d-flex.justify-content-between.align-items-start.gap-2
+              div(style='min-width:0')
+                h6.text-body-tertiary.mb-2.text-truncate(title=stat.label)= stat.label
+                h3.mb-0.text-truncate(data-obs-stat data-obs-stat-key=stat.key title=stat.value)= stat.value
+              //- text-transform:none because the theme uppercases badges, and these
+              //- carry route paths — which are case-sensitive, so shouting them is
+              //- not just ugly, it shows something the server never said.
+              //- The title keeps the full value reachable once it is truncated.
+              span.badge.badge-phoenix.text-truncate(
+                class=`badge-phoenix-${stat.badge || 'primary'}`
+                style='max-width:55%;text-transform:none'
+                title=stat.delta
+                data-obs-stat-delta
+                data-obs-stat-delta-key=stat.key)= stat.delta
 
 //- A KPI strip in the shape monitoring products use: a small uppercase label with an
 //- info affordance, one large number, and a delta chip beside it. Distinct from
@@ -63,11 +77,17 @@ mixin ObsKpiRow(stats)
             if stat.help
               span.text-body-quaternary.fs-10(data-bs-toggle='tooltip' data-bs-placement='top' title=stat.help)
                 span.fa-solid.fa-circle-info
-          .d-flex.align-items-baseline.gap-2.flex-wrap
+          .d-flex.align-items-baseline.gap-2(style='min-width:0')
             //- Proportional figures, not tabular: at this size equal-width digits make a
             //- number like 121 look loose. Tabular is for columns that must align.
             h2.mb-0.fw-semibold.lh-1(data-obs-stat data-obs-stat-key=stat.key)= stat.value
-            span.badge.badge-phoenix.fs-10(class=`badge-phoenix-${stat.badge || 'secondary'}` data-obs-stat-delta data-obs-stat-delta-key=stat.key)= stat.delta
+            //- Same truncation rules as ObsStatCards — see the note there.
+            span.badge.badge-phoenix.fs-10.text-truncate(
+              class=`badge-phoenix-${stat.badge || 'secondary'}`
+              style='max-width:60%;text-transform:none'
+              title=stat.delta
+              data-obs-stat-delta
+              data-obs-stat-delta-key=stat.key)= stat.delta
 
 //- A chart in a card, with the header treatment the KPI row uses so the two read as one
 //- system. `chart` names an entry in integration/charts.js.
