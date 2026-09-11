@@ -1,0 +1,67 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+include ../../mixins/observability/Common
+
+//- One Databricks job run, selected by ?run=<run_id>. Reached from a Databricks row on
+//- ETL Monitoring.
+//-
+//- The stored events say a run failed and how many tasks it had. That is enough for a
+//- table and not enough to act on — a failed run is opened to find out *which* task
+//- failed and what Databricks said about it. That comes from jobs/runs/get, read live:
+//- a terminal run's tasks do not change, and polling every task of every run to keep a
+//- copy would be a large multiple of the poll this connector already does.
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Observability', href: '#!' },
+      { label: 'ETL Monitoring', href: `${CWD}${paths['obs-etl-monitoring']}` },
+      { label: 'Job run', href: '#!', active: true }
+    ];
+
+block content
+  .d-flex.flex-wrap.align-items-start.justify-content-between.gap-3.mb-3(data-run-heading)
+    div
+      h2.mb-1.text-break(data-run-name) —
+      p.text-body-tertiary.fs-9.mb-0.text-break(data-run-meta) Loading run…
+    .d-flex.align-items-center.gap-2
+      a.btn.btn-phoenix-secondary.btn-sm(href=`${CWD}${paths['obs-etl-monitoring']}`)
+        span.fa-solid.fa-arrow-left.me-2
+        | All runs
+      //- Revealed by live-data only when Databricks returned a run page URL. The driver
+      //- logs live there and nowhere else, so it is the next click after a failed task.
+      a.btn.btn-phoenix-secondary.btn-sm.d-none(data-run-link href='#!' target='_blank' rel='noopener')
+        span.fa-solid.fa-arrow-up-right-from-square.me-2
+        | Open in Databricks
+      button.btn.btn-phoenix-secondary.btn-sm(type='button' data-lhb-action='refreshData')
+        span.fa-solid.fa-arrows-rotate.me-2
+        | Update
+
+  +ObsKpiRow([
+    { key: 'runState', label: 'Result', value: '—', delta: '', badge: 'info',
+      help: 'The run\'s result state once it is terminal, or its lifecycle state while it is still going.' },
+    { key: 'runDuration', label: 'Duration', value: '—', delta: '', badge: 'primary',
+      help: 'Wall clock for the whole run. Tasks that ran in parallel do not add up to this.' },
+    { key: 'runTasks', label: 'Tasks', value: '0', delta: '', badge: 'secondary',
+      help: 'Every task in the run, including ones that were skipped because something they depend on failed.' },
+    { key: 'runFailedTasks', label: 'Failed tasks', value: '0', delta: '', badge: 'danger',
+      help: 'Tasks Databricks reported as FAILED. A skipped task is not a failed one — the fix is the task it depends on.' }
+  ])
+
+  +ObsToolTable({
+    title: 'Tasks',
+    live: 'databricksRun',
+    subtitle: 'Every task in this run, in the order Databricks returned them — the message under a task is what it reported',
+    searchPlaceholder: 'Search tasks',
+    pageSize: 20,
+    columns: [
+      { label: 'Task', className: 'ps-3' },
+      { label: 'Run' },
+      { label: 'State' },
+      { label: 'Duration' },
+      { label: 'Depends on' },
+      { label: 'Result' }
+    ],
+    rows: [
+      { icon: 'fa-list-check', iconColor: 'secondary', meta: 'open a Databricks run from ETL Monitoring', cells: ['—', '—', '—', '—', '—', { text: 'No run selected', badge: 'secondary' }] }
+    ]
+  })

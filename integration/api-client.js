@@ -389,6 +389,9 @@ export const api = {
     events: (params) => get('/integrations/etl/events', params),
     executions: (params) => get('/integrations/etl/executions', params),
     incidents: (params) => get('/integrations/etl/incidents', params),
+    /* One Databricks run and its tasks, read live — the stored events carry a task
+       count, not which task failed. */
+    databricksRun: (runId) => get(`/integrations/etl/databricks/runs/${encodeURIComponent(runId)}`),
     retry: (id) => post(`/integrations/etl/executions/${id}/retry`),
     poll: (platform) => post(`/integrations/etl/${platform}/poll`),
     /* Push one execution event in, for platforms that webhook rather than being polled. */

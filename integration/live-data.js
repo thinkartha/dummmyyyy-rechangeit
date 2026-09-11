@@ -238,6 +238,12 @@ const pageHref = (name, section) => {
   return `${dir}${name}${dot ? '.html' : trailing ? '/' : ''}`;
 };
 
+/** Which Databricks job run a drill-down page is about. */
+const runParam = () => {
+  if (typeof window === 'undefined' || !window.location) return '';
+  return new URLSearchParams(window.location.search || '').get('run') || '';
+};
+
 /** Which route a drill-down page is about. Raw, not lowercased: a route is a path. */
 const routeParam = () => {
   if (typeof window === 'undefined' || !window.location) return '';
@@ -523,6 +529,12 @@ export const SOURCES = {
             num(d.records_processed),
             e.timestamp || '—',
           ],
+          /* Only Databricks runs drill down: it is the only connector with a per-run
+             read behind it, and a link that 404s on half the rows is worse than none. */
+          href: String(d.platform || e.source) === 'databricks' && d.execution_id
+            && pageHref('databricks-run')
+            ? `${pageHref('databricks-run')}?run=${encodeURIComponent(d.execution_id)}`
+            : undefined,
           /* Retry only makes sense on a run that failed, and only this app's executions
              can be relaunched — a run polled out of Talend has no execution record here
              to retry against. */
@@ -546,6 +558,76 @@ export const SOURCES = {
    * empty and the page's own banner carries the reason — a row saying "unavailable" in
    * every column would be worse than no rows.
    */
+
+  /**
+   * Columns: Task · Runs · State · Duration · Depends on · Result.
+   *
+   * One Databricks run, opened from a job row. The stored event says a run failed and
+   * how many tasks it had; this says which task, what it ran, and what Databricks said
+   * about it — which is the difference between knowing a job is broken and being able
+   * to do something about it.
+   */
+  databricksRun: {
+    stats: (detail) => {
+      const tasks = (detail && detail.tasks) || [];
+      const failed = tasks.filter((t) => String(t.result_state || '').toUpperCase() === 'FAILED');
+      return {
+        runState: {
+          value: (detail && (detail.result_state || detail.life_cycle_state)) || '—',
+          delta: detail && detail.trigger ? `triggered by ${detail.trigger}` : 'run state',
+        },
+        runDuration: {
+          /* The table's own formatter, fed a synthetic row — one duration format on
+             the page, and no second copy of the minutes-and-seconds rule. */
+          value: detail ? etlDuration({ duration_ms: detail.duration_ms }) : '—',
+          delta: (detail && detail.started_at) || 'not started',
+        },
+        runTasks: { value: num(tasks.length), delta: tasks.length ? 'in this run' : 'no tasks' },
+        runFailedTasks: {
+          value: num(failed.length),
+          delta: failed.length ? failed.map((t) => t.task_key).join(', ') : 'none failed',
+        },
+      };
+    },
+    load: async (api) => {
+      const detail = await api.etl.databricksRun(runParam())
+        .catch((err) => ({ run_id: runParam(), tasks: [], error: err.message }));
+      paintRunHeading(detail);
+      return detail;
+    },
+    rows: (detail) => {
+      if (detail && detail.error) {
+        return [{
+          icon: 'fa-triangle-exclamation', iconColor: 'danger', meta: detail.error,
+          cells: ['Run unavailable', '—', '—', '—', '—', badge('Error')],
+        }];
+      }
+      return ((detail && detail.tasks) || []).map((t) => {
+        const result = String(t.result_state || '').toUpperCase();
+        const skipped = String(t.state || '').toUpperCase() === 'SKIPPED' || result === 'SKIPPED';
+        return {
+          icon: 'fa-list-check',
+          iconColor: result === 'FAILED' ? 'danger' : skipped ? 'secondary'
+            : result === 'SUCCESS' ? 'success' : 'info',
+          /* The message is why the page was opened; the target says what ran. */
+          meta: t.state_message
+            || [t.kind, t.target].filter(Boolean).join(': ')
+            || null,
+          cells: [
+            t.task_key,
+            t.run_id || '—',
+            t.state || '—',
+            etlDuration({ duration_ms: t.duration_ms }),
+            (t.depends_on || []).join(', ') || '—',
+            badge(result === 'FAILED' ? 'Failed'
+              : skipped ? 'Skipped'
+              : result === 'SUCCESS' ? 'Succeeded'
+              : t.state || 'Running'),
+          ],
+        };
+      });
+    },
+  },
 
   databricksUsage: {
     stats: (data) => {
@@ -2061,6 +2143,33 @@ function publishStats(stats) {
  * a link to an account the credential no longer reaches, and "Loading…" forever is the
  * least useful way to report that.
  */
+function paintRunHeading(detail) {
+  const name = document.querySelector('[data-run-name]');
+  const meta = document.querySelector('[data-run-meta]');
+  const link = document.querySelector('[data-run-link]');
+  if (!name || !meta) return;
+  const wanted = runParam();
+  name.textContent = (detail && (detail.job_name || detail.run_name)) || wanted || 'No run selected';
+  if (!wanted) {
+    meta.textContent = 'Open this page from a Databricks row on ETL Monitoring.';
+    return;
+  }
+  meta.textContent = detail && detail.error
+    ? detail.error
+    : [`run ${detail && detail.run_id ? detail.run_id : wanted}`,
+       detail && detail.job_id ? `job ${detail.job_id}` : null,
+       detail && detail.state_message ? detail.state_message : null]
+      .filter(Boolean).join(' · ');
+  /* The workspace's own run page is the one place with the driver logs, so the link is
+     shown when Databricks gave us one and hidden when it did not — a dead button is
+     worse than no button. */
+  if (link) {
+    const url = detail && detail.run_page_url;
+    link.href = url || '#!';
+    link.classList.toggle('d-none', !url);
+  }
+}
+
 function paintRouteHeading(row, wanted) {
   const name = document.querySelector('[data-route-name]');
   const meta = document.querySelector('[data-route-meta]');
