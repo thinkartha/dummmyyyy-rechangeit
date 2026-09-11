@@ -38,7 +38,10 @@ const PAGES = [
     // in Variables.pug. It selects its account from ?account=, because the build is a
     // static export and the account list is AWS's, discovered at read time.
     'cloud-account',
-    'cloud-monitoring', 'data-observability', 'database-monitoring', 'databricks', 'drift',
+    'cloud-monitoring', 'data-observability', 'database-monitoring', 'databricks',
+    // databricks-run is the per-run drill-down, reached from a Databricks row on
+    // etl-monitoring. Same arrangement as cloud-account and api-route.
+    'databricks-run', 'drift',
     'escalation', 'etl-monitoring', 'incident-correlation', 'logs',
     'orchestration-monitoring', 'service-topology', 'slo', 'traces',
   ].map(p => `apps/observability/${p}.html`),

@@ -65,6 +65,49 @@ class DatabricksRunEvent(BaseModel):
     raw: dict[str, Any] | None = None
 
 
+class DatabricksRunTask(BaseModel):
+    """One task of a Lakeflow Jobs run — the level a failure actually happens at."""
+
+    task_key: str
+    run_id: str | None = None
+    state: str | None = None
+    result_state: str | None = None
+    state_message: str | None = None
+    started_at: str | None = None
+    ended_at: str | None = None
+    duration_ms: int | None = None
+    cluster: str | None = None
+    # What the task runs: a notebook path, a wheel entry point, a SQL query id. Named
+    # generically because Databricks returns a different key per task type and the page
+    # only ever shows it as a subtitle.
+    kind: str | None = None
+    target: str | None = None
+    run_page_url: str | None = None
+    # Tasks that could not start because something upstream failed. Worth separating
+    # from a failure: the fix is the other task, not this one.
+    depends_on: list[str] = Field(default_factory=list)
+
+
+class DatabricksRunDetail(BaseModel):
+    """A run expanded to its tasks — what the job-run drill-down reads."""
+
+    run_id: str
+    job_id: str | None = None
+    job_name: str | None = None
+    run_name: str | None = None
+    life_cycle_state: str | None = None
+    result_state: str | None = None
+    state_message: str | None = None
+    started_at: str | None = None
+    ended_at: str | None = None
+    duration_ms: int | None = None
+    trigger: str | None = None
+    run_page_url: str | None = None
+    tasks: list[DatabricksRunTask] = Field(default_factory=list)
+    # Empty with a reason beats an empty list that reads as "this run had no tasks".
+    error: str | None = None
+
+
 class EtlIncident(BaseModel):
     id: str
     tenant_id: str

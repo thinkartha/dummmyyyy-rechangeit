@@ -361,6 +361,23 @@ class DatabricksJobsClient:
                 break
         return runs[:limit]
 
+    def run_detail(self, run_id: str) -> dict[str, Any]:
+        """One run, expanded to its tasks.
+
+        `runs/list` carries the run's state and a task count; what a failed run is
+        actually opened for is *which* task failed and why, and that only comes from
+        `runs/get`. One run, one call — the poller's list read stays as cheap as it was.
+        """
+        if not self.configured:
+            raise RuntimeError("Databricks is not configured for this organization")
+        params = urllib.parse.urlencode({"run_id": run_id})
+        data = _json_request(
+            "GET",
+            f"{self.base_url}/api/2.2/jobs/runs/get?{params}",
+            headers=self._headers(),
+        )
+        return data if isinstance(data, dict) else {}
+
     def verify_connection(self) -> None:
         if not self.configured:
             raise RuntimeError("Databricks requires a workspace host and token")

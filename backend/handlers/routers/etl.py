@@ -12,6 +12,7 @@ from shared.etl import catalog as etl_catalog
 from shared.etl.dto import (
     BoomiConfig,
     BoomiExecutionEvent,
+    DatabricksRunDetail,
     DatabricksRunEvent,
     EtlExecuteRequest,
     EtlExecutionResponse,
@@ -331,6 +332,22 @@ def poll_talend(tenant_id: str = Depends(get_tenant_id)) -> dict[str, int]:
 @router.post("/boomi/poll")
 def poll_boomi(tenant_id: str = Depends(get_tenant_id)) -> dict[str, int]:
     return {"ingested": boomi.poll_once(tenant_id)}
+
+
+@router.get("/databricks/runs/{run_id}", response_model=DatabricksRunDetail)
+def get_databricks_run(run_id: str, tenant_id: str = Depends(get_tenant_id)) -> DatabricksRunDetail:
+    """One job run, expanded to its tasks.
+
+    The stored events carry a run's state and a task count, which is enough for a table
+    and not enough to act on: a failed run is opened to find out which task failed and
+    what it said. That is `runs/get`, read live rather than stored — a run's tasks do
+    not change once it is terminal, and polling every task of every run to keep a copy
+    would be a large multiple of the poll this connector already does.
+
+    An unreachable workspace comes back as a run with an `error` and no tasks, not a
+    500: the drill-down should say why it is empty.
+    """
+    return databricks.run_detail(tenant_id, run_id)
 
 
 @router.post("/databricks/poll")

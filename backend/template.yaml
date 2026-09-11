@@ -535,6 +535,44 @@ Resources:
                   - !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}::/restapis/*
                   - !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}::/apis
                   - !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}::/apis/*
+        # What the AWS connector reads when a tenant leaves the connection on
+        # `default-chain` — that is, when they are monitoring the account this stack is
+        # deployed into rather than assuming a role in theirs. That path had exactly two
+        # CloudWatch actions, so Cost Explorer came back AccessDenied naming this role,
+        # and the cloud pages reported "connected" while every panel sat empty. The
+        # cross-account path (`iam-role`) is unaffected — it runs as the customer's role,
+        # which is why sts:AssumeRole above is all it needs from us.
+        #
+        # Read-only and list-only throughout: nothing here can change a resource. None of
+        # these APIs support resource-level permissions, which is why the resource is "*"
+        # — the scope that matters is the account boundary, and this role only ever holds
+        # credentials for this one.
+        - PolicyName: LoveHeartBeatConnectorReads
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  # Cloud cost: the MTD rollup, the per-service breakdown, the daily
+                  # series and the month-end forecast.
+                  - ce:GetCostAndUsage
+                  - ce:GetCostForecast
+                  # Inventory fans out over the accounts AWS lists, then reads each one.
+                  - organizations:ListAccounts
+                  - route53:ListHostedZones
+                  - route53domains:ListDomains
+                  - route53domains:ListOperations
+                  - cloudfront:ListDistributions
+                  - s3:ListAllMyBuckets
+                  - s3:GetBucketLocation
+                  - iam:ListUsers
+                  - tag:GetResources
+                  # Alarms for the account pages; GetMetricStatistics for the Lambda
+                  # overview, which the two metric actions above do not cover.
+                  - cloudwatch:DescribeAlarms
+                  - cloudwatch:GetMetricStatistics
+                  - lambda:ListFunctions
+                Resource: "*"
         - PolicyName: LoveHeartBeatCognitoAccess
           PolicyDocument:
             Version: "2012-10-17"
