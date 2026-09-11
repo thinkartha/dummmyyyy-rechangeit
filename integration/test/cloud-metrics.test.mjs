@@ -186,11 +186,16 @@ const ACCOUNT = {
 // An account not in the inventory at all is an empty table, not a crash.
 assert.deepEqual(SOURCES.accountAlarms.rows({ account: null }), []);
 
-// Cards degrade to dashes rather than zeros when a source failed.
+/* Counts read 0 rather than a dash: a tenant with no alarms has zero alarms, and a
+   dash made the reader work out whether it meant none, not-collected, or broken.
+   Money is the exception — "USD 0.00" for a bill we could not read is a claim about
+   somebody's spend, so that one stays a dash with the reason in its delta. */
 {
   const stats = SOURCES.accountAlarms.stats({ account: null, streamed: null, cost: null });
-  assert.equal(stats.accountAlarms.value, '—');
+  assert.equal(stats.accountAlarms.value, '0');
+  assert.equal(stats.accountResources.value, '0');
   assert.equal(stats.accountSpend.value, '—');
+  assert.equal(stats.accountSpend.delta, 'not connected');
   assert.equal(stats.accountServices.delta, 'no stream yet');
 }
 
@@ -234,3 +239,48 @@ for (const [pathname, expected] of [
 globalThis.window.location.pathname = '/apps/observability/cloud-account.html';
 
 console.log('account-drilldown: ok');
+
+// --- zeros, not dashes ------------------------------------------------------
+// "-" made the reader decide whether it meant none, not-collected, or broken. For a
+// count the answer is always the first, so it says so.
+{
+  const rows = SOURCES.cloudServices.rows({
+    services: [{ service: 'EC2', namespace: 'AWS/EC2', account: '1', regions: [],
+                 resources: null, metrics: undefined, last_seen: null }],
+  });
+  assert.equal(cell(rows[0], 3), '0', 'a missing count is zero');
+  assert.equal(cell(rows[0], 4), '0');
+
+  const stats = SOURCES.cloudServices.stats({ services: [], accounts: [], regions: [] });
+  assert.equal(stats.streamedServices.value, '0');
+  assert.equal(stats.streamedResources.value, '0');
+  assert.equal(stats.datapoints.value, '0');
+}
+
+// Drift cards come from the same response the table renders, so they cannot disagree —
+// and they were four invented figures with no key before.
+{
+  const stats = SOURCES.drift.stats({
+    numeric: [{ feature: 'a', drift: true }, { feature: 'b', drift: false }],
+    categorical: [{ feature: 'c', drift: true }],
+  });
+  assert.equal(stats.driftTracked.value, '3');
+  assert.equal(stats.driftDrifting.value, '2');
+  assert.equal(stats.driftNumeric.value, '2');
+  assert.equal(stats.driftCategorical.value, '1');
+  assert.equal(SOURCES.drift.stats({}).driftTracked.value, '0');
+}
+
+// The categorical row reads chi_square. `psi` has never been a field on that response,
+// so the Score column was a dash on every categorical row while the header named a
+// test the backend does not run.
+{
+  const rows = SOURCES.drift.rows({
+    numeric: [],
+    categorical: [{ feature: 'country_code', chi_square: 0.31, critical: 0.25, drift: true }],
+  });
+  assert.equal(cell(rows[0], 2), 'Chi-square');
+  assert.equal(cell(rows[0], 3), '0.31');
+}
+
+console.log('zeros + drift: ok');

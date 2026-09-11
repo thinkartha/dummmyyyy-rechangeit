@@ -78,7 +78,7 @@ export default function Page() {
               Every AWS account your connected credential reaches, with what it owns, what is alarming, and what it has cost this month
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="refreshData">
               Refresh
             </button>
@@ -89,16 +89,16 @@ export default function Page() {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 className="text-body-tertiary mb-2">
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div style={{ minWidth: "0" }}>
+                  <h6 className="text-body-tertiary mb-2 text-truncate" title="Linked accounts">
                     Linked accounts
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="linkedAccounts">
+                  <h3 className="mb-0 text-truncate" data-obs-stat="data-obs-stat" data-obs-stat-key="linkedAccounts" title="18">
                     18
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="linkedAccounts">
+                <span className="badge badge-phoenix text-truncate badge-phoenix-info" style={{ maxWidth: "55%", textTransform: "none" }} title="3 clouds" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="linkedAccounts">
                   3 clouds
                 </span>
               </div>
@@ -108,16 +108,16 @@ export default function Page() {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 className="text-body-tertiary mb-2">
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div style={{ minWidth: "0" }}>
+                  <h6 className="text-body-tertiary mb-2 text-truncate" title="Resources watched">
                     Resources watched
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="resources">
+                  <h3 className="mb-0 text-truncate" data-obs-stat="data-obs-stat" data-obs-stat-key="resources" title="12.4k">
                     12.4k
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="resources">
+                <span className="badge badge-phoenix text-truncate badge-phoenix-success" style={{ maxWidth: "55%", textTransform: "none" }} title="+320" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="resources">
                   +320
                 </span>
               </div>
@@ -127,16 +127,16 @@ export default function Page() {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 className="text-body-tertiary mb-2">
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div style={{ minWidth: "0" }}>
+                  <h6 className="text-body-tertiary mb-2 text-truncate" title="Open cloud alarms">
                     Open cloud alarms
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="openAlarms">
+                  <h3 className="mb-0 text-truncate" data-obs-stat="data-obs-stat" data-obs-stat-key="openAlarms" title="7">
                     7
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-danger" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="openAlarms">
+                <span className="badge badge-phoenix text-truncate badge-phoenix-danger" style={{ maxWidth: "55%", textTransform: "none" }} title="2 critical" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="openAlarms">
                   2 critical
                 </span>
               </div>
@@ -146,16 +146,16 @@ export default function Page() {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 className="text-body-tertiary mb-2">
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div style={{ minWidth: "0" }}>
+                  <h6 className="text-body-tertiary mb-2 text-truncate" title="Spend month to date">
                     Spend month to date
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="mtdSpend">
+                  <h3 className="mb-0 text-truncate" data-obs-stat="data-obs-stat" data-obs-stat-key="mtdSpend" title="USD 42,180.00">
                     USD 42,180.00
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-primary" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="mtdSpend">
+                <span className="badge badge-phoenix text-truncate badge-phoenix-primary" style={{ maxWidth: "55%", textTransform: "none" }} title="since 2026-09-01" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="mtdSpend">
                   since 2026-09-01
                 </span>
               </div>

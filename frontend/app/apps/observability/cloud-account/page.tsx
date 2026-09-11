@@ -182,13 +182,11 @@ export default function Page() {
                     <span className="fa-solid fa-circle-info"></span>
                   </span>
                 </div>
-                <div className="d-flex align-items-baseline gap-2 flex-wrap">
+                <div className="d-flex align-items-baseline gap-2" style={{ minWidth: "0" }}>
                   <h2 className="mb-0 fw-semibold lh-1" data-obs-stat="data-obs-stat" data-obs-stat-key="accountAlarms">
-                    —
+                    0
                   </h2>
-                  <span className="badge badge-phoenix fs-10 badge-phoenix-danger" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountAlarms">
-                    awaiting data
-                  </span>
+                  <span className="badge badge-phoenix fs-10 text-truncate badge-phoenix-danger" style={{ maxWidth: "60%", textTransform: "none" }} title="" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountAlarms"></span>
                 </div>
               </div>
             </div>
@@ -202,13 +200,11 @@ export default function Page() {
                     <span className="fa-solid fa-circle-info"></span>
                   </span>
                 </div>
-                <div className="d-flex align-items-baseline gap-2 flex-wrap">
+                <div className="d-flex align-items-baseline gap-2" style={{ minWidth: "0" }}>
                   <h2 className="mb-0 fw-semibold lh-1" data-obs-stat="data-obs-stat" data-obs-stat-key="accountResources">
-                    —
+                    0
                   </h2>
-                  <span className="badge badge-phoenix fs-10 badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountResources">
-                    awaiting data
-                  </span>
+                  <span className="badge badge-phoenix fs-10 text-truncate badge-phoenix-info" style={{ maxWidth: "60%", textTransform: "none" }} title="" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountResources"></span>
                 </div>
               </div>
             </div>
@@ -222,13 +218,11 @@ export default function Page() {
                     <span className="fa-solid fa-circle-info"></span>
                   </span>
                 </div>
-                <div className="d-flex align-items-baseline gap-2 flex-wrap">
+                <div className="d-flex align-items-baseline gap-2" style={{ minWidth: "0" }}>
                   <h2 className="mb-0 fw-semibold lh-1" data-obs-stat="data-obs-stat" data-obs-stat-key="accountStreamed">
-                    —
+                    0
                   </h2>
-                  <span className="badge badge-phoenix fs-10 badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountStreamed">
-                    awaiting data
-                  </span>
+                  <span className="badge badge-phoenix fs-10 text-truncate badge-phoenix-success" style={{ maxWidth: "60%", textTransform: "none" }} title="" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountStreamed"></span>
                 </div>
               </div>
             </div>
@@ -242,13 +236,11 @@ export default function Page() {
                     <span className="fa-solid fa-circle-info"></span>
                   </span>
                 </div>
-                <div className="d-flex align-items-baseline gap-2 flex-wrap">
+                <div className="d-flex align-items-baseline gap-2" style={{ minWidth: "0" }}>
                   <h2 className="mb-0 fw-semibold lh-1" data-obs-stat="data-obs-stat" data-obs-stat-key="accountServices">
-                    —
+                    0
                   </h2>
-                  <span className="badge badge-phoenix fs-10 badge-phoenix-primary" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountServices">
-                    awaiting data
-                  </span>
+                  <span className="badge badge-phoenix fs-10 text-truncate badge-phoenix-primary" style={{ maxWidth: "60%", textTransform: "none" }} title="" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountServices"></span>
                 </div>
               </div>
             </div>
@@ -262,13 +254,11 @@ export default function Page() {
                     <span className="fa-solid fa-circle-info"></span>
                   </span>
                 </div>
-                <div className="d-flex align-items-baseline gap-2 flex-wrap">
+                <div className="d-flex align-items-baseline gap-2" style={{ minWidth: "0" }}>
                   <h2 className="mb-0 fw-semibold lh-1" data-obs-stat="data-obs-stat" data-obs-stat-key="accountRegions">
-                    —
+                    0
                   </h2>
-                  <span className="badge badge-phoenix fs-10 badge-phoenix-secondary" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountRegions">
-                    awaiting data
-                  </span>
+                  <span className="badge badge-phoenix fs-10 text-truncate badge-phoenix-secondary" style={{ maxWidth: "60%", textTransform: "none" }} title="" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountRegions"></span>
                 </div>
               </div>
             </div>
@@ -282,13 +272,11 @@ export default function Page() {
                     <span className="fa-solid fa-circle-info"></span>
                   </span>
                 </div>
-                <div className="d-flex align-items-baseline gap-2 flex-wrap">
+                <div className="d-flex align-items-baseline gap-2" style={{ minWidth: "0" }}>
                   <h2 className="mb-0 fw-semibold lh-1" data-obs-stat="data-obs-stat" data-obs-stat-key="accountSpend">
-                    —
+                    0
                   </h2>
-                  <span className="badge badge-phoenix fs-10 badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountSpend">
-                    awaiting data
-                  </span>
+                  <span className="badge badge-phoenix fs-10 text-truncate badge-phoenix-warning" style={{ maxWidth: "60%", textTransform: "none" }} title="" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="accountSpend"></span>
                 </div>
               </div>
             </div>

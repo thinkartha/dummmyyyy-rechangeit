@@ -69,7 +69,7 @@ export default function Page() {
               Latency, errors, and throughput for the APIs behind your gateways — register them under API Gateway and their traffic shows up here
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="refreshData">
               Refresh
             </button>
@@ -80,18 +80,16 @@ export default function Page() {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 className="text-body-tertiary mb-2">
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div style={{ minWidth: "0" }}>
+                  <h6 className="text-body-tertiary mb-2 text-truncate" title="Requests">
                     Requests
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="requests">
-                    —
+                  <h3 className="mb-0 text-truncate" data-obs-stat="data-obs-stat" data-obs-stat-key="requests" title="0">
+                    0
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="requests">
-                  awaiting data
-                </span>
+                <span className="badge badge-phoenix text-truncate badge-phoenix-info" style={{ maxWidth: "55%", textTransform: "none" }} title="" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="requests"></span>
               </div>
             </div>
           </div>
@@ -99,18 +97,16 @@ export default function Page() {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 className="text-body-tertiary mb-2">
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div style={{ minWidth: "0" }}>
+                  <h6 className="text-body-tertiary mb-2 text-truncate" title="Error rate">
                     Error rate
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="errorRate">
-                    —
+                  <h3 className="mb-0 text-truncate" data-obs-stat="data-obs-stat" data-obs-stat-key="errorRate" title="0">
+                    0
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="errorRate">
-                  awaiting data
-                </span>
+                <span className="badge badge-phoenix text-truncate badge-phoenix-success" style={{ maxWidth: "55%", textTransform: "none" }} title="" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="errorRate"></span>
               </div>
             </div>
           </div>
@@ -118,17 +114,17 @@ export default function Page() {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 className="text-body-tertiary mb-2">
-                    Slowest route p99
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div style={{ minWidth: "0" }}>
+                  <h6 className="text-body-tertiary mb-2 text-truncate" title="Slowest route">
+                    Slowest route
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="p99Latency">
-                    —
+                  <h3 className="mb-0 text-truncate" data-obs-stat="data-obs-stat" data-obs-stat-key="p99Latency" title="0">
+                    0
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="p99Latency">
-                  awaiting data
+                <span className="badge badge-phoenix text-truncate badge-phoenix-warning" style={{ maxWidth: "55%", textTransform: "none" }} title="no routes yet" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="p99Latency">
+                  no routes yet
                 </span>
               </div>
             </div>
@@ -137,18 +133,16 @@ export default function Page() {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 className="text-body-tertiary mb-2">
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div style={{ minWidth: "0" }}>
+                  <h6 className="text-body-tertiary mb-2 text-truncate" title="Routes">
                     Routes
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat" data-obs-stat-key="routes">
-                    —
+                  <h3 className="mb-0 text-truncate" data-obs-stat="data-obs-stat" data-obs-stat-key="routes" title="0">
+                    0
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="routes">
-                  awaiting data
-                </span>
+                <span className="badge badge-phoenix text-truncate badge-phoenix-info" style={{ maxWidth: "55%", textTransform: "none" }} title="" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="routes"></span>
               </div>
             </div>
           </div>

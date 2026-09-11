@@ -69,7 +69,7 @@ export default function Page() {
               Where today stopped looking like the baseline — for metrics feeding alerts and features feeding models
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="rebaseline">
               Rebaseline
             </button>
@@ -80,17 +80,17 @@ export default function Page() {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 className="text-body-tertiary mb-2">
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div style={{ minWidth: "0" }}>
+                  <h6 className="text-body-tertiary mb-2 text-truncate" title="Features tracked">
                     Features tracked
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
-                    214
+                  <h3 className="mb-0 text-truncate" data-obs-stat="data-obs-stat" data-obs-stat-key="driftTracked" title="0">
+                    0
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta">
-                  +18
+                <span className="badge badge-phoenix text-truncate badge-phoenix-info" style={{ maxWidth: "55%", textTransform: "none" }} title="numeric + categorical" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="driftTracked">
+                  numeric + categorical
                 </span>
               </div>
             </div>
@@ -99,17 +99,17 @@ export default function Page() {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 className="text-body-tertiary mb-2">
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div style={{ minWidth: "0" }}>
+                  <h6 className="text-body-tertiary mb-2 text-truncate" title="Drifting">
                     Drifting
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
-                    9
+                  <h3 className="mb-0 text-truncate" data-obs-stat="data-obs-stat" data-obs-stat-key="driftDrifting" title="0">
+                    0
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
-                  4 significant
+                <span className="badge badge-phoenix text-truncate badge-phoenix-warning" style={{ maxWidth: "55%", textTransform: "none" }} title="over threshold" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="driftDrifting">
+                  over threshold
                 </span>
               </div>
             </div>
@@ -118,17 +118,17 @@ export default function Page() {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 className="text-body-tertiary mb-2">
-                    Baseline age
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div style={{ minWidth: "0" }}>
+                  <h6 className="text-body-tertiary mb-2 text-truncate" title="Numeric (KS)">
+                    Numeric (KS)
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
-                    14d
+                  <h3 className="mb-0 text-truncate" data-obs-stat="data-obs-stat" data-obs-stat-key="driftNumeric" title="0">
+                    0
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-primary" data-obs-stat-delta="data-obs-stat-delta">
-                  rolling
+                <span className="badge badge-phoenix text-truncate badge-phoenix-primary" style={{ maxWidth: "55%", textTransform: "none" }} title="distribution shift" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="driftNumeric">
+                  distribution shift
                 </span>
               </div>
             </div>
@@ -137,17 +137,17 @@ export default function Page() {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 className="text-body-tertiary mb-2">
-                    Models affected
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div style={{ minWidth: "0" }}>
+                  <h6 className="text-body-tertiary mb-2 text-truncate" title="Categorical (Chi-square)">
+                    Categorical (Chi-square)
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
-                    3
+                  <h3 className="mb-0 text-truncate" data-obs-stat="data-obs-stat" data-obs-stat-key="driftCategorical" title="0">
+                    0
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-danger" data-obs-stat-delta="data-obs-stat-delta">
-                  retrain suggested
+                <span className="badge badge-phoenix text-truncate badge-phoenix-secondary" style={{ maxWidth: "55%", textTransform: "none" }} title="category mix" data-obs-stat-delta="data-obs-stat-delta" data-obs-stat-delta-key="driftCategorical">
+                  category mix
                 </span>
               </div>
             </div>
@@ -175,7 +175,7 @@ export default function Page() {
                   <strong>
                     Categorical
                   </strong>
-                  — population stability index over the category mix
+                  — Chi-square over the category mix
                 </li>
               </ul>
               <p className="text-body-tertiary fs-9 mb-0">
@@ -242,7 +242,7 @@ export default function Page() {
                         fraud-scorer country_code
                       </td>
                       <td>
-                        PSI
+                        Chi-square
                       </td>
                       <td className="text-danger">
                         0.31
@@ -256,7 +256,7 @@ export default function Page() {
                         demand-forecast channel
                       </td>
                       <td>
-                        PSI
+                        Chi-square
                       </td>
                       <td className="text-warning">
                         0.19
@@ -445,7 +445,7 @@ export default function Page() {
                       fraud-scorer
                     </td>
                     <td className="align-middle col2">
-                      PSI
+                      Chi-square
                     </td>
                     <td className="align-middle col3">
                       0.31
@@ -477,7 +477,7 @@ export default function Page() {
                       demand-forecast
                     </td>
                     <td className="align-middle col2">
-                      PSI
+                      Chi-square
                     </td>
                     <td className="align-middle col3">
                       0.19
@@ -573,7 +573,7 @@ export default function Page() {
                       churn-predictor
                     </td>
                     <td className="align-middle col2">
-                      PSI
+                      Chi-square
                     </td>
                     <td className="align-middle col3">
                       0.04

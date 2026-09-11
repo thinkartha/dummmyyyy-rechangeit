@@ -67,9 +67,17 @@ const FINDING_ICONS = {
 
 const etlPlatform = (name) => ETL_SLUGS[String(name || '').toLowerCase()] || String(name || '').toLowerCase();
 
+/**
+ * A number for display. Nothing measured is 0, not a dash.
+ *
+ * A dash asks the reader to work out whether it means "none", "not collected" or
+ * "broken". For a count the answer is always the first one — a tenant with no alarms
+ * has zero alarms — and the card's own badge carries the connection state, so the
+ * figure does not have to.
+ */
 const num = (v, digits = 0) =>
   v === null || v === undefined || Number.isNaN(Number(v))
-    ? '—'
+    ? '0'
     : Number(v).toLocaleString(undefined, { maximumFractionDigits: digits });
 
 /**
@@ -137,8 +145,11 @@ function logFilters() {
   return params;
 }
 
+/* Same reasoning as num(): a rate over nothing is 0%, not an unanswered question. */
 const pct = (v, digits = 1) =>
-  v === null || v === undefined ? '—' : `${Number(v).toFixed(digits)}%`;
+  v === null || v === undefined || Number.isNaN(Number(v))
+    ? `${(0).toFixed(digits)}%`
+    : `${Number(v).toFixed(digits)}%`;
 
 /**
  * An amount of money, always to the cent.
@@ -254,8 +265,20 @@ export const SOURCES = {
   },
 
   drift: {
-    // The drift endpoint splits numeric (KS) from categorical (PSI); the table shows
-    // both, because "which test" is a property of the feature, not of the page.
+    // The drift endpoint splits numeric (KS) from categorical (Chi-square); the table
+    // shows both, because "which test" is a property of the feature, not of the page.
+    stats: (data) => {
+      const numeric = (data && data.numeric) || [];
+      const categorical = (data && data.categorical) || [];
+      const drifting = [...numeric, ...categorical].filter((d) => d.drift).length;
+      return {
+        driftTracked: { value: num(numeric.length + categorical.length),
+                        delta: 'numeric + categorical' },
+        driftDrifting: { value: num(drifting), delta: 'over threshold' },
+        driftNumeric: { value: num(numeric.length), delta: 'distribution shift' },
+        driftCategorical: { value: num(categorical.length), delta: 'category mix' },
+      };
+    },
     load: (api) => api.drift.list(),
     rows: (data) => {
       const numeric = (data?.numeric || []).map((d) => ({
@@ -269,7 +292,11 @@ export const SOURCES = {
         icon: 'fa-chart-simple',
         iconColor: d.drift ? 'danger' : 'success',
         meta: 'categorical',
-        cells: [d.feature, 'category mix', 'PSI', num(d.psi, 3),
+        /* Chi-square, not PSI. The endpoint has only ever returned `chi_square`
+           (shared/drift/detect.py), so reading `d.psi` printed a dash in the Score
+           column of every categorical row while the header claimed a test that is not
+           the one being run. */
+        cells: [d.feature, 'category mix', 'Chi-square', num(d.chi_square, 3),
                 num(d.critical ?? 0.25, 3), badge(d.drift ? 'Drifting' : 'Stable')],
       }));
       return numeric.concat(categorical);
@@ -285,7 +312,7 @@ export const SOURCES = {
         meta: r.type ? `${r.type} · ${r.id}` : r.id,
         cells: [r.description || 'Recommendation', r.component_name || '—',
                 r.namespace || '—',
-                r.estimated_monthly_savings != null ? `$${num(r.estimated_monthly_savings, 2)}/mo` : '—',
+                `$${num(r.estimated_monthly_savings, 2)}/mo`,
                 r.confidence != null ? pct(r.confidence * 100, 0) : '—',
                 badge(r.confidence >= 0.8 ? 'High confidence' : 'Review')],
       })),
@@ -314,7 +341,7 @@ export const SOURCES = {
         meta: m.version ? `${m.version} · ${m.provider || 'self-hosted'}` : m.provider || '—',
         cells: [m.name || m.model || m.model_id, m.task || (m.tasks || [])[0] || '—',
                 num(m.requests),
-                m.p95_latency_ms != null ? `${num(m.p95_latency_ms)}ms` : '—',
+                `${num(m.p95_latency_ms)}ms`,
                 pct((m.error_rate != null ? m.error_rate * 100 : m.failure_rate), 2),
                 // A declared model with nothing reported yet is neither healthy nor
                 // broken, and saying "unknown" hides that someone is expecting data.
@@ -333,8 +360,8 @@ export const SOURCES = {
         iconColor: d.status === 'down' ? 'danger' : d.status === 'degraded' ? 'warning' : 'info',
         meta: d.host || d.database_id,
         cells: [d.name || d.database_id, d.engine || '—', d.environment || '—',
-                d.connections != null ? num(d.connections) : '—',
-                d.replication_lag_seconds != null ? `${num(d.replication_lag_seconds, 1)}s` : '—',
+                num(d.connections),
+                `${num(d.replication_lag_seconds, 1)}s`,
                 badge(d.status || 'unknown')],
         action: { key: 'removeDatabase', arg: d.id || d.database_id, label: 'Remove' },
       })),
@@ -410,7 +437,7 @@ export const SOURCES = {
           delta: `${num(rows.length)} connected`,
         },
         successRate: {
-          value: jobs ? pct(succeeded / jobs, 1) : '—',
+          value: pct(jobs ? succeeded / jobs : 0, 1),
           delta: jobs ? `${num(jobs)} runs` : 'no runs yet',
         },
         failedRuns: { value: num(failed), delta: 'last 24h' },
@@ -477,7 +504,7 @@ export const SOURCES = {
             String(d.environment ?? d.environment_id ?? d.atom_name ?? '—'),
             badge(status),
             etlDuration(d),
-            d.records_processed != null ? num(d.records_processed) : '—',
+            num(d.records_processed),
             e.timestamp || '—',
           ],
           /* Retry only makes sense on a run that failed, and only this app's executions
@@ -489,6 +516,127 @@ export const SOURCES = {
         };
       });
     },
+  },
+
+  /* --- Databricks --------------------------------------------------------
+   *
+   * Four sources for four questions, matching the dimensions New Relic's Databricks
+   * integration collects: what is it costing, who is spending it, are the queries
+   * healthy, and what compute is up. Job *runs* are not here — they are already the
+   * `etlJobs` source above, fed by the same poller, and a second copy would drift.
+   *
+   * Each one degrades the same way: system tables are opt-in per metastore, so the API
+   * answers `available: false` with a reason instead of failing. The tables render
+   * empty and the page's own banner carries the reason — a row saying "unavailable" in
+   * every column would be worse than no rows.
+   */
+
+  databricksUsage: {
+    stats: (data) => {
+      const points = (data && data.points) || [];
+      const currency = (data && data.currency) || 'USD';
+      /* Compared against the *previous* window of equal length, not against the whole
+         history: "spend is up" only means something against a like-for-like period. */
+      const half = Math.floor(points.length / 2);
+      const sum = (list) => list.reduce((t, p) => t + (Number(p.amount) || 0), 0);
+      const recent = sum(points.slice(half));
+      const prior = sum(points.slice(0, half));
+      const change = prior ? ((recent - prior) / prior) * 100 : 0;
+      return {
+        dbxCost: {
+          value: money((data && data.total_cost) || 0, currency),
+          delta: half ? `${change >= 0 ? '+' : ''}${pct(change, 1)} vs prior` : 'list price',
+        },
+        dbxDbus: { value: num((data && data.total_dbus) || 0, 1), delta: 'DBUs consumed' },
+        dbxTopSku: {
+          value: (data && data.skus && data.skus[0] && data.skus[0].name) || 'none yet',
+          delta: data && data.skus && data.skus[0]
+            ? money(data.skus[0].amount, currency) : 'no billing rows',
+        },
+      };
+    },
+    load: (api) => api.databricks.usage({ days: 30 }),
+    rows: (data) => {
+      const currency = (data && data.currency) || 'USD';
+      const total = (data && data.total_cost) || 0;
+      return ((data && data.skus) || []).map((sku) => ({
+        icon: 'fa-cube',
+        iconColor: 'info',
+        meta: null,
+        cells: [sku.name, num(sku.dbus, 1), money(sku.amount, currency),
+                pct(total ? (sku.amount / total) * 100 : 0, 1)],
+      }));
+    },
+  },
+
+  databricksSpenders: {
+    load: (api) => api.databricks.usage({ days: 30 }),
+    rows: (data) => {
+      const currency = (data && data.currency) || 'USD';
+      return ((data && data.top_spenders) || []).map((row) => ({
+        icon: row.entity_type === 'job' ? 'fa-diagram-project'
+          : row.entity_type === 'warehouse' ? 'fa-warehouse' : 'fa-server',
+        /* "unattributed" is not a problem to flag — serverless and some shared compute
+           genuinely carry no entity id. Colouring it as a warning would have people
+           chasing a fault that is not there. */
+        iconColor: row.entity_type === 'unattributed' ? 'secondary' : 'primary',
+        meta: null,
+        cells: [row.entity, row.entity_type, num(row.dbus, 1), money(row.amount, currency)],
+      }));
+    },
+  },
+
+  databricksQueries: {
+    stats: (data) => ({
+      dbxQueries: { value: num((data && data.total_queries) || 0), delta: 'last 24h' },
+      dbxQueryFailures: {
+        value: pct(((data && data.failure_rate) || 0) * 100, 2),
+        delta: `${num((data && data.total_failures) || 0)} failed`,
+      },
+      /* The worst compute's p99, not an average of p99s — percentiles do not
+         recombine, and averaging them produces a number nothing ever measured. */
+      dbxQueryP99: { value: `${num((data && data.worst_p99_ms) || 0, 0)}ms`, delta: 'worst compute' },
+    }),
+    load: (api) => api.databricks.queries({ hours: 24 }),
+    rows: (data) =>
+      ((data && data.items) || []).map((q) => {
+        const rate = q.queries ? q.failures / q.queries : 0;
+        return {
+          icon: 'fa-magnifying-glass-chart',
+          iconColor: rate > 0.05 ? 'danger' : rate > 0.01 ? 'warning' : 'success',
+          meta: q.statement_type,
+          cells: [q.compute_id, num(q.queries), num(q.failures), pct(rate * 100, 2),
+                  `${num(q.avg_duration_ms, 0)}ms`, `${num(q.p99_duration_ms, 0)}ms`,
+                  badge(rate > 0.05 ? 'Failing' : rate > 0.01 ? 'Degraded' : 'Healthy')],
+        };
+      }),
+  },
+
+  databricksClusters: {
+    stats: (data) => ({
+      dbxClusters: { value: num((data && data.total) || 0), delta: 'in workspace' },
+      dbxClustersRunning: {
+        value: num((data && data.running) || 0),
+        delta: 'running now',
+      },
+    }),
+    load: (api) => api.databricks.clusters(),
+    rows: (data) =>
+      ((data && data.items) || []).map((c) => ({
+        icon: 'fa-server',
+        iconColor: c.running ? 'success' : 'secondary',
+        meta: c.state_message || c.spark_version || null,
+        cells: [
+          c.name,
+          badge(c.running ? 'Running' : c.state === 'PENDING' ? 'Starting' : 'Stopped'),
+          c.source,
+          c.node_type || '—',
+          /* An autoscaling cluster has no fixed worker count, and printing its floor as
+             if it were the size is how a 2-64 cluster reads as a small one. */
+          c.min_workers ? `${num(c.min_workers)}\u2013${num(c.max_workers)}` : num(c.workers),
+          c.autotermination_minutes ? `${num(c.autotermination_minutes)}m` : 'never',
+        ],
+      })),
   },
 
   correlation: {
@@ -554,7 +702,7 @@ export const SOURCES = {
         cells: [r.name, r.category || r.source || 'any',
                 (r.notification_channels || []).join(', ') || '—',
                 r.severity || '—',
-                r.escalation_minutes != null ? `${num(r.escalation_minutes)}m` : '—',
+                `${num(r.escalation_minutes)}m`,
                 badge(r.enabled ? 'Enabled' : 'Disabled')],
         action: { key: 'testRoutingRule', arg: r.id, label: 'Test' },
       })),
@@ -581,12 +729,12 @@ export const SOURCES = {
       return {
         requests: { value: num(requests), delta: `${num(rows.length)} routes` },
         errorRate: {
-          value: requests ? pct((errors / requests) * 100, 2) : '—',
+          value: pct(requests ? (errors / requests) * 100 : 0, 2),
           delta: `${num(errors)} 5xx`,
         },
         p99Latency: {
-          value: slowest ? `${num(slowest.p99_latency_ms, 1)}ms` : '—',
-          delta: slowest ? slowest.route : 'awaiting data',
+          value: `${num(slowest ? slowest.p99_latency_ms : 0, 1)}ms`,
+          delta: slowest ? slowest.route : 'no routes yet',
         },
         routes: { value: num(rows.length), delta: 'from stored spans' },
       };
@@ -612,7 +760,7 @@ export const SOURCES = {
         iconColor: t.errors ? 'danger' : 'info',
         meta: t.trace_id,
         cells: [t.root_name || t.trace_id, num(t.span_count), num(t.errors),
-                t.duration_ms != null ? `${num(t.duration_ms, 1)}ms` : '—',
+                `${num(t.duration_ms, 1)}ms`,
                 t.start_time || '—',
                 badge(t.errors ? 'Failed' : 'OK')],
       })),
@@ -712,7 +860,7 @@ export const SOURCES = {
       const total = cost && cost.mtd_total;
       const forecast = cost && cost.forecast_month_end;
       return {
-        mtdSpend: { value: money(total, currency), delta: cost?.period_start ? `since ${cost.period_start}` : 'awaiting data' },
+        mtdSpend: { value: money(total, currency), delta: cost?.period_start ? `since ${cost.period_start}` : 'not connected' },
         forecastEom: {
           value: money(forecast, currency),
           // Cost Explorer declines to forecast a new account or the last day of a
@@ -792,7 +940,7 @@ export const SOURCES = {
         iconColor: w.status === 'failed' ? 'danger' : 'success',
         meta: w.id,
         cells: [w.name, num(w.agents), `${num(w.completed_steps)} / ${num(w.steps)}`,
-                w.duration_ms != null ? `${num(w.duration_ms, 1)}ms` : '—',
+                `${num(w.duration_ms, 1)}ms`,
                 w.started_at || '—', badge(w.status || 'unknown')],
       })),
   },
@@ -881,9 +1029,12 @@ export const SOURCES = {
           delta: alarms ? `in ${num(alarming)} accounts` : 'all clear',
         },
         mtdSpend: {
+          /* The one figure that stays a dash. A count of zero is true when there is
+             nothing to count; "USD 0.00" when Cost Explorer refused the role is a claim
+             about somebody's bill that we did not read. The delta beside it says which. */
           value: cost && !cost.error ? money(cost.mtd_total, currency) : '—',
           delta: cost && cost.error ? 'Cost Explorer denied'
-            : cost && cost.period_start ? `since ${cost.period_start}` : 'awaiting data',
+            : cost && cost.period_start ? `since ${cost.period_start}` : 'not connected',
         },
       };
     },
@@ -985,7 +1136,7 @@ export const SOURCES = {
         streamedRegions: {
           value: num(((data && data.regions) || []).length),
           delta: ((data && data.accounts) || []).length
-            ? `${num(data.accounts.length)} accounts` : 'awaiting data',
+            ? `${num(data.accounts.length)} accounts` : 'not connected',
         },
         datapoints: { value: num((data && data.datapoints) || 0), delta: 'last 3h' },
       };
@@ -1096,31 +1247,32 @@ export const SOURCES = {
       const streamedResources = services.reduce((t, s) => t + (Number(s.resources) || 0), 0);
       return {
         accountAlarms: {
-          value: account ? num((account.alarms || []).length) : '—',
+          value: num(account ? (account.alarms || []).length : 0),
           delta: account && (account.regions || []).length
-            ? `${num(account.regions.length)} regions` : 'awaiting data',
+            ? `${num(account.regions.length)} regions` : 'not connected',
         },
         accountResources: {
-          value: account ? num(countResources(account)) : '—',
+          value: num(account ? countResources(account) : 0),
           delta: account && account.error ? 'unreachable' : 'inventory',
         },
         accountStreamed: {
-          value: streamed ? num(streamedResources) : '—',
+          value: num(streamedResources),
           delta: streamedResources ? 'in range' : 'no stream yet',
         },
         accountServices: {
-          value: streamed ? num(services.length) : '—',
+          value: num(services.length),
           delta: services.length ? 'reporting' : 'no stream yet',
         },
         accountRegions: {
-          value: account ? num((account.regions || []).length) : '—',
+          value: num(account ? (account.regions || []).length : 0),
           delta: account && (account.regions || []).length
-            ? account.regions[0] : 'awaiting data',
+            ? account.regions[0] : 'not connected',
         },
         accountSpend: {
+          // Same exception as the cloud-cost card: an unread bill is not a bill of 0.
           value: cost && !cost.error ? money(cost.total, currency) : '—',
           delta: cost && cost.error ? 'CE denied'
-            : cost && cost.period_start ? `since ${cost.period_start}` : 'awaiting data',
+            : cost && cost.period_start ? `since ${cost.period_start}` : 'not connected',
         },
       };
     },
@@ -1744,9 +1896,18 @@ function isFiltering(root) {
 function publishStats(stats) {
   for (const [key, stat] of Object.entries(stats || {})) {
     const value = document.querySelector(`[data-obs-stat-key="${key}"]`);
-    if (value) value.textContent = stat.value;
+    if (value) {
+      value.textContent = stat.value;
+      /* Both of these are truncated in the markup, so the title is the only way to read
+         the whole thing. Set here as well as in the template, or it keeps saying
+         whatever the placeholder said before the first measurement landed. */
+      value.title = stat.value;
+    }
     const delta = document.querySelector(`[data-obs-stat-delta-key="${key}"]`);
-    if (delta && stat.delta != null) delta.textContent = stat.delta;
+    if (delta && stat.delta != null) {
+      delta.textContent = stat.delta;
+      delta.title = stat.delta;
+    }
   }
 }
 
@@ -1878,11 +2039,11 @@ async function sweepTables(api, polled) {
        invented number is painted for one frame before this runs — which is exactly the
        flash of demo data this pair of rules exists to prevent. */
     for (const el of document.querySelectorAll('[data-obs-stat]')) {
-      el.textContent = '—';
+      el.textContent = '0';
       el.removeAttribute('data-obs-stat');
     }
     for (const el of document.querySelectorAll('[data-obs-stat-delta]')) {
-      el.textContent = 'awaiting data';
+      el.textContent = '';
       el.removeAttribute('data-obs-stat-delta');
     }
     /* Cards written by hand from invented rows — a trace waterfall, a critical-path
@@ -1927,7 +2088,7 @@ async function sweepTables(api, polled) {
         // repeat pass the table may still be holding the previous rows, so it is
         // emptied rather than left showing data the API no longer reports.
         if (!MOCK_DATA) showEmpty(root);
-        mark(root, MOCK_DATA ? 'Sample data — none registered yet' : 'Awaiting data',
+        mark(root, MOCK_DATA ? 'Sample data — none registered yet' : 'Connected · 0 rows',
              MOCK_DATA ? 'warning' : 'secondary');
         return;
       }

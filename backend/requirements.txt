@@ -26,3 +26,10 @@ PyMySQL==1.1.1
 # ELK
 elasticsearch==8.13.1
 python-dateutil==2.8.2
+
+# OTLP/protobuf ingest. Every OpenTelemetry SDK exporter defaults to protobuf, so
+# without these the standard onboarding path 400s until the operator finds the one line
+# of collector YAML that switches it to JSON. ~1.5MB unzipped; imported lazily in
+# shared/elk/otlp.py so a JSON-only deployment pays nothing at cold start.
+protobuf==4.25.3
+opentelemetry-proto==1.25.0

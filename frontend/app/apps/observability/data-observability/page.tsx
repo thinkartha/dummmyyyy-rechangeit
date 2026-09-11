@@ -69,7 +69,7 @@ export default function Page() {
               Freshness, volume, schema, and quality for the tables your pipelines land — backed by Databricks Unity Catalog
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="runScan">
               Run scan
             </button>
@@ -80,16 +80,16 @@ export default function Page() {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 className="text-body-tertiary mb-2">
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div style={{ minWidth: "0" }}>
+                  <h6 className="text-body-tertiary mb-2 text-truncate" title="Tables monitored">
                     Tables monitored
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
+                  <h3 className="mb-0 text-truncate" data-obs-stat="data-obs-stat" title="1,284">
                     1,284
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta">
+                <span className="badge badge-phoenix text-truncate badge-phoenix-info" style={{ maxWidth: "55%", textTransform: "none" }} title="+96" data-obs-stat-delta="data-obs-stat-delta">
                   +96
                 </span>
               </div>
@@ -99,16 +99,16 @@ export default function Page() {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 className="text-body-tertiary mb-2">
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div style={{ minWidth: "0" }}>
+                  <h6 className="text-body-tertiary mb-2 text-truncate" title="Passing">
                     Passing
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
+                  <h3 className="mb-0 text-truncate" data-obs-stat="data-obs-stat" title="94.1%">
                     94.1%
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
+                <span className="badge badge-phoenix text-truncate badge-phoenix-success" style={{ maxWidth: "55%", textTransform: "none" }} title="+0.8%" data-obs-stat-delta="data-obs-stat-delta">
                   +0.8%
                 </span>
               </div>
@@ -118,16 +118,16 @@ export default function Page() {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 className="text-body-tertiary mb-2">
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div style={{ minWidth: "0" }}>
+                  <h6 className="text-body-tertiary mb-2 text-truncate" title="Stale tables">
                     Stale tables
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
+                  <h3 className="mb-0 text-truncate" data-obs-stat="data-obs-stat" title="23">
                     23
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
+                <span className="badge badge-phoenix text-truncate badge-phoenix-warning" style={{ maxWidth: "55%", textTransform: "none" }} title="past freshness SLA" data-obs-stat-delta="data-obs-stat-delta">
                   past freshness SLA
                 </span>
               </div>
@@ -137,16 +137,16 @@ export default function Page() {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 className="text-body-tertiary mb-2">
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div style={{ minWidth: "0" }}>
+                  <h6 className="text-body-tertiary mb-2 text-truncate" title="Schema changes (7d)">
                     Schema changes (7d)
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
+                  <h3 className="mb-0 text-truncate" data-obs-stat="data-obs-stat" title="11">
                     11
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-danger" data-obs-stat-delta="data-obs-stat-delta">
+                <span className="badge badge-phoenix text-truncate badge-phoenix-danger" style={{ maxWidth: "55%", textTransform: "none" }} title="2 breaking" data-obs-stat-delta="data-obs-stat-delta">
                   2 breaking
                 </span>
               </div>

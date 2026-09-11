@@ -6,13 +6,17 @@ with an X-API-Key header and their telemetry lands in the same Elasticsearch ind
 the native /logs/ingest, /metrics/ingest and /traces/ingest routes write to — so the
 Logs, Traces and monitoring pages work with no per-tenant code.
 
-ponytail: JSON encoding only (`encoding: json` on the collector's otlphttp exporter),
-no protobuf. Adding protobuf means a build-time dependency on the generated OTLP stubs;
-do it when a customer cannot set that one line.
+Both OTLP/HTTP encodings are accepted. JSON is the simpler path and what the docs page
+shows; protobuf is the *default* for every OTel SDK exporter and for the collector's
+otlphttp exporter, so rejecting it meant anyone who pointed existing instrumentation
+here got a 400 until they found the one line of YAML to change. decode_protobuf() below
+converts a protobuf body into the same dict shape the JSON path produces, so the three
+converters underneath it stay encoding-agnostic.
 """
 
 from __future__ import annotations
 
+import base64
 from datetime import datetime, timezone
 from typing import Any
 
@@ -178,3 +182,89 @@ def metrics(payload: dict) -> list[dict[str, Any]]:
                     "attributes": {**resource_attrs, **_attributes(point.get("attributes"))},
                 })
     return docs
+
+
+# --- protobuf ---------------------------------------------------------------
+
+# Lazily imported: the generated stubs are ~1MB of module-level class construction, and
+# a deployment whose tenants all send JSON should not pay it on every cold start.
+_PROTO_REQUESTS = {
+    "traces": ("opentelemetry.proto.collector.trace.v1.trace_service_pb2",
+               "ExportTraceServiceRequest"),
+    "metrics": ("opentelemetry.proto.collector.metrics.v1.metrics_service_pb2",
+                "ExportMetricsServiceRequest"),
+    "logs": ("opentelemetry.proto.collector.logs.v1.logs_service_pb2",
+             "ExportLogsServiceRequest"),
+}
+
+# The one place the two encodings genuinely disagree. OTLP/JSON spells trace and span
+# ids as lowercase hex; protobuf carries them as raw bytes, which MessageToDict renders
+# as base64. Left alone, every span would arrive with an id that looks nothing like the
+# same span reported over JSON, and the two would never join in the traces index.
+#
+# The value is the id's length in bytes, and it is load-bearing rather than decoration:
+# hex digits are all valid base64 characters, so an id that is *already* hex decodes
+# happily into 24 bytes of noise. Requiring the decode to produce exactly the right
+# width is what makes this safe to run on a value that may have been converted once
+# already.
+_ID_FIELDS = {"traceId": 16, "spanId": 8, "parentSpanId": 8}
+
+
+class ProtobufUnavailable(RuntimeError):
+    """Raised when a protobuf body arrives but the stubs are not installed."""
+
+
+def _hexify(node: Any) -> Any:
+    if isinstance(node, dict):
+        return {
+            k: (_b64_to_hex(v, _ID_FIELDS[k]) if k in _ID_FIELDS and isinstance(v, str)
+                else _hexify(v))
+            for k, v in node.items()
+        }
+    if isinstance(node, list):
+        return [_hexify(item) for item in node]
+    return node
+
+
+def _b64_to_hex(value: str, width: int) -> str:
+    """base64 -> hex, but only when the result is an id of exactly `width` bytes.
+
+    Anything else is passed through untouched: an id that is already hex, or a value we
+    do not recognise. Dropping it would orphan the span, and replacing it with the noise
+    a mis-decode produces would be worse — the span would still be indexed, under an id
+    nothing else references.
+    """
+    try:
+        raw = base64.b64decode(value, validate=True)
+    except Exception:
+        return value
+    return raw.hex() if len(raw) == width else value
+
+
+def decode_protobuf(body: bytes, signal: str) -> dict:
+    """An OTLP/protobuf Export*ServiceRequest -> the dict the JSON path would have given.
+
+    use_integers_for_enums keeps severityNumber, span kind and status code as the numbers
+    the converters below already switch on; the default would hand them enum *names* and
+    every span would come out UNSET.
+    """
+    try:
+        from google.protobuf.json_format import MessageToDict
+    except ImportError as exc:  # pragma: no cover - depends on deployment packaging
+        raise ProtobufUnavailable(
+            "This deployment cannot decode OTLP/protobuf. Set `encoding: json` on the "
+            "exporter, or install the protobuf and opentelemetry-proto packages."
+        ) from exc
+
+    module_name, class_name = _PROTO_REQUESTS[signal]
+    try:
+        module = __import__(module_name, fromlist=[class_name])
+    except ImportError as exc:  # pragma: no cover - depends on deployment packaging
+        raise ProtobufUnavailable(
+            "This deployment cannot decode OTLP/protobuf. Set `encoding: json` on the "
+            "exporter, or install the opentelemetry-proto package."
+        ) from exc
+
+    message = getattr(module, class_name)()
+    message.ParseFromString(body)
+    return _hexify(MessageToDict(message, use_integers_for_enums=True))

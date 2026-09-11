@@ -69,7 +69,7 @@ export default function Page() {
               What you promised, what you have spent, and how fast you are spending it
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="defineSlo">
               Define SLO
             </button>
@@ -80,16 +80,16 @@ export default function Page() {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 className="text-body-tertiary mb-2">
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div style={{ minWidth: "0" }}>
+                  <h6 className="text-body-tertiary mb-2 text-truncate" title="SLOs tracked">
                     SLOs tracked
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
+                  <h3 className="mb-0 text-truncate" data-obs-stat="data-obs-stat" title="18">
                     18
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta">
+                <span className="badge badge-phoenix text-truncate badge-phoenix-info" style={{ maxWidth: "55%", textTransform: "none" }} title="+2" data-obs-stat-delta="data-obs-stat-delta">
                   +2
                 </span>
               </div>
@@ -99,16 +99,16 @@ export default function Page() {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 className="text-body-tertiary mb-2">
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div style={{ minWidth: "0" }}>
+                  <h6 className="text-body-tertiary mb-2 text-truncate" title="Meeting target">
                     Meeting target
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
+                  <h3 className="mb-0 text-truncate" data-obs-stat="data-obs-stat" title="15">
                     15
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
+                <span className="badge badge-phoenix text-truncate badge-phoenix-success" style={{ maxWidth: "55%", textTransform: "none" }} title="83%" data-obs-stat-delta="data-obs-stat-delta">
                   83%
                 </span>
               </div>
@@ -118,16 +118,16 @@ export default function Page() {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 className="text-body-tertiary mb-2">
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div style={{ minWidth: "0" }}>
+                  <h6 className="text-body-tertiary mb-2 text-truncate" title="Budget at risk">
                     Budget at risk
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
+                  <h3 className="mb-0 text-truncate" data-obs-stat="data-obs-stat" title="2">
                     2
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
+                <span className="badge badge-phoenix text-truncate badge-phoenix-warning" style={{ maxWidth: "55%", textTransform: "none" }} title="burn > 2x" data-obs-stat-delta="data-obs-stat-delta">
                   burn &gt; 2x
                 </span>
               </div>
@@ -137,16 +137,16 @@ export default function Page() {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 className="text-body-tertiary mb-2">
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div style={{ minWidth: "0" }}>
+                  <h6 className="text-body-tertiary mb-2 text-truncate" title="Breached">
                     Breached
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
+                  <h3 className="mb-0 text-truncate" data-obs-stat="data-obs-stat" title="1">
                     1
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-danger" data-obs-stat-delta="data-obs-stat-delta">
+                <span className="badge badge-phoenix text-truncate badge-phoenix-danger" style={{ maxWidth: "55%", textTransform: "none" }} title="partner API" data-obs-stat-delta="data-obs-stat-delta">
                   partner API
                 </span>
               </div>

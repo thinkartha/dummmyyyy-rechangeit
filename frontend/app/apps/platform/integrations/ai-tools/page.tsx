@@ -74,7 +74,7 @@ export default function Page() {
               Register the collector agent that pushes AI telemetry. AI Monitoring displays whatever the gateway and these agents report — it registers nothing itself
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="connectAiTool">
               Connect AI tool
             </button>

@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from shared.core import databricks as dbx
+from shared.core import databricks_metrics as dbx_metrics
 from shared.core.tenancy import get_tenant_id
 
 router = APIRouter(prefix="/api/v1/databricks", tags=["databricks"])
@@ -126,3 +127,45 @@ def run_query(
 ) -> dict:
     """Run a read-only statement. Writes are rejected before reaching Databricks."""
     return _guard(dbx.run_query, body.sql, body.limit, body.catalog, body.schema_name, tenant_id)
+
+
+# --- metrics ----------------------------------------------------------------
+#
+# Consumption, query health and clusters — the three dimensions the ETL job-run poller
+# does not cover. Each is a separate route rather than one fat response so a page can
+# refresh the cheap one (clusters, a REST call) without re-running the expensive one
+# (cost, a warehouse statement over a month of billing rows).
+
+
+@router.get("/usage")
+def get_usage(
+    days: int = Query(default=30, ge=1, le=365),
+    tenant_id: str = Depends(get_tenant_id),
+) -> dict:
+    """DBU consumption and list cost from system.billing."""
+    return _guard(dbx_metrics.usage, tenant_id, days)
+
+
+@router.get("/queries")
+def get_queries(
+    hours: int = Query(default=24, ge=1, le=720),
+    tenant_id: str = Depends(get_tenant_id),
+) -> dict:
+    """Query volume, failures and latency per compute, from system.query.history."""
+    return _guard(dbx_metrics.queries, tenant_id, hours)
+
+
+@router.get("/clusters")
+def get_clusters(tenant_id: str = Depends(get_tenant_id)) -> dict:
+    """Workspace clusters with state and size. Needs host+token, not a warehouse."""
+    return _guard(dbx_metrics.clusters, tenant_id)
+
+
+@router.get("/metrics/summary")
+def get_metrics_summary(
+    days: int = Query(default=30, ge=1, le=365),
+    hours: int = Query(default=24, ge=1, le=720),
+    tenant_id: str = Depends(get_tenant_id),
+) -> dict:
+    """All three at once for the monitoring page, each dimension failing on its own."""
+    return dbx_metrics.summary(tenant_id, days, hours)

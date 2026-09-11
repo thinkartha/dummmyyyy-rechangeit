@@ -74,7 +74,7 @@ export default function Page() {
               Register a database by connection string — test it from the same dialog before it is saved. Database Monitoring reads what these report
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <button className="btn btn-primary" type="button" data-lhb-action="addDatabase">
               Add database
             </button>

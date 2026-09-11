@@ -72,7 +72,7 @@ export default function Page() {
               Connection health, replication lag, and slow queries across every engine an org has registered
             </h5>
           </div>
-          <div className="col-auto">
+          <div className="col-auto d-flex gap-2">
             <a className="btn btn-phoenix-primary" href="/apps/platform/integrations/databases/">
               Configure in Integrations
             </a>
@@ -83,16 +83,16 @@ export default function Page() {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 className="text-body-tertiary mb-2">
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div style={{ minWidth: "0" }}>
+                  <h6 className="text-body-tertiary mb-2 text-truncate" title="Databases">
                     Databases
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
+                  <h3 className="mb-0 text-truncate" data-obs-stat="data-obs-stat" title="48">
                     48
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-info" data-obs-stat-delta="data-obs-stat-delta">
+                <span className="badge badge-phoenix text-truncate badge-phoenix-info" style={{ maxWidth: "55%", textTransform: "none" }} title="+6" data-obs-stat-delta="data-obs-stat-delta">
                   +6
                 </span>
               </div>
@@ -102,16 +102,16 @@ export default function Page() {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 className="text-body-tertiary mb-2">
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div style={{ minWidth: "0" }}>
+                  <h6 className="text-body-tertiary mb-2 text-truncate" title="Healthy">
                     Healthy
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
+                  <h3 className="mb-0 text-truncate" data-obs-stat="data-obs-stat" title="43">
                     43
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-success" data-obs-stat-delta="data-obs-stat-delta">
+                <span className="badge badge-phoenix text-truncate badge-phoenix-success" style={{ maxWidth: "55%", textTransform: "none" }} title="89.6%" data-obs-stat-delta="data-obs-stat-delta">
                   89.6%
                 </span>
               </div>
@@ -121,16 +121,16 @@ export default function Page() {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 className="text-body-tertiary mb-2">
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div style={{ minWidth: "0" }}>
+                  <h6 className="text-body-tertiary mb-2 text-truncate" title="Degraded">
                     Degraded
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
+                  <h3 className="mb-0 text-truncate" data-obs-stat="data-obs-stat" title="4">
                     4
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-warning" data-obs-stat-delta="data-obs-stat-delta">
+                <span className="badge badge-phoenix text-truncate badge-phoenix-warning" style={{ maxWidth: "55%", textTransform: "none" }} title="replication lag" data-obs-stat-delta="data-obs-stat-delta">
                   replication lag
                 </span>
               </div>
@@ -140,16 +140,16 @@ export default function Page() {
         <div className="col-12 col-sm-6 col-xl-3">
           <div className="card h-100">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <h6 className="text-body-tertiary mb-2">
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div style={{ minWidth: "0" }}>
+                  <h6 className="text-body-tertiary mb-2 text-truncate" title="Down">
                     Down
                   </h6>
-                  <h3 className="mb-0" data-obs-stat="data-obs-stat">
+                  <h3 className="mb-0 text-truncate" data-obs-stat="data-obs-stat" title="1">
                     1
                   </h3>
                 </div>
-                <span className="badge badge-phoenix badge-phoenix-danger" data-obs-stat-delta="data-obs-stat-delta">
+                <span className="badge badge-phoenix text-truncate badge-phoenix-danger" style={{ maxWidth: "55%", textTransform: "none" }} title="connect refused" data-obs-stat-delta="data-obs-stat-delta">
                   connect refused
                 </span>
               </div>

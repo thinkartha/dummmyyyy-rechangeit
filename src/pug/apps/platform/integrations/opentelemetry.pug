@@ -19,12 +19,11 @@ block content
   .card.mb-4
     .card-body
       h4.mb-2 Collector configuration
-      p.text-body-tertiary.fs-9 Add this exporter to your OTel Collector and send every pipeline to it. The endpoint and the key are shown in the table below; the key is one of this organization's API keys.
+      p.text-body-tertiary.fs-9 Add this exporter to your OTel Collector and send every pipeline to it. The endpoint and the key are shown in the table below; the key is one of this organization's API keys. Both OTLP/HTTP encodings are accepted — protobuf (the default) and JSON — so there is no line to change.
       pre.bg-body-highlight.rounded-3.p-3.fs-9.mb-3.overflow-auto.
         exporters:
           otlphttp:
             endpoint: &lt;OTLP endpoint below&gt;
-            encoding: json          # JSON only — protobuf is not accepted yet
             headers:
               X-API-Key: &lt;your ingest key&gt;
 
@@ -36,10 +35,11 @@ block content
       p.text-body-tertiary.fs-9.mb-0
         | An SDK exporter works too — set
         code.mx-1 OTEL_EXPORTER_OTLP_ENDPOINT
-        | to the same URL,
-        code.mx-1 OTEL_EXPORTER_OTLP_PROTOCOL=http/json
-        | and
+        | to the same URL and
         code.mx-1 OTEL_EXPORTER_OTLP_HEADERS=X-API-Key=…
+        | . The SDK default,
+        code.mx-1 http/protobuf
+        | , is accepted as-is
         | . Set
         code.mx-1 service.name
         | on your resource — it is what every page groups telemetry by.
@@ -57,6 +57,6 @@ block content
       { label: 'Status' }
     ],
     rows: [
-      { icon: 'fa-satellite-dish', iconColor: 'secondary', meta: 'nothing received yet', cells: ['—', '—', '—', '0', { text: 'Not connected', badge: 'secondary' }] }
+      { icon: 'fa-satellite-dish', iconColor: 'secondary', meta: 'nothing received yet', cells: ['traces', 'otlp/http', 'not yet', '0', { text: 'Not connected', badge: 'secondary' }] }
     ]
   })

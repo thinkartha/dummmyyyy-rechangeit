@@ -2141,6 +2141,64 @@ export const ACTIONS = {
     },
   },
 
+  /**
+   * Launch a job on the connected platform.
+   *
+   * The backend has been able to do this since the ETL connectors landed —
+   * /integrations/etl/{platform}/execute calls Databricks' jobs/run-now, Talend's task
+   * launcher or Boomi's process executor — and nothing in the UI called it, so the
+   * capability existed only for whoever was willing to curl it.
+   *
+   * Dry run is on by default, and that is not timidity: `job_id` is a free-text field
+   * whose meaning is a *production job*, and the failure mode of a typo is launching
+   * the wrong one. A dry run records the execution here and launches nothing, so the
+   * form's first use can be checking it is pointed where the operator thinks.
+   */
+  runEtlJob: {
+    title: 'Run job',
+    submit: 'Run',
+    success: 'Job submitted.',
+    fields: [
+      { name: 'platform', label: 'Platform', type: 'select', required: true,
+        options: [
+          { value: 'databricks', label: 'Databricks' },
+          { value: 'talend', label: 'Talend' },
+          { value: 'boomi', label: 'Boomi' },
+        ] },
+      { name: 'job_id', label: 'Job ID', required: true,
+        help: 'Databricks wants the numeric job id from the workspace URL; Talend a task id; Boomi a process id.' },
+      { name: 'job_name', label: 'Label', placeholder: 'Optional — shown in the run list' },
+      { name: 'parameters', label: 'Parameters (JSON)', type: 'textarea',
+        placeholder: '{"run_date": "2026-09-10"}',
+        help: 'Passed through to the provider as job parameters. Leave blank for none.' },
+      { name: 'dry_run', label: 'Dry run (record it here, launch nothing)',
+        type: 'checkbox', value: true },
+    ],
+    run: async (api, body) => {
+      let parameters;
+      if (String(body.parameters || '').trim()) {
+        try {
+          parameters = JSON.parse(body.parameters);
+        } catch (err) {
+          /* Caught here rather than sent: the backend would take a malformed string as
+             an absent parameter block and launch the job without it, which is a silently
+             different run from the one that was asked for. */
+          throw new Error(`Parameters must be valid JSON: ${err.message}`);
+        }
+        if (parameters === null || typeof parameters !== 'object' || Array.isArray(parameters)) {
+          throw new Error('Parameters must be a JSON object, e.g. {"run_date": "2026-09-10"}');
+        }
+      }
+      const platform = body.platform || 'databricks';
+      return api.etl.execute(platform, {
+        jobId: String(body.job_id || '').trim(),
+        jobName: body.job_name || undefined,
+        parameters,
+        dryRun: Boolean(body.dry_run),
+      });
+    },
+  },
+
   pollEtl: {
     direct: true,
     run: async (api, platform) => {

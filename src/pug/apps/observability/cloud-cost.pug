@@ -22,10 +22,10 @@ block content
   //- no key because nothing computes it for a real tenant — rightsizing needs per-tenant
   //- utilization that is not collected — so it stays blank rather than quoting a figure.
   +ObsStatCards([
-    { label: 'MTD cloud spend', key: 'mtdSpend', value: '—', delta: 'awaiting data', badge: 'warning' },
-    { label: 'Forecast EOM', key: 'forecastEom', value: '—', delta: 'awaiting data', badge: 'danger' },
-    { label: 'Accounts over budget', key: 'accountsOverBudget', value: '—', delta: 'awaiting data', badge: 'warning' },
-    { label: 'Savings opportunities', value: '—', delta: 'awaiting data', badge: 'success' }
+    { label: 'MTD cloud spend', key: 'mtdSpend', value: '0', delta: '', badge: 'warning' },
+    { label: 'Forecast EOM', key: 'forecastEom', value: '0', delta: '', badge: 'danger' },
+    { label: 'Accounts over budget', key: 'accountsOverBudget', value: '0', delta: '', badge: 'warning' },
+    { label: 'Savings opportunities', value: '0', delta: '', badge: 'success' }
   ])
 
   //- Month-to-date spend from AWS Cost Explorer for the account connected under
