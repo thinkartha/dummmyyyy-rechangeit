@@ -208,7 +208,7 @@ function costGroupBy() {
  * scripts, but this file is served as an asset and never passes through it — so the
  * form is taken from the page currently being viewed rather than assumed.
  */
-const pageHref = (name) => {
+const pageHref = (name, section) => {
   /* Guarded because this module is imported outside a browser — the CI checks and the
      row-builder tests both do it — and a row builder must not need a DOM to produce
      rows. Without a location there is no link to make, and a row without one renders
@@ -224,7 +224,17 @@ const pageHref = (name) => {
      setting means `/cloud-account` without one is not where the page lives either. */
   const trailing = !dot && path.endsWith('/');
   const clean = trailing ? path.slice(0, -1) : path;
-  const dir = clean.slice(0, clean.lastIndexOf('/') + 1);
+  let dir = clean.slice(0, clean.lastIndexOf('/') + 1);
+  /* A sibling is the wrong guess when the same table is rendered in two sections. The
+     linked-accounts table is on both Observability -> Cloud monitoring and Platform ->
+     Integrations -> Cloud accounts, and the drill-down it links to exists only under
+     apps/observability — so from the integrations page every row 404ed. `section` says
+     where the target actually lives; the path is rebuilt from the deployment root
+     (everything before /apps/) so it keeps working under a sub-path deploy. */
+  if (section) {
+    const at = dir.indexOf('/apps/');
+    if (at !== -1) dir = `${dir.slice(0, at)}/${section}/`;
+  }
   return `${dir}${name}${dot ? '.html' : trailing ? '/' : ''}`;
 };
 
@@ -1119,8 +1129,8 @@ export const SOURCES = {
           iconSet: 'fa-brands',
           icon: 'fa-aws',
           iconColor: account.error ? 'danger' : alarms ? 'warning' : 'success',
-          href: pageHref('cloud-account')
-            ? `${pageHref('cloud-account')}?account=${encodeURIComponent(account.accountId)}`
+          href: pageHref('cloud-account', 'apps/observability')
+            ? `${pageHref('cloud-account', 'apps/observability')}?account=${encodeURIComponent(account.accountId)}`
             : undefined,
           /* Whichever of these is true is the thing the operator needs: why the row is
              empty, then which reads were refused, then just which account it is. */
